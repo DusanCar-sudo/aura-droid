@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aura Droid</string>
+    <string name="new_chat">New Chat</string>
+    <string name="sessions">Sessions</string>
+    <string name="settings">Settings</string>
+    <string name="send">Send</string>
+    <string name="message_placeholder">Message Aura…</string>
+    <string name="aura_thinking">Aura is thinking…</string>
+    <string name="start_conversation">Start a conversation</string>
+    <string name="empty_state_hint">Ask Aura to help with coding, debugging, or any task</string>
+    <string name="coder_mode">Coder Mode</string>
+    <string name="gazelle_mode">Gazelle Mode</string>
+    <string name="architect_mode">Architect Mode</string>
+    <string name="attach_file">Attach file</string>
+    <string name="more_options">More options</string>
+    <string name="pin">Pin</string>
+    <string name="unpin">Unpin</string>
+    <string name="delete">Delete</string>
+    <string name="delete_confirmation">Delete this session?</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="api_key">API Key</string>
+    <string name="base_url">Base URL</string>
+    <string name="model">Model</string>
+    <string name="provider">Provider</string>
+    <string name="auto_approve">Auto-approve tool calls</string>
+    <string name="max_turns">Max turns</string>
+    <string name="version">Version</string>
+    <string name="build">Build</string>
+</resources>
