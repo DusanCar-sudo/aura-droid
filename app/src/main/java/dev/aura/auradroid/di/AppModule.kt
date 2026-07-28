@@ -41,10 +41,4 @@ object AppModule {
     fun provideAuraApiService(): AuraApiService {
         return NetworkAdapter.auraApiService
     }
-
-    @Provides
-    @Singleton
-    fun provideAuraRepository(repository: AuraRepository): AuraRepository {
-        return repository
-    }
 }

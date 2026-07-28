@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.AuraDroid" parent="android:Theme.Material.Light.NoActionBar">
+    <!--
+      Pre-Compose window theme. windowBackground is Aura ink so launch does not
+      flash white before AuraDroidTheme (dark by default) takes over.
+    -->
+    <style name="Theme.AuraDroid" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/aura_ink</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

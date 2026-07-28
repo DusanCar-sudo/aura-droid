@@ -20,6 +20,7 @@ class SettingsViewModel @Inject constructor(
     private val _config = MutableStateFlow(
         AuraConfig(
             model = "deepseek/deepseek-chat",
+            provider = "DeepSeek",
             providers = emptyList(),
             baseUrl = null,
             apiKey = null,

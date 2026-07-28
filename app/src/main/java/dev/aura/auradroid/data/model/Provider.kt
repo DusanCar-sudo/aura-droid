@@ -26,7 +26,9 @@ enum class ModelSpeed {
 
 data class AuraConfig(
     val model: String,
-    val providers: List<Provider>,
+    /** Name of the currently selected provider, e.g. "DeepSeek". */
+    val provider: String = "DeepSeek",
+    val providers: List<Provider> = emptyList(),
     val baseUrl: String? = null,
     val apiKey: String? = null,
     val mode: SessionMode = SessionMode.CODER,

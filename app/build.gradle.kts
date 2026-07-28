@@ -40,6 +40,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi"
+        )
     }
 
     buildFeatures {
@@ -85,24 +89,12 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
 
-    // Networking
+    // Networking (OkHttp also carries the streaming/SSE path)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.google.code.gson:gson:2.10.1")
-
-    // WebSocket/Streaming
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    // Markdown rendering
-    implementation("com.github.skydoves:landscapist-glide:2.4.6")
-    implementation("io.noties.markwon:core:4.6.2")
-    implementation("io.noties.markwon:editor:4.6.2")
-    implementation("io.noties.markwon:syntax-highlight:4.6.2")
-
-    // Code syntax highlighting
-    implementation("io.github.rosemoe.sora-editor:editor:0.23.2")
 
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.1.1")

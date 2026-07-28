@@ -261,7 +261,7 @@ fun AuraApiKeyField(
         },
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
-        colors = TextFieldDefaults.outlinedTextFieldColors(
+        colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
         )
@@ -287,7 +287,7 @@ fun AuraSettingsTextField(
         },
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
-        colors = TextFieldDefaults.outlinedTextFieldColors(
+        colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
         )
@@ -436,7 +436,7 @@ fun AuraSettingsDropdown(
                 }
             },
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
             )

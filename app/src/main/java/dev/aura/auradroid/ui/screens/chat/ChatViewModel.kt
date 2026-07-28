@@ -8,7 +8,11 @@ import dev.aura.auradroid.data.model.MessageRole
 import dev.aura.auradroid.data.model.Session
 import dev.aura.auradroid.data.model.SessionMode
 import dev.aura.auradroid.data.repository.AuraRepository
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,26 +21,25 @@ class ChatViewModel @Inject constructor(
     private val repository: AuraRepository
 ) : ViewModel() {
 
-    private val _currentSession = mutableStateOf<Session?>(null)
-    val currentSession: State<Session?> = _currentSession
+    private val _currentSession = MutableStateFlow<Session?>(null)
+    val currentSession: StateFlow<Session?> = _currentSession.asStateFlow()
 
-    private val _messages = mutableStateListOf<MessageItem>()
-    val messages: List<MessageItem> = _messages
+    private val _messages = MutableStateFlow<List<MessageItem>>(emptyList())
+    val messages: StateFlow<List<MessageItem>> = _messages.asStateFlow()
 
-    private val _inputText = mutableStateOf("")
-    val inputText: State<String> = _inputText
+    private val _inputText = MutableStateFlow("")
+    val inputText: StateFlow<String> = _inputText.asStateFlow()
 
-    private val _isLoading = mutableStateOf(false)
-    val isLoading: State<Boolean> = _isLoading
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _isStreaming = mutableStateOf(false)
-    val isStreaming: State<Boolean> = _isStreaming
+    private val _currentMode = MutableStateFlow(SessionMode.CODER)
+    val currentMode: StateFlow<SessionMode> = _currentMode.asStateFlow()
 
-    private val _currentMode = mutableStateOf(SessionMode.CODER)
-    val currentMode: State<SessionMode> = _currentMode
+    /** Collector for the active session's messages; cancelled when switching sessions. */
+    private var messageCollectJob: Job? = null
 
     init {
-        // Create a default session if none exists
         viewModelScope.launch {
             val sessions = repository.getActiveSessions().first()
             if (sessions.isEmpty()) {
@@ -48,11 +51,15 @@ class ChatViewModel @Inject constructor(
     }
 
     fun loadSession(sessionId: String) {
+        messageCollectJob?.cancel()
         viewModelScope.launch {
-            _currentSession.value = repository.getSessionById(sessionId)
+            val session = repository.getSessionById(sessionId) ?: return@launch
+            _currentSession.value = session
+            _currentMode.value = session.mode
+        }
+        messageCollectJob = viewModelScope.launch {
             repository.getMessagesForSession(sessionId).collect { messageList ->
-                _messages.clear()
-                _messages.addAll(messageList.map { it.toMessageItem() })
+                _messages.value = messageList.map { it.toMessageItem() }
             }
         }
     }
@@ -65,8 +72,7 @@ class ChatViewModel @Inject constructor(
                 provider = "DeepSeek",
                 mode = _currentMode.value
             )
-            _currentSession.value = session
-            _messages.clear()
+            loadSession(session.id)
         }
     }
 
@@ -78,50 +84,56 @@ class ChatViewModel @Inject constructor(
         val text = _inputText.value.trim()
         if (text.isEmpty() || _isLoading.value) return
 
-        viewModelScope.launch {
-            val sessionId = _currentSession.value?.id ?: return@launch
+        val sessionId = _currentSession.value?.id ?: return
 
-            // Add user message
-            val userMessage = repository.addMessage(
+        viewModelScope.launch {
+            repository.addMessage(
                 sessionId = sessionId,
                 role = MessageRole.USER,
                 content = text
             )
-            _messages.add(userMessage.toMessageItem())
             _inputText.value = ""
             _isLoading.value = true
 
-            // Simulate AI response (replace with actual API call)
-            simulateAIResponse(sessionId, text)
+            try {
+                respond(sessionId, text)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
-    private suspend fun simulateAIResponse(sessionId: String, userMessage: String) {
-        // This is a placeholder - replace with actual API call
-        kotlinx.coroutines.delay(1000)
+    /**
+     * Placeholder response. Wired to the Aura HTTP API in a follow-up —
+     * see AuraApiService.sendMessageStream.
+     */
+    private suspend fun respond(sessionId: String, userMessage: String) {
+        kotlinx.coroutines.delay(600)
 
         val response = when {
-            userMessage.contains("hello", ignoreCase = true) -> "Hello! How can I help you today?"
-            userMessage.contains("code", ignoreCase = true) -> "I can help you with coding tasks. What would you like me to work on?"
-            userMessage.contains("help", ignoreCase = true) -> "I'm Aura, your AI coding assistant. I can help you with:\n• Writing and refactoring code\n• Debugging issues\n• Explaining code\n• Architectural decisions\n\nWhat would you like to work on?"
-            else -> "I understand you're asking about: \"$userMessage\". Let me help you with that..."
+            userMessage.contains("hello", ignoreCase = true) ->
+                "Hello. What are we building?"
+            userMessage.contains("help", ignoreCase = true) ->
+                "I can help with coding, debugging, architecture, and explanation. " +
+                    "Point me at a task and I'll read, plan, execute, and verify."
+            else ->
+                "Not yet connected to the Aura backend. Your message was: \"$userMessage\""
         }
 
-        val assistantMessage = repository.addMessage(
+        repository.addMessage(
             sessionId = sessionId,
             role = MessageRole.ASSISTANT,
             content = response
         )
-        _messages.add(assistantMessage.toMessageItem())
-        _isLoading.value = false
     }
 
     fun setMode(mode: SessionMode) {
         _currentMode.value = mode
-    }
-
-    fun clearMessages() {
-        _messages.clear()
+        val session = _currentSession.value ?: return
+        viewModelScope.launch {
+            repository.updateSession(session.copy(mode = mode))
+            _currentSession.value = session.copy(mode = mode)
+        }
     }
 }
 
