@@ -1,9 +1,16 @@
 package dev.aura.auradroid.ui.screens.sessions
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,12 +18,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.aura.auradroid.data.model.Session
+import dev.aura.auradroid.ui.theme.AuraCyan
+import dev.aura.auradroid.ui.theme.AuraLogo
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -30,35 +44,49 @@ fun SessionsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Sessions") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.createNewSession() }) {
-                        Icon(Icons.Default.Add, contentDescription = "New Session")
-                    }
-                }
+            AuraSessionsTopBar(onNavigateBack = onNavigateBack)
+        },
+        floatingActionButton = {
+            AuraFloatingActionButton(
+                onClick = { viewModel.createNewSession() }
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header section
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    Text(
+                        text = "Your Sessions",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "${sessions.size} session${if (sessions.size != 1) "s" else ""}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
             if (sessions.isEmpty()) {
                 item {
-                    EmptySessionsState(onCreateNew = { viewModel.createNewSession() })
+                    AuraEmptySessionsState(onCreateNew = { viewModel.createNewSession() })
                 }
             } else {
                 items(sessions) { session ->
-                    SessionItem(
+                    AuraSessionCard(
                         session = session,
                         onClick = { viewModel.selectSession(session.id) },
                         onPinToggle = { viewModel.togglePin(session.id) },
@@ -71,7 +99,75 @@ fun SessionsScreen(
 }
 
 @Composable
-fun SessionItem(
+fun AuraSessionsTopBar(onNavigateBack: () -> Unit) {
+    TopAppBar(
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AuraLogo(
+                    modifier = Modifier.size(28.dp),
+                    cyanColor = MaterialTheme.colorScheme.primary,
+                    rubyColor = MaterialTheme.colorScheme.tertiary
+                )
+                Text(
+                    text = "Sessions",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent
+        )
+    )
+}
+
+@Composable
+fun AuraFloatingActionButton(onClick: () -> Unit) {
+    val infiniteTransition = rememberInfiniteTransition(label = "fab-pulse")
+
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "fab-pulse"
+    )
+
+    Box(
+        modifier = Modifier
+            .scale(scale)
+            .padding(16.dp)
+    ) {
+        FloatingActionButton(
+            onClick = onClick,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "New Session",
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+    }
+}
+
+@Composable
+fun AuraSessionCard(
     session: Session,
     onClick: () -> Unit,
     onPinToggle: () -> Unit,
@@ -83,14 +179,22 @@ fun SessionItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (session.isPinned) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
             } else {
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
             }
-        )
+        ),
+        border = if (session.isPinned) {
+            androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            )
+        } else {
+            null
+        }
     ) {
         Row(
             modifier = Modifier
@@ -99,28 +203,70 @@ fun SessionItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Left side: Avatar + Session info
             Row(
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Avatar/icon
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (session.mode == dev.aura.auradroid.data.model.SessionMode.CODER) {
-                            Icons.Default.Code
-                        } else {
-                            Icons.Default.Chat
-                        },
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary
+                // Avatar with glow
+                Box {
+                    // Glow effect
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        when (session.mode) {
+                                            dev.aura.auradroid.data.model.SessionMode.CODER ->
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                            dev.aura.auradroid.data.model.SessionMode.GAZELLE ->
+                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)
+                                            dev.aura.auradroid.data.model.SessionMode.ARCHITECT ->
+                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)
+                                        },
+                                        Color.Transparent
+                                    )
+                                )
+                            )
                     )
+                    // Avatar
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when (session.mode) {
+                                    dev.aura.auradroid.data.model.SessionMode.CODER ->
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    dev.aura.auradroid.data.model.SessionMode.GAZELLE ->
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+                                    dev.aura.auradroid.data.model.SessionMode.ARCHITECT ->
+                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = when (session.mode) {
+                                dev.aura.auradroid.data.model.SessionMode.CODER -> Icons.Default.Code
+                                dev.aura.auradroid.data.model.SessionMode.GAZELLE -> Icons.Default.Chat
+                                dev.aura.auradroid.data.model.SessionMode.ARCHITECT -> Icons.Default.AccountTree
+                            },
+                            contentDescription = null,
+                            tint = when (session.mode) {
+                                dev.aura.auradroid.data.model.SessionMode.CODER ->
+                                    MaterialTheme.colorScheme.primary
+                                dev.aura.auradroid.data.model.SessionMode.GAZELLE ->
+                                    MaterialTheme.colorScheme.secondary
+                                dev.aura.auradroid.data.model.SessionMode.ARCHITECT ->
+                                    MaterialTheme.colorScheme.tertiary
+                            },
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
 
                 // Session info
@@ -129,11 +275,12 @@ fun SessionItem(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             text = session.title,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -146,15 +293,30 @@ fun SessionItem(
                             )
                         }
                     }
-                    Text(
-                        text = "${session.model} • ${session.messageCount} messages",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = session.mode.name.lowercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        )
+                        Text(
+                            text = "${session.messageCount} message${if (session.messageCount != 1) "s" else ""}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Text(
                         text = formatDate(session.updatedAt),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
             }
@@ -162,24 +324,47 @@ fun SessionItem(
             // Menu
             Box {
                 IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More")
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
                 }
                 DropdownMenu(
                     expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
+                    onDismissRequest = { showMenu = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     DropdownMenuItem(
-                        text = { Text(if (session.isPinned) "Unpin" else "Pin") },
+                        text = {
+                            Text(
+                                if (session.isPinned) "Unpin" else "Pin",
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
                         onClick = {
                             onPinToggle()
                             showMenu = false
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.PushPin, contentDescription = null)
+                            Icon(
+                                Icons.Default.PushPin,
+                                contentDescription = null,
+                                tint = if (session.isPinned) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Delete") },
+                        text = {
+                            Text(
+                                "Delete",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        },
                         onClick = {
                             onDelete()
                             showMenu = false
@@ -190,10 +375,7 @@ fun SessionItem(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error
                             )
-                        },
-                        colors = MenuDefaults.itemColors(
-                            textColor = MaterialTheme.colorScheme.error
-                        )
+                        }
                     )
                 }
             }
@@ -202,29 +384,76 @@ fun SessionItem(
 }
 
 @Composable
-fun EmptySessionsState(onCreateNew: () -> Unit) {
+fun AuraEmptySessionsState(onCreateNew: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.History,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        // Animated Aura logo
+        val infiniteTransition = rememberInfiniteTransition(label = "breathing")
+
+        val scale by infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2500, easing = LinearEasing),
+                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+            ),
+            label = "breathing"
         )
-        Text(
-            text = "No sessions yet",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Button(onClick = onCreateNew) {
+
+        Box(modifier = Modifier.size(80.dp * scale)) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .alpha(0.3f)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+            AuraLogo(
+                modifier = Modifier.size(64.dp),
+                cyanColor = MaterialTheme.colorScheme.primary,
+                rubyColor = MaterialTheme.colorScheme.tertiary
+            )
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "No sessions yet",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Start your first conversation with Aura",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+
+        Button(
+            onClick = onCreateNew,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Start a new session")
+            Text("Start New Session")
         }
     }
 }

@@ -1,7 +1,10 @@
 package dev.aura.auradroid.ui.screens.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -9,10 +12,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.aura.auradroid.ui.theme.AuraLogo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,74 +30,100 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     val config by viewModel.config.collectAsState()
+    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
+            AuraSettingsTopBar(onNavigateBack = onNavigateBack)
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // Header
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Settings",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Configure your Aura experience",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+
             // API Configuration Section
-            SettingsSection("API Configuration") {
-                ApiKeyField(
+            AuraSettingsSection(
+                title = "API Configuration",
+                icon = Icons.Default.Key
+            ) {
+                AuraApiKeyField(
                     apiKey = config.apiKey ?: "",
                     onApiKeyChange = { viewModel.updateApiKey(it) }
                 )
 
-                SettingsTextField(
+                AuraSettingsTextField(
                     label = "Base URL",
                     value = config.baseUrl ?: "",
                     onValueChange = { viewModel.updateBaseUrl(it) },
-                    placeholder = "https://api.example.com/v1"
+                    placeholder = "https://api.example.com/v1",
+                    icon = Icons.Default.Language
                 )
             }
 
             // Model Configuration
-            SettingsSection("Model Configuration") {
-                SettingsDropdown(
+            AuraSettingsSection(
+                title = "Model Configuration",
+                icon = Icons.Default.Psychology
+            ) {
+                AuraSettingsDropdown(
                     label = "Model",
                     selected = config.model,
                     options = viewModel.availableModels,
-                    onOptionSelected = { viewModel.updateModel(it) }
+                    onOptionSelected = { viewModel.updateModel(it) },
+                    icon = Icons.Default.Memory
                 )
 
-                SettingsDropdown(
+                AuraSettingsDropdown(
                     label = "Provider",
                     selected = config.provider,
                     options = viewModel.availableProviders,
-                    onOptionSelected = { viewModel.updateProvider(it) }
+                    onOptionSelected = { viewModel.updateProvider(it) },
+                    icon = Icons.Default.Cloud
                 )
             }
 
             // Behavior Settings
-            SettingsSection("Behavior") {
-                SettingsSwitch(
+            AuraSettingsSection(
+                title = "Behavior",
+                icon = Icons.Default.Tune
+            ) {
+                AuraSettingsSwitch(
                     label = "Auto-approve tool calls",
+                    description = "Automatically approve file edits and shell commands",
                     checked = config.autoApprove,
                     onCheckedChange = { viewModel.updateAutoApprove(it) }
                 )
 
-                SettingsSwitch(
+                AuraSettingsSwitch(
                     label = "Enable Gazelle mode",
+                    description = "Lean conversational mode for non-coding tasks",
                     checked = config.enableGazelle,
                     onCheckedChange = { viewModel.updateEnableGazelle(it) }
                 )
 
-                SettingsSlider(
+                AuraSettingsSlider(
                     label = "Max turns",
                     value = config.maxTurns.toFloat(),
                     valueRange = 1f..100f,
@@ -97,32 +132,97 @@ fun SettingsScreen(
             }
 
             // About Section
-            SettingsSection("About") {
-                SettingsItem("Version", "0.1.0")
-                SettingsItem("Build", "1")
+            AuraSettingsSection(
+                title = "About",
+                icon = Icons.Default.Info
+            ) {
+                AuraSettingsItem("Version", "0.1.0", Icons.Default.PhoneAndroid)
+                AuraSettingsItem("Build", "1", Icons.Default.Build)
+                AuraSettingsItem(
+                    "Made with",
+                    "❤️ by Dušan Milosavljević",
+                    Icons.Default.Favorite
+                )
             }
         }
     }
 }
 
 @Composable
-fun SettingsSection(title: String, content: @Composable () -> Unit) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 4.dp)
+fun AuraSettingsTopBar(onNavigateBack: () -> Unit) {
+    TopAppBar(
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AuraLogo(
+                    modifier = Modifier.size(28.dp),
+                    cyanColor = MaterialTheme.colorScheme.primary,
+                    rubyColor = MaterialTheme.colorScheme.tertiary
+                )
+                Text(
+                    text = "Settings",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent
         )
+    )
+}
+
+@Composable
+fun AuraSettingsSection(
+    title: String,
+    icon: ImageVector,
+    content: @Composable () -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Section header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(start = 4.dp)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        // Section content card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            )
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 content()
             }
@@ -131,7 +231,7 @@ fun SettingsSection(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun ApiKeyField(
+fun AuraApiKeyField(
     apiKey: String,
     onApiKeyChange: (String) -> Unit
 ) {
@@ -143,7 +243,14 @@ fun ApiKeyField(
         modifier = Modifier.fillMaxWidth(),
         label = { Text("API Key") },
         placeholder = { Text("sk-...") },
-        visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        leadingIcon = {
+            Icon(Icons.Default.Key, contentDescription = null)
+        },
+        visualTransformation = if (isVisible) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        },
         trailingIcon = {
             IconButton(onClick = { isVisible = !isVisible }) {
                 Icon(
@@ -152,16 +259,22 @@ fun ApiKeyField(
                 )
             }
         },
-        singleLine = true
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+        )
     )
 }
 
 @Composable
-fun SettingsTextField(
+fun AuraSettingsTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    placeholder: String = ""
+    placeholder: String = "",
+    icon: ImageVector
 ) {
     OutlinedTextField(
         value = value,
@@ -169,13 +282,22 @@ fun SettingsTextField(
         modifier = Modifier.fillMaxWidth(),
         label = { Text(label) },
         placeholder = { Text(placeholder) },
-        singleLine = true
+        leadingIcon = {
+            Icon(icon, contentDescription = null)
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+        )
     )
 }
 
 @Composable
-fun SettingsSwitch(
+fun AuraSettingsSwitch(
     label: String,
+    description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -184,16 +306,36 @@ fun SettingsSwitch(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         )
     }
 }
 
 @Composable
-fun SettingsSlider(
+fun AuraSettingsSlider(
     label: String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
@@ -207,42 +349,74 @@ fun SettingsSlider(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(label)
-            Text(value.toInt().toString())
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                value.toInt().toString(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
         }
         Slider(
             value = value,
             onValueChange = onValueChange,
-            valueRange = valueRange
+            valueRange = valueRange,
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         )
     }
 }
 
 @Composable
-fun SettingsItem(label: String, value: String) {
+fun AuraSettingsItem(
+    label: String,
+    value: String,
+    icon: ImageVector
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }
 
 @Composable
-fun SettingsDropdown(
+fun AuraSettingsDropdown(
     label: String,
     selected: String,
     options: List<String>,
-    onOptionSelected: (String) -> Unit
+    onOptionSelected: (String) -> Unit,
+    icon: ImageVector
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -252,21 +426,39 @@ fun SettingsDropdown(
             onValueChange = {},
             modifier = Modifier.fillMaxWidth(),
             label = { Text(label) },
+            leadingIcon = {
+                Icon(icon, contentDescription = null)
+            },
             readOnly = true,
             trailingIcon = {
                 IconButton(onClick = { expanded = true }) {
                     Icon(Icons.Default.ArrowDropDown, contentDescription = "Expand")
                 }
-            }
+            },
+            shape = RoundedCornerShape(12.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            )
         )
 
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = {
+                        Text(
+                            option,
+                            color = if (option == selected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    },
                     onClick = {
                         onOptionSelected(option)
                         expanded = false

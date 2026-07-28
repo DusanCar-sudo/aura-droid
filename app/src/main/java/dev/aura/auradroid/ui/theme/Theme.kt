@@ -40,15 +40,15 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryDark,
+    primary = PrimaryDark, // Aura cyan
     onPrimary = OnPrimaryDark,
     primaryContainer = PrimaryContainerDark,
     onPrimaryContainer = OnPrimaryContainerDark,
-    secondary = SecondaryDark,
+    secondary = SecondaryDark, // Aura copper
     onSecondary = OnSecondaryDark,
     secondaryContainer = SecondaryContainerDark,
     onSecondaryContainer = OnSecondaryContainerDark,
-    tertiary = TertiaryDark,
+    tertiary = TertiaryDark, // Aura ruby
     onTertiary = OnTertiaryDark,
     tertiaryContainer = TertiaryContainerDark,
     onTertiaryContainer = OnTertiaryContainerDark,
@@ -56,9 +56,9 @@ private val DarkColorScheme = darkColorScheme(
     onError = OnErrorDark,
     errorContainer = ErrorContainerDark,
     onErrorContainer = OnErrorContainerDark,
-    background = BackgroundDark,
-    onBackground = OnBackgroundDark,
-    surface = SurfaceDark,
+    background = BackgroundDark, // Aura ink
+    onBackground = OnBackgroundDark, // Aura cream
+    surface = SurfaceDark, // Aura ink2
     onSurface = OnSurfaceDark,
     surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = OnSurfaceVariantDark,
@@ -66,7 +66,7 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun AuraDroidTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true, // Default to dark theme for Aura brand
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -85,7 +85,13 @@ fun AuraDroidTheme(
         SideEffect {
             val window = (view.context as Activity).window
             WindowCompat.setDecorFitsSystemWindows(window, false)
+
+            // Use Aura's theme color
             window.statusBarColor = colorScheme.background.toArgb()
+
+            // Light status bar for dark theme, dark for light
+            val windowInsetsController = WindowCompat.getInsetsController(window, view)
+            windowInsetsController.isAppearanceLightStatusBars = !darkTheme
         }
     }
 
