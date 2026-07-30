@@ -7,6 +7,7 @@ import dev.aura.auradroid.data.repository.AuraRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,21 +31,52 @@ class SessionsViewModel @Inject constructor(
         }
     }
 
-    fun createNewSession() {
+    /**
+     * Create a conversation and hand its id back so the caller can open it.
+     *
+     * Model and provider are left empty rather than guessed: the phone holds
+     * no credentials and the desktop's configured model is the only correct
+     * answer, which the chat screen fills in from /api/project. This used to
+     * hardcode a DeepSeek model, which was simply wrong on any other setup.
+     */
+    fun createNewSession(onCreated: (String) -> Unit = {}) {
         viewModelScope.launch {
-            repository.createSession(
+            val session = repository.createSession(
                 title = "New Chat",
-                model = "deepseek/deepseek-chat",
-                provider = "DeepSeek"
+                model = "",
+                provider = "",
+            )
+            onCreated(session.id)
+        }
+    }
+
+    /**
+     * Export a conversation and hand it to the share sheet.
+     *
+     * Markdown by default because it is what every other coding agent accepts
+     * as context — the point is that a conversation started here does not have
+     * to end here.
+     */
+    fun exportSession(
+        context: android.content.Context,
+        sessionId: String,
+        format: dev.aura.auradroid.data.export.ChatExporter.Format,
+    ) {
+        viewModelScope.launch {
+            val session = repository.getSessionById(sessionId) ?: return@launch
+            val messages = repository.getMessagesForSession(sessionId).first()
+            val body = dev.aura.auradroid.data.export.ChatExporter.export(session, messages, format)
+            dev.aura.auradroid.data.export.Sharing.shareText(
+                context = context,
+                fileName = dev.aura.auradroid.data.export.ChatExporter.fileName(session, format),
+                content = body,
+                subject = session.title,
             )
         }
     }
 
-    fun selectSession(sessionId: String) {
-        // This will be handled by navigation back to chat screen
-        viewModelScope.launch {
-            // Update current session in shared preferences or via navigation
-        }
+    fun renameSession(sessionId: String, title: String) {
+        viewModelScope.launch { repository.renameSession(sessionId, title) }
     }
 
     fun togglePin(sessionId: String) {

@@ -27,7 +27,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.aura.auradroid.data.export.ChatExporter
 import dev.aura.auradroid.data.model.Session
 import dev.aura.auradroid.ui.theme.AuraCyan
 import dev.aura.auradroid.ui.theme.AuraLogo
@@ -38,9 +40,12 @@ import java.util.*
 @Composable
 fun SessionsScreen(
     viewModel: SessionsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    /** Open this conversation in the chat screen. */
+    onSessionSelected: (String) -> Unit,
 ) {
     val sessions by viewModel.sessions.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -48,7 +53,9 @@ fun SessionsScreen(
         },
         floatingActionButton = {
             AuraFloatingActionButton(
-                onClick = { viewModel.createNewSession() }
+                // Create, then open it — a new conversation the user cannot
+                // reach is the same bug as one they cannot go back to.
+                onClick = { viewModel.createNewSession(onSessionSelected) }
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -82,14 +89,18 @@ fun SessionsScreen(
 
             if (sessions.isEmpty()) {
                 item {
-                    AuraEmptySessionsState(onCreateNew = { viewModel.createNewSession() })
+                    AuraEmptySessionsState(
+                        onCreateNew = { viewModel.createNewSession(onSessionSelected) },
+                    )
                 }
             } else {
                 items(sessions) { session ->
                     AuraSessionCard(
                         session = session,
-                        onClick = { viewModel.selectSession(session.id) },
+                        onClick = { onSessionSelected(session.id) },
                         onPinToggle = { viewModel.togglePin(session.id) },
+                        onRename = { viewModel.renameSession(session.id, it) },
+                        onExport = { viewModel.exportSession(context, session.id, it) },
                         onDelete = { viewModel.deleteSession(session.id) }
                     )
                 }
@@ -171,9 +182,12 @@ fun AuraSessionCard(
     session: Session,
     onClick: () -> Unit,
     onPinToggle: () -> Unit,
+    onRename: (String) -> Unit,
+    onExport: (ChatExporter.Format) -> Unit,
     onDelete: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -359,6 +373,42 @@ fun AuraSessionCard(
                         }
                     )
                     DropdownMenuItem(
+                        text = { Text("Export as Markdown", color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            onExport(ChatExporter.Format.MARKDOWN)
+                            showMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Share, null, tint = MaterialTheme.colorScheme.onSurface)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Export as JSON", color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            onExport(ChatExporter.Format.JSON)
+                            showMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.DataObject, null, tint = MaterialTheme.colorScheme.onSurface)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text("Rename", color = MaterialTheme.colorScheme.onSurface)
+                        },
+                        onClick = {
+                            renaming = true
+                            showMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        },
+                    )
+                    DropdownMenuItem(
                         text = {
                             Text(
                                 "Delete",
@@ -381,6 +431,37 @@ fun AuraSessionCard(
             }
         }
     }
+
+    if (renaming) {
+        // Pre-filled, so replacing a generic "New Chat" is one gesture rather
+        // than a manual clear.
+        var draft by remember(session.id) { mutableStateOf(session.title) }
+        AlertDialog(
+            onDismissRequest = { renaming = false },
+            title = { Text("Rename conversation") },
+            text = {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    singleLine = true,
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { onRename(draft); renaming = false },
+                    // A blank name leaves a row with nothing to identify it,
+                    // so the action stays unavailable until there is one.
+                    enabled = draft.isNotBlank(),
+                ) { Text("Rename") }
+            },
+            dismissButton = {
+                TextButton(onClick = { renaming = false }) { Text("Cancel") }
+            },
+        )
+    }
+
 }
 
 @Composable

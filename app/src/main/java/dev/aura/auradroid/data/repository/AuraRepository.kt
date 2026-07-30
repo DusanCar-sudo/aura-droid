@@ -1,6 +1,7 @@
 package dev.aura.auradroid.data.repository
 
 import dev.aura.auradroid.data.local.AuraDatabase
+import dev.aura.auradroid.data.local.MemoDao
 import dev.aura.auradroid.data.local.MessageDao
 import dev.aura.auradroid.data.local.SessionDao
 import dev.aura.auradroid.data.model.*
@@ -14,10 +15,58 @@ import javax.inject.Singleton
 @Singleton
 class AuraRepository @Inject constructor(
     private val database: AuraDatabase
-) {
+) : MessageStore {
 
     private val sessionDao: SessionDao = database.sessionDao()
     private val messageDao: MessageDao = database.messageDao()
+    private val memoDao: MemoDao = database.memoDao()
+
+    // ── Memos ───────────────────────────────────────────────────────────────
+
+    fun getMemos(): Flow<List<Memo>> = memoDao.getAllMemos()
+
+    suspend fun getMemoById(id: String): Memo? = memoDao.getMemoById(id)
+
+    suspend fun saveMemo(text: String, durationMs: Long): Memo {
+        val memo = Memo(
+            id = java.util.UUID.randomUUID().toString(),
+            text = text.trim(),
+            title = titleFor(text),
+            durationMs = durationMs,
+        )
+        memoDao.insertMemo(memo)
+        return memo
+    }
+
+    suspend fun updateMemoText(id: String, text: String) {
+        val memo = memoDao.getMemoById(id) ?: return
+        // The title tracks the text, or an edited memo keeps a title that no
+        // longer describes it.
+        memoDao.updateMemo(memo.copy(text = text.trim(), title = titleFor(text)))
+    }
+
+    suspend fun linkMemoToSession(id: String, sessionId: String) {
+        val memo = memoDao.getMemoById(id) ?: return
+        memoDao.updateMemo(memo.copy(startedSessionId = sessionId))
+    }
+
+    suspend fun deleteMemo(id: String) = memoDao.deleteMemoById(id)
+
+    suspend fun markMemoSynced(id: String) {
+        val memo = memoDao.getMemoById(id) ?: return
+        memoDao.updateMemo(memo.copy(synced = true))
+    }
+
+    /** First sentence or so, for the list. */
+    private fun titleFor(text: String): String {
+        val firstLine = text.trim().lineSequence().firstOrNull { it.isNotBlank() }.orEmpty()
+        val cut = firstLine.take(60).trim()
+        return when {
+            cut.isEmpty() -> "Untitled memo"
+            firstLine.length > 60 -> "$cut…"
+            else -> cut
+        }
+    }
 
     // Session operations
     fun getAllSessions(): Flow<List<Session>> = sessionDao.getAllSessions()
@@ -54,6 +103,17 @@ class AuraRepository @Inject constructor(
 
     suspend fun deleteSession(sessionId: String) = sessionDao.deleteSessionById(sessionId)
 
+    /**
+     * Rename a conversation. Blank titles are ignored rather than stored — an
+     * untitled row is indistinguishable from a broken one in the list.
+     */
+    suspend fun renameSession(sessionId: String, title: String) {
+        val trimmed = title.trim()
+        if (trimmed.isEmpty()) return
+        val session = sessionDao.getSessionById(sessionId) ?: return
+        sessionDao.updateSession(session.copy(title = trimmed, updatedAt = System.currentTimeMillis()))
+    }
+
     suspend fun togglePinSession(sessionId: String) {
         val session = getSessionById(sessionId) ?: return
         sessionDao.updatePinnedStatus(sessionId, !session.isPinned)
@@ -65,13 +125,14 @@ class AuraRepository @Inject constructor(
     fun getMessagesForSession(sessionId: String): Flow<List<Message>> =
         messageDao.getMessagesForSession(sessionId)
 
-    suspend fun addMessage(
+    override suspend fun addMessage(
         sessionId: String,
         role: MessageRole,
         content: String,
-        isStreaming: Boolean = false,
-        toolCalls: String? = null,
-        errorMessage: String? = null
+        isStreaming: Boolean,
+        toolCalls: String?,
+        metadata: String?,
+        errorMessage: String?
     ): Message {
         val message = Message(
             sessionId = sessionId,
@@ -79,6 +140,7 @@ class AuraRepository @Inject constructor(
             content = content,
             isStreaming = isStreaming,
             toolCalls = toolCalls,
+            metadata = metadata,
             errorMessage = errorMessage
         )
         val messageId = messageDao.insertMessage(message)
@@ -86,9 +148,11 @@ class AuraRepository @Inject constructor(
         return message.copy(id = messageId)
     }
 
-    suspend fun updateMessage(message: Message) = messageDao.updateMessage(message)
+    override suspend fun getMessage(messageId: Long): Message? = messageDao.getMessageById(messageId)
 
-    suspend fun updateStreamingMessage(messageId: Long, content: String, isStreaming: Boolean = false) {
+    override suspend fun updateMessage(message: Message) = messageDao.updateMessage(message)
+
+    override suspend fun updateStreamingMessage(messageId: Long, content: String, isStreaming: Boolean) {
         messageDao.updateMessageContent(messageId, content, isStreaming)
     }
 

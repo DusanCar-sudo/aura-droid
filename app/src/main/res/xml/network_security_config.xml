@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext is denied everywhere except loopback.
+
+  Loopback is where every supported local path lands:
+    · USB pairing — `adb reverse tcp:7337 tcp:7337` forwards the phone's
+      127.0.0.1 to the desktop, so the desktop server keeps its loopback-only
+      bind and nothing is exposed to the network.
+    · Termux standalone — `aura serve` running on the device itself.
+
+  Neither can use TLS (a self-signed cert for 127.0.0.1 buys nothing when the
+  socket never leaves the device), and both are unreachable from off-device.
+
+  Everything else stays cleartext-denied, which is deliberate: the LAN pairing
+  path carries a bearer token plus the contents of your source tree and shell
+  output, so it must be wss://. Denying cleartext here means the platform
+  enforces that for us — a mistake in app code cannot silently downgrade it.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>
