@@ -18,7 +18,9 @@ Aura Droid is the official Android client for [Aura Code](https://github.com/Dus
 
 ## Screenshots
 
-Coming soon...
+| Chat Interface | Sessions | Settings | Modes |
+|---|---|---|---|
+| <img src="screenshots/screenshot-1-chat.jpg" width="200"/> | <img src="screenshots/screenshot-2-sessions.jpg" width="200"/> | <img src="screenshots/screenshot-3-settings.jpg" width="200"/> | <img src="screenshots/screenshot-4-modes.jpg" width="200"/> |
 
 ## Requirements
 
