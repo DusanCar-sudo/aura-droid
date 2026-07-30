@@ -1,24 +1,29 @@
 package dev.aura.auradroid.ui.screens.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.aura.auradroid.ui.theme.AuraLogo
@@ -27,444 +32,355 @@ import dev.aura.auradroid.ui.theme.AuraLogo
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onUnpair: () -> Unit,
+    /** Opens the mode chooser, so a desktop can be paired at any time. */
+    onSetUpDesktop: () -> Unit = {},
+    onOpenMemory: () -> Unit = {},
 ) {
-    val config by viewModel.config.collectAsState()
-    val scrollState = rememberScrollState()
+    val state by viewModel.state.collectAsState()
+    var confirmUnpair by remember { mutableStateOf(false) }
+    var editingStandalone by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            AuraSettingsTopBar(onNavigateBack = onNavigateBack)
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        AuraLogo(
+                            modifier = Modifier.size(24.dp),
+                            cyanColor = MaterialTheme.colorScheme.primary,
+                            rubyColor = MaterialTheme.colorScheme.tertiary,
+                        )
+                        Text("Settings", fontWeight = FontWeight.SemiBold)
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(scrollState)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            // Header
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Section("Paired desktop") {
+                if (state.host == null) {
+                    Text(
+                        "No desktop paired. This phone is running Aura on its own.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    // Without this there is no way back to pairing once the
+                    // phone-only mode is set up: the chooser only appears when
+                    // nothing at all is configured, so someone who picked
+                    // "on this phone" was stuck with it.
+                    Button(
+                        onClick = onSetUpDesktop,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Default.Computer, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Connect a desktop")
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    ) {
+                        Box(
+                            Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when (state.reachable) {
+                                        true -> MaterialTheme.colorScheme.primary
+                                        false -> MaterialTheme.colorScheme.error
+                                        null -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                ),
+                        )
+                        Text(
+                            "${state.host}:${state.port}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                    }
+                    state.projectName?.let { Row2("Project", it) }
+                    state.model?.let { Row2("Model", it) }
+                    state.identity?.let {
+                        Row2("Identity", it)
+                        Text(
+                            "Over Wi-Fi this must match the Identity shown by " +
+                                "`aura serve --lan`. If it ever changes without you " +
+                                "re-pairing, something else is answering.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (state.reachable == false) {
+                        Text(
+                            "Not reachable right now. Check that `aura serve` is running.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+
+            Section("Standalone") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Run without a desktop", fontWeight = FontWeight.Medium)
+                        Text(
+                            // Said plainly: this is the one place the phone
+                            // holds a provider credential, and the user should
+                            // know that before turning it on rather than after.
+                            "Talk to a model directly from this phone. Needs an " +
+                                "API key, which is stored encrypted on the device.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = state.standalone,
+                        onCheckedChange = { on ->
+                            if (on) editingStandalone = true else viewModel.disableStandalone()
+                        },
+                    )
+                }
+                if (state.standalone) {
+                    Row2("Model", state.standaloneModel.ifBlank { "—" })
+                    Row2("Endpoint", state.baseUrl.ifBlank { "—" })
+                    Row2("API key", if (state.hasApiKey) "stored on device" else "none")
+                    TextButton(onClick = { editingStandalone = true }) { Text("Change") }
+                }
+            }
+
+            // The agent's own notes. Visible and deletable on principle: it
+            // writes these without being asked, and something that remembers
+            // things about you that you cannot read is not something to ship.
+            Section("What Aura remembers") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            when (state.memoryCount) {
+                                0 -> "Nothing yet"
+                                1 -> "1 note"
+                                else -> "${state.memoryCount} notes"
+                            },
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            "Facts she saved herself while you talked — preferences, " +
+                                "decisions, what you are building.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(onClick = onOpenMemory) { Text("View") }
+                }
+            }
+
+            // No API-key field unless standalone is on: when paired with a
+            // desktop the keys live there, and the phone holds only a pairing
+            // token.
+            Section("About") {
+                // Read from the build, not typed in again here. The literal
+                // that used to sit in this line was already a version behind
+                // the one in build.gradle.kts.
+                Row2("Version", dev.aura.auradroid.BuildConfig.VERSION_NAME)
                 Text(
-                    text = "Settings",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Configure your Aura experience",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-
-            // API Configuration Section
-            AuraSettingsSection(
-                title = "API Configuration",
-                icon = Icons.Default.Key
-            ) {
-                AuraApiKeyField(
-                    apiKey = config.apiKey ?: "",
-                    onApiKeyChange = { viewModel.updateApiKey(it) }
-                )
-
-                AuraSettingsTextField(
-                    label = "Base URL",
-                    value = config.baseUrl ?: "",
-                    onValueChange = { viewModel.updateBaseUrl(it) },
-                    placeholder = "https://api.example.com/v1",
-                    icon = Icons.Default.Language
+                    if (state.standalone) {
+                        "This phone is talking to a model directly. The paired " +
+                            "desktop, if any, is not being used."
+                    } else {
+                        "Provider and API key are configured on the desktop with " +
+                            "`aura setup --web`. Turn on Standalone above to use a " +
+                            "model directly from this phone instead."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
-            // Model Configuration
-            AuraSettingsSection(
-                title = "Model Configuration",
-                icon = Icons.Default.Psychology
-            ) {
-                AuraSettingsDropdown(
-                    label = "Model",
-                    selected = config.model,
-                    options = viewModel.availableModels,
-                    onOptionSelected = { viewModel.updateModel(it) },
-                    icon = Icons.Default.Memory
-                )
-
-                AuraSettingsDropdown(
-                    label = "Provider",
-                    selected = config.provider,
-                    options = viewModel.availableProviders,
-                    onOptionSelected = { viewModel.updateProvider(it) },
-                    icon = Icons.Default.Cloud
-                )
-            }
-
-            // Behavior Settings
-            AuraSettingsSection(
-                title = "Behavior",
-                icon = Icons.Default.Tune
-            ) {
-                AuraSettingsSwitch(
-                    label = "Auto-approve tool calls",
-                    description = "Automatically approve file edits and shell commands",
-                    checked = config.autoApprove,
-                    onCheckedChange = { viewModel.updateAutoApprove(it) }
-                )
-
-                AuraSettingsSwitch(
-                    label = "Enable Gazelle mode",
-                    description = "Lean conversational mode for non-coding tasks",
-                    checked = config.enableGazelle,
-                    onCheckedChange = { viewModel.updateEnableGazelle(it) }
-                )
-
-                AuraSettingsSlider(
-                    label = "Max turns",
-                    value = config.maxTurns.toFloat(),
-                    valueRange = 1f..100f,
-                    onValueChange = { viewModel.updateMaxTurns(it.toInt()) }
-                )
-            }
-
-            // About Section
-            AuraSettingsSection(
-                title = "About",
-                icon = Icons.Default.Info
-            ) {
-                AuraSettingsItem("Version", "0.1.0", Icons.Default.PhoneAndroid)
-                AuraSettingsItem("Build", "1", Icons.Default.Build)
-                AuraSettingsItem(
-                    "Made with",
-                    "❤️ by Dušan Milosavljević",
-                    Icons.Default.Favorite
-                )
+            if (state.host != null) {
+                OutlinedButton(
+                    onClick = { confirmUnpair = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Icon(Icons.Default.LinkOff, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Unpair this desktop")
+                }
             }
         }
+    }
+
+    if (editingStandalone) {
+        var key by rememberSaveable { mutableStateOf("") }
+        var base by rememberSaveable {
+            mutableStateOf(state.baseUrl.ifBlank { "https://api.deepseek.com" })
+        }
+        var model by rememberSaveable {
+            mutableStateOf(state.standaloneModel.ifBlank { "deepseek-chat" })
+        }
+        var showKey by rememberSaveable { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { editingStandalone = false },
+            title = { Text("Standalone setup") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = base,
+                        onValueChange = { base = it },
+                        label = { Text("Base URL") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = model,
+                        onValueChange = { model = it },
+                        label = { Text("Model ID") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = key,
+                        onValueChange = { key = it },
+                        label = {
+                            Text(if (state.hasApiKey) "API key (already saved)" else "API key")
+                        },
+                        singleLine = true,
+                        // Masked by default and never read back from storage:
+                        // a key that can be displayed is a key that can be
+                        // shoulder-surfed off a screen.
+                        visualTransformation = if (showKey) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { showKey = !showKey }) {
+                                Icon(
+                                    if (showKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (showKey) "Hide key" else "Show key",
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (state.hasApiKey) {
+                        Text(
+                            "Leave empty to keep the key already stored. It survives " +
+                                "pairing and unpairing a desktop.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    state.saveError?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall,
+                             color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.enableStandalone(key, base, model)
+                        editingStandalone = false
+                    },
+                    enabled = base.isNotBlank() && model.isNotBlank() &&
+                        (key.isNotBlank() || state.hasApiKey),
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingStandalone = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (confirmUnpair) {
+        AlertDialog(
+            onDismissRequest = { confirmUnpair = false },
+            icon = { Icon(Icons.Default.Info, null) },
+            title = { Text("Unpair?") },
+            text = {
+                Text(
+                    "The stored token will be deleted from this phone. You will " +
+                        "need the token from `aura serve` to connect again.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmUnpair = false
+                    viewModel.unpair(onUnpair)
+                }) {
+                    Text("Unpair", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmUnpair = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 
 @Composable
-fun AuraSettingsTopBar(onNavigateBack: () -> Unit) {
-    TopAppBar(
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                AuraLogo(
-                    modifier = Modifier.size(28.dp),
-                    cyanColor = MaterialTheme.colorScheme.primary,
-                    rubyColor = MaterialTheme.colorScheme.tertiary
-                )
-                Text(
-                    text = "Settings",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        },
-        navigationIcon = {
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent
+private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
         )
-    )
-}
-
-@Composable
-fun AuraSettingsSection(
-    title: String,
-    icon: ImageVector,
-    content: @Composable () -> Unit
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Section header
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(start = 4.dp)
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        // Section content card
-        Card(
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            shape = RoundedCornerShape(14.dp),
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-            )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                content()
-            }
+                Modifier.padding(15.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
+                content = content,
+            )
         }
     }
 }
 
 @Composable
-fun AuraApiKeyField(
-    apiKey: String,
-    onApiKeyChange: (String) -> Unit
-) {
-    var isVisible by remember { mutableStateOf(false) }
-
-    OutlinedTextField(
-        value = apiKey,
-        onValueChange = onApiKeyChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("API Key") },
-        placeholder = { Text("sk-...") },
-        leadingIcon = {
-            Icon(Icons.Default.Key, contentDescription = null)
-        },
-        visualTransformation = if (isVisible) {
-            VisualTransformation.None
-        } else {
-            PasswordVisualTransformation()
-        },
-        trailingIcon = {
-            IconButton(onClick = { isVisible = !isVisible }) {
-                Icon(
-                    if (isVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                    contentDescription = if (isVisible) "Hide" else "Show"
-                )
-            }
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-        )
-    )
-}
-
-@Composable
-fun AuraSettingsTextField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String = "",
-    icon: ImageVector
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(label) },
-        placeholder = { Text(placeholder) },
-        leadingIcon = {
-            Icon(icon, contentDescription = null)
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-        )
-    )
-}
-
-@Composable
-fun AuraSettingsSwitch(
-    label: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
+private fun Row2(label: String, value: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-@Composable
-fun AuraSettingsSlider(
-    label: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                value.toInt().toString(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = valueRange,
-            colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        )
-    }
-}
-
-@Composable
-fun AuraSettingsItem(
-    label: String,
-    value: String,
-    icon: ImageVector
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
-    }
-}
-
-@Composable
-fun AuraSettingsDropdown(
-    label: String,
-    selected: String,
-    options: List<String>,
-    onOptionSelected: (String) -> Unit,
-    icon: ImageVector
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = selected,
-            onValueChange = {},
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(label) },
-            leadingIcon = {
-                Icon(icon, contentDescription = null)
-            },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { expanded = true }) {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Expand")
-                }
-            },
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-            )
-        )
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            option,
-                            color = if (option == selected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
-                        )
-                    },
-                    onClick = {
-                        onOptionSelected(option)
-                        expanded = false
-                    }
-                )
-            }
-        }
     }
 }
