@@ -13,6 +13,7 @@ import dev.aura.auradroid.data.agent.Persona
 import dev.aura.auradroid.data.attach.Attachment
 import dev.aura.auradroid.data.attach.AttachmentKind
 import dev.aura.auradroid.data.attach.Attachments
+import dev.aura.auradroid.data.attach.ReadResult
 import dev.aura.auradroid.data.audio.ListenState
 import dev.aura.auradroid.data.audio.Listener
 import dev.aura.auradroid.data.audio.Speaker
@@ -116,6 +117,18 @@ class ChatViewModel @Inject constructor(
      */
     private val _localConfirm = MutableStateFlow<PendingConfirm?>(null)
     private var awaitingApproval: CompletableDeferred<Boolean>? = null
+
+    /**
+     * Approve tools without asking, for this conversation only.
+     *
+     * Scoped to the chat rather than stored in Settings on purpose. A blanket
+     * permission granted for one task should not still be in force next week
+     * for a different one, and on a phone a switch buried in Settings is
+     * exactly the kind of thing that gets turned on once and forgotten.
+     * Starting or opening another conversation clears it.
+     */
+    private val _autoApprove = MutableStateFlow(false)
+    val autoApprove: StateFlow<Boolean> = _autoApprove.asStateFlow()
 
     // Straight through from the socket and the sink.
     val connection: StateFlow<ConnState> = socket.state
@@ -259,6 +272,8 @@ class ChatViewModel @Inject constructor(
 
     fun loadSession(sessionId: String) {
         messageCollectJob?.cancel()
+        // Permission was granted for the conversation being left, not this one.
+        if (_currentSession.value?.id != sessionId) _autoApprove.value = false
         viewModelScope.launch {
             val session = repository.getSessionById(sessionId) ?: return@launch
             _currentSession.value = session
@@ -305,17 +320,20 @@ class ChatViewModel @Inject constructor(
      */
     fun attach(uri: Uri) {
         viewModelScope.launch {
-            val attachment = Attachments.read(appContext, uri)
-            if (attachment == null) {
-                _notice.value = "That file could not be read."
-                return@launch
+            // A failure says why, on screen. It used to return null for every
+            // cause — unsupported type, unreadable file, decode error — and the
+            // picker would simply close with nothing to show for it.
+            when (val result = Attachments.read(appContext, uri)) {
+                is ReadResult.Failed -> _notice.value = result.reason
+                is ReadResult.Ok -> {
+                    // One file can be several: a PDF arrives as a page each.
+                    _attachments.value =
+                        (_attachments.value + result.attachments).takeLast(MAX_ATTACHMENTS)
+                    result.attachments.firstOrNull { it.truncated }?.let {
+                        _notice.value = "${it.name} was long — only the first part was attached."
+                    }
+                }
             }
-            if (attachment.kind == AttachmentKind.BINARY) {
-                _notice.value =
-                    "${attachment.name} is not text or an image, so the model cannot read it."
-                return@launch
-            }
-            _attachments.value = (_attachments.value + attachment).takeLast(MAX_ATTACHMENTS)
         }
     }
 
@@ -446,8 +464,16 @@ class ChatViewModel @Inject constructor(
         _thinkingLocal.value = false
     }
 
-    /** Answer the agent's approval prompt. It is blocked until this lands. */
-    fun respondToConfirm(id: String, approved: Boolean) {
+    /**
+     * Answer the agent's approval prompt. It is blocked until this lands.
+     *
+     * [rememberForChat] only takes effect alongside an approval — "always deny"
+     * would leave the agent silently refused for the rest of the conversation
+     * with nothing on screen saying why.
+     */
+    fun respondToConfirm(id: String, approved: Boolean, rememberForChat: Boolean = false) {
+        if (approved && rememberForChat) _autoApprove.value = true
+
         if (id == LOCAL_CONFIRM_ID) {
             _localConfirm.value = null
             awaitingApproval?.complete(approved)
@@ -456,6 +482,11 @@ class ChatViewModel @Inject constructor(
         }
         socket.sendConfirm(id, approved)
         sink.clearPendingConfirm()
+    }
+
+    /** Go back to being asked. Reachable from the chat header while it is on. */
+    fun setAutoApprove(on: Boolean) {
+        _autoApprove.value = on
     }
 
     fun selectModel(modelId: String) {
@@ -674,6 +705,8 @@ class ChatViewModel @Inject constructor(
      * command should not have run by the time its approval appears.
      */
     private suspend fun askApproval(name: String, description: String): Boolean {
+        if (_autoApprove.value) return true
+
         val deferred = CompletableDeferred<Boolean>()
         awaitingApproval = deferred
         _localConfirm.value = PendingConfirm(

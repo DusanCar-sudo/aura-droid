@@ -68,6 +68,7 @@ fun ChatScreen(
     val micLevel by viewModel.micLevel.collectAsState()
     val speakingId by viewModel.speakingId.collectAsState()
     val standalone by viewModel.standalone.collectAsState()
+    val autoApprove by viewModel.autoApprove.collectAsState()
     val attachments by viewModel.attachments.collectAsState()
     val notice by viewModel.notice.collectAsState()
     val projectName by viewModel.projectName.collectAsState()
@@ -132,6 +133,8 @@ fun ChatScreen(
                 mode = currentMode,
                 connection = connection,
                 standalone = standalone != null,
+                autoApprove = autoApprove,
+                onRevokeAutoApprove = { viewModel.setAutoApprove(false) },
                 onMenuClick = onNavigateToSessions,
                 onSettingsClick = onNavigateToSettings,
                 onMemosClick = onNavigateToMemos,
@@ -202,7 +205,9 @@ fun ChatScreen(
     pendingConfirm?.let { confirm ->
         ApprovalSheet(
             message = confirm.message,
-            onAllow = { viewModel.respondToConfirm(confirm.id, true) },
+            onAllow = { remember ->
+                viewModel.respondToConfirm(confirm.id, true, rememberForChat = remember)
+            },
             onDeny = { viewModel.respondToConfirm(confirm.id, false) },
         )
     }
@@ -215,6 +220,8 @@ private fun ChatTopBar(
     mode: SessionMode,
     connection: ConnState,
     standalone: Boolean = false,
+    autoApprove: Boolean = false,
+    onRevokeAutoApprove: () -> Unit = {},
     onMenuClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onMemosClick: () -> Unit,
@@ -254,6 +261,19 @@ private fun ChatTopBar(
             IconButton(onClick = onMenuClick) { Icon(Icons.Default.Menu, "Sessions") }
         },
         actions = {
+            // Only while it is on, and it is the off switch. A standing
+            // permission the user cannot see they granted is the part of this
+            // that would actually bite them.
+            if (autoApprove) {
+                IconButton(onClick = onRevokeAutoApprove) {
+                    Icon(
+                        Icons.Default.LockOpen,
+                        contentDescription = "Tools are auto-approved in this chat — " +
+                            "tap to require approval again",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+            }
             Box {
                 IconButton(onClick = { modeMenu = true }) { Icon(Icons.Default.Tune, "Mode") }
                 DropdownMenu(modeMenu, onDismissRequest = { modeMenu = false }) {
@@ -669,9 +689,11 @@ private fun PlanCard(plan: PlanPayload, title: String) {
 @Composable
 private fun ApprovalSheet(
     message: String,
-    onAllow: () -> Unit,
+    onAllow: (rememberForChat: Boolean) -> Unit,
     onDeny: () -> Unit,
 ) {
+    var rememberForChat by remember { mutableStateOf(false) }
+
     ModalBottomSheet(
         // Dismissing without answering would leave the agent blocked until it
         // times out, so a swipe-away denies rather than doing nothing.
@@ -719,9 +741,40 @@ private fun ApprovalSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
+            // Offered per conversation, not forever. Granting a blanket
+            // permission from a phone is easy; remembering weeks later that you
+            // did is not, so it expires with the chat it was granted in.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { rememberForChat = !rememberForChat },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = rememberForChat,
+                    onCheckedChange = { rememberForChat = it },
+                )
+                Column(Modifier.padding(start = 2.dp)) {
+                    Text(
+                        "Don't ask again in this chat",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        "Cleared when you start or open another conversation.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
                 OutlinedButton(onClick = onDeny, modifier = Modifier.weight(1f)) { Text("Deny") }
-                Button(onClick = onAllow, modifier = Modifier.weight(1f)) { Text("Allow") }
+                Button(
+                    onClick = { onAllow(rememberForChat) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(if (rememberForChat) "Allow all" else "Allow")
+                }
             }
         }
     }
