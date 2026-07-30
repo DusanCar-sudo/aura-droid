@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!--
+      Exports only, and only from the cache. Nothing else in the app's storage
+      is exposed: the database holds conversations and the encrypted pairing
+      token, and a FileProvider path wide enough to reach them would hand any
+      app that receives a share the ability to ask for them too.
+    -->
+    <cache-path name="exports" path="exports/" />
+    <!--
+      Where the system camera writes a photo being attached. Also cache-only,
+      and swept on launch: the shot is read into the message and the file has
+      no further use, so it should not become a private pile of photographs.
+    -->
+    <cache-path name="camera" path="camera/" />
+</paths>

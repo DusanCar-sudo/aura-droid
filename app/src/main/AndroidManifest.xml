@@ -3,16 +3,58 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Dictation and memos. Requested at the point of use, not at launch. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!--
+      Photos are taken by the system camera app through ACTION_IMAGE_CAPTURE,
+      which needs no permission of ours — and deliberately so. Declaring
+      CAMERA would turn that into a runtime permission this app has to hold
+      and justify, to do something the camera app already does on its own.
+
+      required=false so the app still installs on a device without a camera;
+      attaching a photo is one feature of many, not a reason to be unavailable.
+    -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <!--
+      Android 11 hides other packages by default, and both SpeechRecognizer and
+      TextToSpeech resolve to a separate app. Without these the platform reports
+      "no recognition available" and a silent TTS engine on a phone that has
+      both installed — a failure that looks like a bug in this app.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
+    <!--
+      allowBackup=false: this app stores a pairing token that grants full
+      control of the paired desktop agent. Backup would copy it off the device
+      into cloud storage, so the whole app is excluded rather than trying to
+      carve out one file.
+
+      usesCleartextTraffic is deliberately absent — the attribute is ignored
+      once networkSecurityConfig is set, so leaving it would only mislead.
+      See res/xml/network_security_config.xml for the actual policy.
+    -->
     <application
         android:name=".AuraApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AuraDroid"
-        android:usesCleartextTraffic="false">
+        android:theme="@style/Theme.AuraDroid">
 
         <activity
             android:name=".MainActivity"
@@ -24,6 +66,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Serves exported conversations to the app the user picks to receive
+             them. Not exported, and grants read only for the life of a share. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>
