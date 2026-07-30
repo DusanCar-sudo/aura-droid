@@ -136,8 +136,14 @@ class ChatViewModel @Inject constructor(
         combine(sink.thinking, _thinkingLocal) { a, b -> a || b }
             .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val pendingConfirm: StateFlow<PendingConfirm?> =
-        combine(sink.pendingConfirm, _localConfirm) { remote, local -> local ?: remote }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        combine(sink.pendingConfirm, _localConfirm, _autoApprove) { remote, local, auto ->
+            // A local approval never gets this far while auto-approve is on:
+            // askApproval checks the flag before raising one at all. A request
+            // from the desktop arrives unbidden, so it is hidden here and
+            // answered by observeRemoteApprovals — hiding it in the same breath
+            // as answering it, or the sheet flashes up for a frame first.
+            local ?: remote?.takeUnless { auto }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val contextHealth: StateFlow<ContextSnapshot?> = sink.contextHealth
 
     private var messageCollectJob: Job? = null
@@ -209,6 +215,7 @@ class ChatViewModel @Inject constructor(
             socket.connect(paired, viewModelScope)
             observeEvents()
             observeConnection()
+            observeRemoteApprovals()
 
             http.fetchProject(paired)?.let { project ->
                 _projectName.value = project.name
@@ -254,6 +261,26 @@ class ChatViewModel @Inject constructor(
             socket.events.collect { event ->
                 val sessionId = _currentSession.value?.id ?: return@collect
                 sink.handle(sessionId, event)
+            }
+        }
+    }
+
+    /**
+     * Answer the desktop's approval requests while auto-approve is on.
+     *
+     * The phone's own tools are gated inside [askApproval], which simply
+     * returns true and never raises a prompt. The desktop has no idea any of
+     * that happened — it asks over the socket regardless — so its requests have
+     * to be answered here, or ticking "don't ask again" appears to do nothing
+     * at all for anyone paired to a computer.
+     */
+    private fun observeRemoteApprovals() {
+        viewModelScope.launch {
+            sink.pendingConfirm.collect { confirm ->
+                if (confirm != null && _autoApprove.value) {
+                    socket.sendConfirm(confirm.id, true)
+                    sink.clearPendingConfirm()
+                }
             }
         }
     }
