@@ -3,7 +3,10 @@ package dev.aura.auradroid.data.attach
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.util.Base64
 import androidx.core.content.FileProvider
@@ -13,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
+import java.util.zip.ZipInputStream
 
 /** What kind of thing was attached, which decides how it reaches the model. */
 enum class AttachmentKind { IMAGE, TEXT, BINARY }
@@ -39,13 +43,29 @@ data class Attachment(
     val truncated: Boolean = false,
 )
 
+/** What came of trying to read an attachment. */
+sealed interface ReadResult {
+    /** One file can become several: a PDF arrives as a page image each. */
+    data class Ok(val attachments: List<Attachment>) : ReadResult
+
+    /** Said in words the user can act on, never swallowed. */
+    data class Failed(val reason: String) : ReadResult
+}
+
 /**
  * Turns a picked or photographed [Uri] into something a model can be given.
  *
- * Two paths, because models take two things. An image is downscaled and sent as
- * an inline data URL, the format every OpenAI-compatible vision endpoint
- * accepts. Anything textual is read as text and inlined into the message, which
- * works with every model rather than only the vision ones.
+ * Everything ends up as one of two things, because that is all a model takes:
+ * an image sent as an inline data URL, which every OpenAI-compatible vision
+ * endpoint accepts, or text inlined into the message, which works with every
+ * model rather than only the vision ones.
+ *
+ * Getting there differs by format. Photos and pictures downscale. Source and
+ * config files are read as they are. A PDF is rendered to page images by the
+ * platform and sent as pictures — a phone has no text extractor, and rendering
+ * has the side benefit of working on scanned documents, where extraction would
+ * find nothing. Word, Excel and PowerPoint files are ZIP archives of XML, so
+ * their text is unpacked directly. None of this needs a third-party library.
  *
  * The downscaling is not a nicety. A modern phone camera produces 4–12 MB per
  * shot; base64 inflates that by a third, and it is uploaded over mobile data on
@@ -54,23 +74,50 @@ data class Attachment(
  */
 object Attachments {
 
-    suspend fun read(context: Context, uri: Uri): Attachment? = withContext(Dispatchers.IO) {
+    /**
+     * Read [uri], or say why not.
+     *
+     * Every failure returns a reason rather than null. The previous version
+     * wrapped the whole thing in runCatching and discarded the exception, so a
+     * file that could not be read produced a picker that closed and nothing
+     * else — no attachment, no message, nothing to act on.
+     */
+    suspend fun read(context: Context, uri: Uri): ReadResult = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         val name = displayName(context, uri) ?: "attachment"
         val mime = resolver.getType(uri) ?: guessMime(name)
+        val extension = name.substringAfterLast('.', "").lowercase()
 
-        runCatching {
+        try {
             when {
-                mime.startsWith("image/") -> readImage(context, uri, name, mime)
-                isTextual(mime, name) -> readText(context, uri, name, mime)
-                else -> Attachment(
-                    name = name,
-                    mimeType = mime,
-                    kind = AttachmentKind.BINARY,
-                    sizeBytes = sizeOf(context, uri),
+                mime.startsWith("image/") ->
+                    readImage(context, uri, name)
+                        ?.let { ReadResult.Ok(listOf(it)) }
+                        ?: ReadResult.Failed("$name could not be decoded as an image.")
+
+                mime == "application/pdf" || extension == "pdf" ->
+                    readPdf(context, uri, name)
+
+                extension in OFFICE_EXTENSIONS ->
+                    readOffice(context, uri, name, extension)
+
+                isTextual(mime, name) ->
+                    readText(context, uri, name, mime)
+                        ?.let { ReadResult.Ok(listOf(it)) }
+                        ?: ReadResult.Failed("$name could not be opened.")
+
+                else -> ReadResult.Failed(
+                    "Cannot read $name. Attach an image, a PDF, an Office document, " +
+                        "or a text file.",
                 )
             }
-        }.getOrNull()
+        } catch (e: OutOfMemoryError) {
+            // Its own branch because it is not an Exception and would otherwise
+            // take the whole app down on a large scan.
+            ReadResult.Failed("$name is too large to open on this phone.")
+        } catch (e: Exception) {
+            ReadResult.Failed("Could not read $name: ${e.message ?: e.javaClass.simpleName}")
+        }
     }
 
     /** Where a photo about to be taken should be written. */
@@ -101,7 +148,183 @@ object Attachments {
         dir.listFiles()?.forEach { if (it.lastModified() < cutoff) it.delete() }
     }
 
-    private fun readImage(context: Context, uri: Uri, name: String, mime: String): Attachment? {
+    /**
+     * Render a PDF to page images with the platform's own renderer.
+     *
+     * Pictures rather than extracted text, which sounds backwards until you
+     * consider what people photograph and forward on a phone: scans, invoices,
+     * forms. Those carry no text layer at all, and an extractor returns an
+     * empty string for them while a vision model reads them fine. Rendering
+     * also keeps tables and layout, which extraction flattens into noise.
+     *
+     * Capped at four pages. Each one is an image in the request, and a
+     * forty-page document would cost more than anyone intends to spend asking
+     * what a letter says.
+     */
+    private fun readPdf(context: Context, uri: Uri, name: String): ReadResult {
+        // Copied to a real file first. PdfRenderer needs a seekable descriptor,
+        // and plenty of providers hand back a pipe, which it rejects outright.
+        val scratch = File(context.cacheDir, CAMERA_DIR).apply { mkdirs() }
+            .let { File(it, "pdf_${System.currentTimeMillis()}.pdf") }
+        try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                scratch.outputStream().use { input.copyTo(it) }
+            } ?: return ReadResult.Failed("$name could not be opened.")
+
+            ParcelFileDescriptor.open(scratch, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+                PdfRenderer(fd).use { renderer ->
+                    if (renderer.pageCount == 0) {
+                        return ReadResult.Failed("$name has no pages.")
+                    }
+                    val wanted = minOf(renderer.pageCount, MAX_PDF_PAGES)
+                    val pages = ArrayList<Attachment>(wanted)
+
+                    for (index in 0 until wanted) {
+                        renderer.openPage(index).use { page ->
+                            val scale = PDF_EDGE.toFloat() / maxOf(page.width, page.height)
+                            val bitmap = Bitmap.createBitmap(
+                                (page.width * scale).toInt().coerceAtLeast(1),
+                                (page.height * scale).toInt().coerceAtLeast(1),
+                                Bitmap.Config.ARGB_8888,
+                            )
+                            // Pages render with a transparent background, and
+                            // transparent flattens to black in a JPEG — black
+                            // text on black. White first.
+                            Canvas(bitmap).drawColor(android.graphics.Color.WHITE)
+                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+                            val bytes = ByteArrayOutputStream().use { out ->
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, PDF_QUALITY, out)
+                                out.toByteArray()
+                            }
+                            bitmap.recycle()
+
+                            pages += Attachment(
+                                name = if (wanted == 1) name else "$name p${index + 1}",
+                                mimeType = "image/jpeg",
+                                kind = AttachmentKind.IMAGE,
+                                base64 = Base64.encodeToString(bytes, Base64.NO_WRAP),
+                                sizeBytes = bytes.size.toLong(),
+                                truncated = renderer.pageCount > wanted,
+                            )
+                        }
+                    }
+                    return ReadResult.Ok(pages)
+                }
+            }
+        } finally {
+            scratch.delete()
+        }
+    }
+
+    /**
+     * Pull the words out of a .docx, .xlsx or .pptx.
+     *
+     * All three are ZIP archives of XML, so this needs no library — open the
+     * archive, take the parts that hold text, and strip the markup. Formatting
+     * is discarded on purpose: the model wants the content, and the run-level
+     * markup in these formats splits a single sentence across a dozen tags.
+     */
+    private fun readOffice(
+        context: Context,
+        uri: Uri,
+        name: String,
+        extension: String,
+    ): ReadResult {
+        val parts = sortedMapOf<String, String>()
+
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            ZipInputStream(input.buffered()).use { zip ->
+                var entry = zip.nextEntry
+                var budget = MAX_TEXT_BYTES
+                while (entry != null && budget > 0) {
+                    if (wantsEntry(extension, entry.name)) {
+                        val xml = zip.readBytes().toString(Charsets.UTF_8)
+                        budget -= xml.length
+                        parts[entry.name] = xml
+                    }
+                    zip.closeEntry()
+                    entry = zip.nextEntry
+                }
+            }
+        } ?: return ReadResult.Failed("$name could not be opened.")
+
+        if (parts.isEmpty()) {
+            return ReadResult.Failed(
+                "$name has no readable text — it may be an older .doc/.xls, " +
+                    "which is a different format entirely.",
+            )
+        }
+
+        // Slides and sheets are numbered, and "slide10" sorts before "slide2"
+        // as a string, which silently reorders a deck.
+        val text = parts.entries
+            .sortedBy { numberIn(it.key) }
+            .joinToString("\n\n") { (path, xml) -> sectionFor(extension, path, xml) }
+            .replace(Regex("\n{3,}"), "\n\n")
+            .trim()
+
+        if (text.isBlank()) {
+            return ReadResult.Failed("$name appears to contain no text.")
+        }
+
+        return ReadResult.Ok(
+            listOf(
+                Attachment(
+                    name = name,
+                    mimeType = "text/plain",
+                    kind = AttachmentKind.TEXT,
+                    text = text.take(MAX_TEXT_BYTES),
+                    sizeBytes = text.length.toLong(),
+                    truncated = text.length > MAX_TEXT_BYTES,
+                ),
+            ),
+        )
+    }
+
+    private fun wantsEntry(extension: String, path: String): Boolean = when (extension) {
+        "docx" -> path == "word/document.xml"
+        "pptx" -> path.startsWith("ppt/slides/slide") && path.endsWith(".xml")
+        "xlsx" -> path == "xl/sharedStrings.xml" ||
+            (path.startsWith("xl/worksheets/sheet") && path.endsWith(".xml"))
+        else -> false
+    }
+
+    private fun sectionFor(extension: String, path: String, xml: String): String {
+        val body = stripXml(
+            xml
+                // Paragraph and row ends become line breaks before the tags go,
+                // or the whole document arrives as one unbroken line.
+                .replace("</w:p>", "\n")
+                .replace("</a:p>", "\n")
+                .replace("</row>", "\n")
+                .replace("<w:tab/>", "\t")
+                .replace("</si>", "\n"),
+        )
+        return if (extension == "pptx") {
+            "--- Slide ${numberIn(path)} ---\n$body"
+        } else {
+            body
+        }
+    }
+
+    /** Tag soup to words, with the XML entities put back. */
+    private fun stripXml(xml: String): String = xml
+        .replace(Regex("<[^>]+>"), " ")
+        .replace("&lt;", "<").replace("&gt;", ">")
+        .replace("&quot;", "\"").replace("&apos;", "'")
+        // Ampersand last, or the replacements above would be re-decoded.
+        .replace("&amp;", "&")
+        .replace(Regex("[ \\t]{2,}"), " ")
+        .lineSequence()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .joinToString("\n")
+
+    private fun numberIn(path: String): Int =
+        Regex("(\\d+)").findAll(path).lastOrNull()?.value?.toIntOrNull() ?: 0
+
+    private fun readImage(context: Context, uri: Uri, name: String): Attachment? {
         val resolver = context.contentResolver
 
         // Two passes: measure first, then decode with inSampleSize, so a 12
@@ -257,6 +480,13 @@ object Attachments {
     private const val MAX_TEXT_BYTES = 200_000
     private const val CAMERA_DIR = "camera"
     private const val CAMERA_KEEP_MS = 60 * 60 * 1000L
+
+    /** Larger than a photo: small print in a document has to survive. */
+    private const val PDF_EDGE = 1400
+    private const val PDF_QUALITY = 85
+    private const val MAX_PDF_PAGES = 4
+
+    private val OFFICE_EXTENSIONS = setOf("docx", "xlsx", "pptx")
 
     private val TEXTUAL_MIMES = setOf(
         "application/json",
