@@ -1,5 +1,6 @@
 package dev.aura.auradroid.ui.screens.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -8,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
@@ -20,7 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.font.FontWeight
@@ -202,6 +207,16 @@ fun SettingsScreen(
                 // that used to sit in this line was already a version behind
                 // the one in build.gradle.kts.
                 Row2("Version", dev.aura.auradroid.BuildConfig.VERSION_NAME)
+                LinkRow(
+                    label = "Aura Code CLI",
+                    shown = "github.com/DusanCar-sudo/aura-code",
+                    url = "https://github.com/DusanCar-sudo/aura-code",
+                )
+                LinkRow(
+                    label = "Website",
+                    shown = "aurawebsite-eta.vercel.app",
+                    url = "https://aurawebsite-eta.vercel.app",
+                )
                 Text(
                     if (state.standalone) {
                         "This phone is talking to a model directly. The paired " +
@@ -213,6 +228,15 @@ fun SettingsScreen(
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                HorizontalDivider(
+                    Modifier.padding(top = 2.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f),
+                )
+                Text(
+                    "© 2026 LeanProgressIQ",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 )
             }
 
@@ -360,6 +384,53 @@ private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) 
                 Modifier.padding(15.dp),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
                 content = content,
+            )
+        }
+    }
+}
+
+/**
+ * A row whose value opens in a browser.
+ *
+ * The URL is shown rather than hidden behind a word like "here": on a phone
+ * there is no status bar to preview a link in, and someone about to leave the
+ * app for a site is entitled to see which one first.
+ */
+@Composable
+private fun LinkRow(label: String, shown: String, url: String) {
+    val uriHandler = LocalUriHandler.current
+
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable { runCatching { uriHandler.openUri(url) } },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                shown,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 190.dp),
+            )
+            Icon(
+                Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = null,
+                modifier = Modifier.size(13.dp),
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
     }
