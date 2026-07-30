@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Aura Droid — Connect to your desktop</title>
+<style>
+  @page { size: A4; margin: 14mm 15mm; }
+
+  :root {
+    --cyan: #0097A7;
+    --cyan-deep: #00666F;
+    --ruby: #B53325;
+    --copper: #A6633C;
+    --ink: #1A2126;
+    --muted: #5C6B73;
+    --rule: #D8E1E5;
+    --wash: #F2F7F9;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 9pt;
+    line-height: 1.45;
+    color: var(--ink);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Masthead ─────────────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding-bottom: 7px;
+    border-bottom: 2px solid var(--cyan);
+    margin-bottom: 11px;
+  }
+  header .mark { flex: none; }
+  header h1 {
+    margin: 0;
+    font-size: 15pt;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    color: var(--cyan-deep);
+  }
+  header .sub {
+    margin: 1px 0 0;
+    font-size: 8.6pt;
+    color: var(--muted);
+  }
+
+  h2 {
+    font-size: 11pt;
+    margin: 0 0 3px;
+    color: var(--cyan-deep);
+    font-weight: 600;
+  }
+  p { margin: 0 0 8px; }
+  .lede { font-size: 9.4pt; margin-bottom: 10px; }
+
+  /* ── The two routes ───────────────────────────────────────── */
+  .route {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--cyan);
+    border-radius: 5px;
+    padding: 9px 12px 3px;
+    margin-bottom: 9px;
+    background: #fff;
+    break-inside: avoid;
+  }
+  .route.wifi { border-left-color: var(--copper); }
+  .route.wifi h2 { color: var(--copper); }
+
+  .route .tag {
+    display: inline-block;
+    font-size: 7.4pt;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--cyan);
+    border-radius: 3px;
+    padding: 1.5px 6px;
+    vertical-align: 2px;
+    margin-left: 7px;
+  }
+  .route.wifi .tag { background: var(--copper); }
+
+  .route .why {
+    font-size: 8.2pt;
+    color: var(--muted);
+    margin: 0 0 7px;
+  }
+
+  ol { margin: 0; padding-left: 17px; }
+  ol li { margin-bottom: 5px; }
+  ol li::marker { font-weight: 700; color: var(--cyan); }
+  .route.wifi ol li::marker { color: var(--copper); }
+
+  .where {
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  code, pre {
+    font-family: "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
+  }
+  pre {
+    margin: 4px 0 0;
+    padding: 4.5px 8px;
+    background: #10262B;
+    color: #C8EEF5;
+    border-radius: 4px;
+    font-size: 8.6pt;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  pre .cmt { color: #6E8F97; }
+  code.inl {
+    background: var(--wash);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.5px 4px;
+    font-size: 8.6pt;
+  }
+
+  .field {
+    margin-top: 4px;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 8.8pt;
+  }
+  .field td { padding: 1.5px 0; vertical-align: top; }
+  .field td:first-child { width: 74px; color: var(--muted); }
+  .field td:last-child { font-family: "DejaVu Sans Mono", monospace; font-weight: 600; }
+
+  /* ── Callout ──────────────────────────────────────────────── */
+  .note {
+    background: var(--wash);
+    border-radius: 5px;
+    padding: 8px 11px;
+    margin-bottom: 9px;
+    font-size: 8.8pt;
+    break-inside: avoid;
+  }
+  .note b { color: var(--cyan-deep); }
+  .note.warn { background: #FDF1EF; }
+  .note.warn b { color: var(--ruby); }
+
+  /* ── Troubleshooting ──────────────────────────────────────── */
+  table.tr { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+  table.tr th {
+    text-align: left;
+    font-size: 7.6pt;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 8px 3px 0;
+  }
+  table.tr td {
+    padding: 6px 8px 6px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  table.tr td:first-child { width: 38%; font-weight: 600; }
+
+  footer {
+    margin-top: 14px;
+    padding-top: 7px;
+    border-top: 1px solid var(--rule);
+    font-size: 7.8pt;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  footer a { color: var(--cyan); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="mark" width="34" height="34" viewBox="0 0 48 48" aria-hidden="true">
+    <circle cx="24" cy="24" r="19" fill="none" stroke="#0097A7" stroke-width="3.2"/>
+    <circle cx="24" cy="24" r="7" fill="#B53325"/>
+  </svg>
+  <div>
+    <h1>Connect Aura Droid to your desktop</h1>
+    <p class="sub">Pairing over USB or Wi-Fi · takes about two minutes</p>
+  </div>
+</header>
+
+<p class="lede">
+  Aura runs on your computer, where your project lives. This app is its remote
+  control. Pairing happens once: the phone trades a short code for its own key,
+  and reconnects on its own from then on.
+</p>
+
+<div class="note">
+  <b>Before you start</b> — Aura Code installed and working on the desktop, and
+  both devices to hand. You never type a long key: the code you enter is six
+  characters, and the phone swaps it for the real one.
+</div>
+
+<div class="route">
+  <h2>Over USB <span class="tag">most reliable</span></h2>
+  <p class="why">
+    Traffic runs down the cable and never touches the network — nothing to
+    misconfigure, and it works on a café Wi-Fi that blocks devices from seeing
+    each other.
+  </p>
+  <ol>
+    <li>
+      <span class="where">On the desktop</span>
+      Start the server:
+<pre>aura serve</pre>
+    </li>
+    <li>
+      <span class="where">On the desktop</span>
+      Plug the phone in with a USB cable, enable USB debugging on it, then
+      forward the port back to the phone:
+<pre>adb reverse tcp:7337 tcp:7337</pre>
+    </li>
+    <li>
+      <span class="where">On the desktop</span>
+      Ask for a pairing code — it prints six characters:
+<pre>aura devices add "my phone"</pre>
+    </li>
+    <li>
+      <span class="where">On the phone</span>
+      Open Aura, choose <b>With my desktop</b>, and fill in:
+      <table class="field">
+        <tr><td>Address</td><td>127.0.0.1</td></tr>
+        <tr><td>Port</td><td>7337</td></tr>
+        <tr><td>Pairing code</td><td>the six characters</td></tr>
+      </table>
+      Tap <b>Connect</b>.
+    </li>
+  </ol>
+</div>
+
+<div class="route wifi">
+  <h2>Over Wi-Fi <span class="tag">no cable</span></h2>
+  <p class="why">
+    Both devices must be on the same network. The connection is encrypted and
+    the desktop's certificate is pinned during pairing, so only that computer
+    can answer afterwards.
+  </p>
+  <ol>
+    <li>
+      <span class="where">On the desktop</span>
+      Start the server on the network. It prints the address to use and an
+      <b>Identity</b> — note the identity down.
+<pre>aura serve --lan</pre>
+    </li>
+    <li>
+      <span class="where">On the desktop</span>
+      Ask for a pairing code:
+<pre>aura devices add "my phone"</pre>
+    </li>
+    <li>
+      <span class="where">On the phone</span>
+      Open Aura, choose <b>With my desktop</b>, and fill in:
+      <table class="field">
+        <tr><td>Address</td><td>the IP it printed</td></tr>
+        <tr><td>Port</td><td>7337</td></tr>
+        <tr><td>Pairing code</td><td>the six characters</td></tr>
+      </table>
+      Tap <b>Connect</b>.
+    </li>
+    <li>
+      <span class="where">On the phone</span>
+      Open <b>Settings</b> and check that <b>Identity</b> matches what the
+      desktop printed. They should be the same eight characters.
+    </li>
+  </ol>
+</div>
+
+<div class="note">
+  <b>About the code</b> — it is six characters, lasts about ten minutes, and
+  works once. If it is refused, it has almost certainly expired or already been
+  used: run <code class="inl">aura devices add</code> again for a fresh one.
+</div>
+
+<div class="note warn">
+  <b>If Identity ever changes</b> and you did not re-pair, stop and find out
+  why. Over Wi-Fi that means something other than your desktop is answering on
+  that address. Over USB there is no identity to check, because the traffic
+  never leaves the phone.
+</div>
+
+<h2 style="margin-top:14px">If it will not connect</h2>
+<table class="tr">
+  <thead>
+    <tr><th>What you see</th><th>What to do</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>“That code was not accepted”</td>
+      <td>Get a fresh code — they expire in about ten minutes and work once.
+          Over USB, check <code class="inl">adb reverse</code> is still set: it
+          is lost every time the cable is unplugged.</td>
+    </tr>
+    <tr>
+      <td>“Could not reach …”</td>
+      <td>The desktop is not answering. Check <code class="inl">aura serve</code>
+          is still running, and over Wi-Fi that you used
+          <code class="inl">--lan</code>, the address is right, and both devices
+          are on the same network.</td>
+    </tr>
+    <tr>
+      <td>Connects, then drops</td>
+      <td>Normal when the phone sleeps or changes network. It reconnects by
+          itself; the header shows a countdown while it does.</td>
+    </tr>
+    <tr>
+      <td>Wi-Fi refuses but USB works</td>
+      <td>Many home and public networks block devices from reaching each other.
+          Use the cable, or a network you control.</td>
+    </tr>
+    <tr>
+      <td>No desktop at all</td>
+      <td>Choose <b>On this phone only</b> on the start screen and use your own
+          API key. You can pair a desktop later without losing anything.</td>
+    </tr>
+  </tbody>
+</table>
+
+<footer>
+  <span>© 2026 LeanProgressIQ · Aura Droid</span>
+  <span>github.com/DusanCar-sudo/aura-code · aurawebsite-eta.vercel.app</span>
+</footer>
+
+</body>
+</html>
