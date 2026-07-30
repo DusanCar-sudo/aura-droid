@@ -1,6 +1,7 @@
 package dev.aura.auradroid.di
 
 import android.content.Context
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,9 +10,6 @@ import dagger.hilt.components.SingletonComponent
 import dev.aura.auradroid.data.local.AuraDatabase
 import dev.aura.auradroid.data.local.MessageDao
 import dev.aura.auradroid.data.local.SessionDao
-import dev.aura.auradroid.data.network.AuraApiService
-import dev.aura.auradroid.data.network.NetworkAdapter
-import dev.aura.auradroid.data.repository.AuraRepository
 import javax.inject.Singleton
 
 @Module
@@ -37,8 +35,14 @@ object AppModule {
     }
 
     @Provides
-    @Singleton
-    fun provideAuraApiService(): AuraApiService {
-        return NetworkAdapter.auraApiService
+    fun provideMemoryDao(database: AuraDatabase): dev.aura.auradroid.data.local.MemoryDao {
+        return database.memoryDao()
     }
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
+
+    // AuraSocket and AuraHttp are @Singleton with @Inject constructors, so
+    // Hilt builds them without a provider here.
 }
