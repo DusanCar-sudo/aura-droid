@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aura mark: cyan ring with ruby core, matching the brand favicon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer ring -->
+    <path
+        android:strokeWidth="5"
+        android:strokeColor="#6ED0EA"
+        android:pathData="M 54,32 A 22,22 0 1 1 53.99,32" />
+
+    <!-- Ruby core -->
+    <path
+        android:fillColor="#D24B30"
+        android:pathData="M 54,45 A 9,9 0 1 1 53.99,45" />
+</vector>
