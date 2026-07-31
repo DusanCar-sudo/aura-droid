@@ -164,6 +164,7 @@ class EventSink(
                     content = event.name,
                     metadata = gson.toJson(
                         ArtifactPayload(
+                            type = "artifact",
                             id = event.id,
                             name = event.name,
                             content = event.content,
@@ -357,6 +358,11 @@ data class PlanPayload(
 
 /** Serialized into Message.metadata for an artifact row. */
 data class ArtifactPayload(
+    // Discriminator so plan metadata (which also lives in Message.metadata)
+    // is not mistaken for an artifact. Gson bypasses Kotlin defaults, so
+    // this is null when deserialised from a plan JSON — which is exactly
+    // what we need to tell them apart.
+    val type: String = "artifact",
     val id: String,
     val name: String,
     val content: String,

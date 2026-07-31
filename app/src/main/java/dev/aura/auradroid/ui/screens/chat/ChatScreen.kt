@@ -393,7 +393,7 @@ private fun MessageRow(
 
     when {
         message.role == MessageRole.TOOL -> ToolRow(message)
-        artifact != null -> ArtifactRow(artifact)
+        artifact != null && artifact.type == "artifact" -> ArtifactRow(artifact)
         message.role == MessageRole.SYSTEM -> SystemRow(message)
         else -> BubbleRow(message, speaking, onSpeak)
     }
@@ -419,7 +419,7 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    artifact.name,
+                    artifact.name.orEmpty(),
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Medium,
@@ -457,7 +457,7 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                                 settings.javaScriptEnabled = true
                                 settings.domStorageEnabled = true
                                 webViewClient = WebViewClient()
-                                loadDataWithBaseURL(null, artifact.content, "text/html", "utf-8", null)
+                                loadDataWithBaseURL(null, artifact.content.orEmpty(), "text/html", "utf-8", null)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -473,7 +473,7 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                 ) {
                     SelectionContainer {
                         Text(
-                            artifact.content,
+                            artifact.content.orEmpty(),
                             style = MaterialTheme.typography.bodySmall,
                             fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.onSurface,

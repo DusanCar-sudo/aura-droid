@@ -264,6 +264,7 @@ class EventSinkTest {
         assertEquals("index.html", msg.content)
         assertNotNull(msg.metadata)
         val payload = Gson().fromJson(msg.metadata, dev.aura.auradroid.data.repository.ArtifactPayload::class.java)
+        assertEquals("artifact", payload.type)
         assertEquals("a1", payload.id)
         assertEquals("index.html", payload.name)
         assertEquals("<h1>Hello</h1>", payload.content)
