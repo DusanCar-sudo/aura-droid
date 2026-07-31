@@ -44,9 +44,13 @@ import com.google.gson.Gson
 import dev.aura.auradroid.data.model.MessageRole
 import dev.aura.auradroid.data.model.SessionMode
 import dev.aura.auradroid.data.network.ConnState
+import dev.aura.auradroid.data.repository.ArtifactPayload
 import dev.aura.auradroid.data.repository.PlanPayload
 import dev.aura.auradroid.data.repository.ToolPayload
 import dev.aura.auradroid.ui.theme.AuraLogo
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun ChatScreen(
@@ -381,10 +385,104 @@ private fun MessageRow(
     speaking: Boolean = false,
     onSpeak: () -> Unit = {},
 ) {
-    when (message.role) {
-        MessageRole.TOOL -> ToolRow(message)
-        MessageRole.SYSTEM -> SystemRow(message)
+    val artifact = remember(message.metadata) {
+        runCatching {
+            Gson().fromJson(message.metadata, ArtifactPayload::class.java)
+        }.getOrNull()
+    }
+
+    when {
+        message.role == MessageRole.TOOL -> ToolRow(message)
+        artifact != null -> ArtifactRow(artifact)
+        message.role == MessageRole.SYSTEM -> SystemRow(message)
         else -> BubbleRow(message, speaking, onSpeak)
+    }
+}
+
+@Composable
+private fun ArtifactRow(artifact: ArtifactPayload) {
+    var showPreview by remember { mutableStateOf(false) }
+    var showCode by remember { mutableStateOf(false) }
+
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.25f),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.InsertDriveFile,
+                    null,
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.tertiary,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    artifact.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = { showPreview = !showPreview }, modifier = Modifier.size(28.dp)) {
+                    Icon(
+                        imageVector = if (showPreview) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (showPreview) "Hide preview" else "Show preview",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+                IconButton(onClick = { showCode = !showCode }, modifier = Modifier.size(28.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Code,
+                        contentDescription = "Show code",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+
+            if (showPreview) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                ) {
+                    AndroidView(
+                        factory = { context ->
+                            WebView(context).apply {
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                webViewClient = WebViewClient()
+                                loadDataWithBaseURL(null, artifact.content, "text/html", "utf-8", null)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+
+            if (showCode) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    SelectionContainer {
+                        Text(
+                            artifact.content,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(10.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

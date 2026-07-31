@@ -159,6 +159,16 @@ class EventParserTest {
     }
 
     @Test
+    fun `parses an artifact event`() {
+        val raw = """{"type":"artifact","id":"a1","name":"index.html","content":"<h1>Hi</h1>","contentType":"text/html"}"""
+        val e = EventParser.parse(raw) as ServerEvent.Artifact
+        assertEquals("a1", e.id)
+        assertEquals("index.html", e.name)
+        assertEquals("<h1>Hi</h1>", e.content)
+        assertEquals("text/html", e.contentType)
+    }
+
+    @Test
     fun `keeps an unknown event type instead of failing`() {
         // A newer desktop must not break an older phone.
         val e = EventParser.parse("""{"type":"some_future_event","x":1}""") as ServerEvent.Unknown

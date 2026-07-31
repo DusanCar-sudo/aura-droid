@@ -156,6 +156,23 @@ class EventSink(
                 writePlan(sessionId)
             }
 
+            is ServerEvent.Artifact -> {
+                _thinking.value = false
+                repository.addMessage(
+                    sessionId = sessionId,
+                    role = MessageRole.SYSTEM,
+                    content = event.name,
+                    metadata = gson.toJson(
+                        ArtifactPayload(
+                            id = event.id,
+                            name = event.name,
+                            content = event.content,
+                            contentType = event.contentType,
+                        )
+                    ),
+                )
+            }
+
             is ServerEvent.PlanDone -> {
                 writePlan(sessionId)
                 planMessageId = null
@@ -336,6 +353,14 @@ data class ToolPayload(
 data class PlanPayload(
     val goal: String?,
     val steps: List<StepSnapshot>,
+)
+
+/** Serialized into Message.metadata for an artifact row. */
+data class ArtifactPayload(
+    val id: String,
+    val name: String,
+    val content: String,
+    val contentType: String,
 )
 
 data class StepSnapshot(

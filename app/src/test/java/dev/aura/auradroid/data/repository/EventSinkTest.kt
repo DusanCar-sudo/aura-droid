@@ -245,6 +245,30 @@ class EventSinkTest {
         sink.handle(session, ServerEvent.Unknown("some_future_event"))
         assertTrue(repo.store.isEmpty())
     }
+
+    @Test
+    fun `artifact event creates a system message with metadata`() = runTest {
+        sink.handle(
+            session,
+            ServerEvent.Artifact(
+                id = "a1",
+                name = "index.html",
+                content = "<h1>Hello</h1>",
+                contentType = "text/html",
+            ),
+        )
+
+        assertEquals(1, repo.store.size)
+        val msg = repo.store.values.single()
+        assertEquals(MessageRole.SYSTEM, msg.role)
+        assertEquals("index.html", msg.content)
+        assertNotNull(msg.metadata)
+        val payload = Gson().fromJson(msg.metadata, dev.aura.auradroid.data.repository.ArtifactPayload::class.java)
+        assertEquals("a1", payload.id)
+        assertEquals("index.html", payload.name)
+        assertEquals("<h1>Hello</h1>", payload.content)
+        assertEquals("text/html", payload.contentType)
+    }
 }
 
 /**

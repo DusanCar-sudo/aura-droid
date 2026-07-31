@@ -77,6 +77,14 @@ sealed interface ServerEvent {
         val toolCount: Int?,
     ) : ServerEvent
 
+    /** The agent produced a file-like artifact (HTML, image, etc.). */
+    data class Artifact(
+        val id: String,
+        val name: String,
+        val content: String,
+        val contentType: String,
+    ) : ServerEvent
+
     /** Server-side history was cleared. */
     data object ResetOk : ServerEvent
 

@@ -90,6 +90,13 @@ fun parse(raw: String): ServerEvent? {
             toolCount = obj.get("toolCount")?.takeIf { !it.isJsonNull }?.asInt,
         )
 
+        "artifact" -> ServerEvent.Artifact(
+            id = str("id").orEmpty(),
+            name = str("name").orEmpty(),
+            content = str("content").orEmpty(),
+            contentType = str("contentType").orEmpty(),
+        )
+
         else -> ServerEvent.Unknown(type)
     }
 }
