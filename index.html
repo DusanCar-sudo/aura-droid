@@ -1,1396 +1,451 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aura Droid — Aura Code on Android</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            coral:  '#ff6a5b',
-            cyan:   '#4fe3ee',
-            navy:   '#07121c',
-            'navy-mid': '#101b2a',
-            'navy-panel': '#142235',
-            'navy-border': '#2d4058',
-            'navy-border2': '#1e3147',
-            snow:   '#f4fbff',
-            accent:  'var(--accent)',
-            'accent-dim': 'var(--accent-dim)',
-            surface: 'var(--surface)',
-            'surface-2': 'var(--surface-2)',
-            'surface-3': 'var(--surface-3)',
-            border:  'var(--border)',
-            muted:   'var(--muted)',
-            'muted-light': 'var(--muted-light)',
-            text:    'var(--text)',
-          },
-          fontFamily: {
-            display: ['"Space Grotesk"', 'sans-serif'],
-            mono:    ['"JetBrains Mono"', 'monospace'],
-            body:    ['Inter', 'system-ui', 'sans-serif'],
-          },
-        },
-      },
-    }
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070d1b">
+  <meta name="description" content="Aura Droid — a mobile control surface for your autonomous coding agent.">
+  <title>Aura Droid — Your codebase, in your pocket.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
-    /* ═══════════════════════════════════════════════════════
-       CSS CUSTOM PROPERTIES — light / dark themes
-    ═══════════════════════════════════════════════════════ */
     :root {
-      --accent: #ff6a5b;
-      --accent-2: #4fe3ee;
-      --accent-dim: rgba(255,106,91,0.12);
-      --accent-glow: rgba(255,106,91,0.25);
-      --surface: #07121c;
-      --surface-2: #101b2a;
-      --surface-3: '#142235';
-      --border: #1e3147;
-      --border-light: #2d4058;
-      --muted: #5a6e82;
-      --muted-light: #8aa0b4;
-      --text: #f4fbff;
-      --text-dim: #b8cdd8;
+      --ink: #070d1b;
+      --ink-2: #0b1325;
+      --panel: #101a2e;
+      --panel-2: #131f35;
+      --paper: #f2f4ff;
+      --paper-muted: #a6b0c6;
+      --line: rgba(176, 205, 235, .15);
+      --line-strong: rgba(176, 205, 235, .3);
+      --lime: #ffd84d;
+      --aqua: #ff5ca8;
+      --coral: #ff713f;
+      --orange: #ffb84d;
+      --max: 1220px;
+      --sans: 'DM Sans', system-ui, sans-serif;
+      --display: 'Space Grotesk', 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
     }
 
-    [data-theme="light"] {
-      --accent: #d9442e;
-      --accent-2: #1a9eaa;
-      --accent-dim: rgba(217,68,46,0.08);
-      --accent-glow: rgba(217,68,46,0.18);
-      --surface: #f0f4f8;
-      --surface-2: #e4ecf4;
-      --surface-3: #d8e4ee;
-      --border: #c0d0dc;
-      --border-light: #a0b8c8;
-      --muted: #607080;
-      --muted-light: #8898a8;
-      --text: #07121c;
-      --text-dim: #3a5060;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       BASE
-    ═══════════════════════════════════════════════════════ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      background: var(--surface);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0;
+      color: var(--paper);
+      background: var(--ink);
+      font-family: var(--sans);
       overflow-x: hidden;
-      transition: background 0.4s, color 0.4s;
     }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    img { display: block; max-width: 100%; }
+    ::selection { color: var(--ink); background: var(--lime); }
 
-    /* ═══════════════════════════════════════════════════════
-       VFX
-    ═══════════════════════════════════════════════════════ */
-    .vignette {
-      position: absolute; inset: 0;
-      background: radial-gradient(circle at center, transparent 45%, rgba(0,0,0,0.82) 100%);
-      z-index: 1; pointer-events: none;
-    }
-    [data-theme="light"] .vignette {
-      background: radial-gradient(circle at center, transparent 45%, rgba(7,18,28,0.15) 100%);
-    }
-    .grain {
-      position: absolute; inset: 0;
-      opacity: 0.055; mix-blend-mode: overlay;
-      pointer-events: none; z-index: 2;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-    }
-    .scanlines {
-      position: absolute; inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
-      z-index: 3; pointer-events: none;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       TYPOGRAPHY
-    ═══════════════════════════════════════════════════════ */
-    .display-xl {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: clamp(2.5rem, 6vw, 4.5rem);
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-    }
-    .display-lg {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-      line-height: 1.15;
-      letter-spacing: -0.02em;
-    }
-    .body-text {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-weight: 400;
-      font-size: 1rem;
-      line-height: 1.65;
-      color: var(--text-dim);
-    }
-    .mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       LAYOUT
-    ═══════════════════════════════════════════════════════ */
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 2rem;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       NAVIGATION
-    ═══════════════════════════════════════════════════════ */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0;
-      z-index: 100;
-      padding: 1rem 2rem;
-      display: flex; align-items: center; justify-content: space-between;
-      backdrop-filter: blur(12px);
-      background: rgba(7,18,28,0.7);
-      border-bottom: 1px solid var(--border);
-    }
-    [data-theme="light"] nav {
-      background: rgba(240,244,248,0.8);
-    }
-    .nav-logo {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: var(--text);
-      text-decoration: none;
-      letter-spacing: -0.02em;
-    }
-    .nav-logo span { color: var(--accent); }
-    .nav-links {
-      display: flex; gap: 2rem; align-items: center;
-      list-style: none;
-    }
-    .nav-links a {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--muted-light);
-      text-decoration: none;
-      letter-spacing: 0.02em;
-      transition: color 0.2s;
-    }
-    .nav-links a:hover { color: var(--text); }
-    .nav-links a.accent-link { color: var(--accent); }
-    .nav-links a.accent-link:hover { opacity: 0.8; }
-
-    /* ═══════════════════════════════════════════════════════
-       HERO — HYPERFRAMES RUNTIME
-    ═══════════════════════════════════════════════════════ */
-    .hero {
-      position: relative;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 8rem 2rem 4rem;
-      overflow: hidden;
-    }
-    .hero-bg-grid {
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 60px 60px;
-      opacity: 0.25;
-      mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 70%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 70%);
-    }
-    .hero-glow {
-      position: absolute;
-      width: 600px; height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-      top: 10%; left: 50%;
-      transform: translateX(-50%);
-      filter: blur(80px);
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    .hero-glow-2 {
-      position: absolute;
-      width: 400px; height: 400px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(79,227,238,0.15) 0%, transparent 70%);
-      top: 30%; right: 10%;
-      filter: blur(60px);
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    /* HUD */
-    .hf-hud {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      margin-bottom: 2rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .hf-hud-sep { opacity: 0.4; }
-    .hf-hud-frame { color: var(--accent); font-weight: 600; }
-
-    /* Acts */
-    .hf-acts {
-      position: relative;
-      min-height: 340px;
-    }
-    .hf-act {
-      position: absolute;
+    .site-shell { position: relative; overflow: hidden; }
+    .site-shell::before {
+      content: '';
+      position: fixed;
+      z-index: 10;
       inset: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      opacity: 0;
-      transform: translateY(18px) scale(0.98);
-      transition: opacity 0.55s ease, transform 0.55s ease;
+      opacity: .025;
       pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      mix-blend-mode: screen;
     }
-    .hf-act.active {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      pointer-events: auto;
-      position: relative;
-    }
-    .hf-act-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--accent);
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-    .hf-act-label::before {
-      content: '';
-      display: inline-block;
-      width: 20px; height: 1px;
-      background: var(--accent);
-    }
-    .hf-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: clamp(2.8rem, 7vw, 5.5rem);
-      line-height: 0.92;
-      letter-spacing: -0.04em;
-      margin-bottom: 1.25rem;
-    }
-    .hf-title .accent { color: var(--accent); }
-    .hf-subtitle {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: clamp(0.95rem, 1.4vw, 1.15rem);
-      font-weight: 300;
-      color: var(--text-dim);
-      max-width: 520px;
-      line-height: 1.65;
-      margin-bottom: 2rem;
-    }
+    .container { width: min(var(--max), calc(100% - 64px)); margin: 0 auto; }
 
-    /* Progress dots */
-    .hf-progress {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 2.5rem;
-    }
-    .hf-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--border);
-      transition: background 0.4s, box-shadow 0.4s, transform 0.4s;
-      cursor: pointer;
-    }
-    .hf-dot:hover { background: var(--border-light); }
-    .hf-dot.active {
-      background: var(--accent);
-      box-shadow: 0 0 12px var(--accent-glow);
-      transform: scale(1.4);
-    }
-
-    .hf-hint {
-      text-align: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      color: var(--muted);
-      letter-spacing: 0.06em;
-      margin-top: 1rem;
-      opacity: 0.6;
-    }
-    .hf-acts.paused .hf-act.active { transition: none; }
-
-    /* ═══════════════════════════════════════════════════════
-       GLITCH TEXT EFFECT
-    ═══════════════════════════════════════════════════════ */
-    .glitch {
-      position: relative;
-      display: inline-block;
-    }
-    .glitch::before,
-    .glitch::after {
-      content: attr(data-text);
+    /* Navigation */
+    .nav {
       position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-    .glitch::before {
-      color: var(--accent);
-      clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
-      animation: glitchTop 3.5s infinite linear alternate-reverse;
-    }
-    .glitch::after {
-      color: var(--accent-2);
-      clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
-      animation: glitchBottom 2.8s infinite linear alternate-reverse;
-    }
-    .glitch-slice::before {
-      content: '';
-      position: absolute;
-      inset: -4px -8px;
-      background: var(--accent);
-      opacity: 0;
-      mix-blend-mode: overlay;
-      animation: glitchSlice 6s infinite;
-      pointer-events: none;
-    }
-    @keyframes glitchTop {
-      0%, 90%, 100% { transform: translate(0); clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%); }
-      92% { transform: translate(-3px, -1px); clip-path: polygon(0 10%, 100% 10%, 100% 35%, 0 35%); }
-      94% { transform: translate(3px, 1px); clip-path: polygon(0 5%, 100% 5%, 100% 25%, 0 25%); }
-      96% { transform: translate(-2px, 0); clip-path: polygon(0 15%, 100% 15%, 100% 40%, 0 40%); }
-      98% { transform: translate(0); clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%); }
-    }
-    @keyframes glitchBottom {
-      0%, 85%, 100% { transform: translate(0); clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%); }
-      87% { transform: translate(3px, 1px); clip-path: polygon(0 60%, 100% 60%, 100% 85%, 0 85%); }
-      89% { transform: translate(-3px, -1px); clip-path: polygon(0 65%, 100% 65%, 100% 90%, 0 90%); }
-      91% { transform: translate(2px, 0); clip-path: polygon(0 58%, 100% 58%, 100% 80%, 0 80%); }
-      93% { transform: translate(0); clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%); }
-    }
-    @keyframes glitchSlice {
-      0%, 94%, 100% { opacity: 0; transform: translateX(0) scaleY(1); }
-      95% { opacity: 0.12; transform: translateX(-6px) scaleY(0.04); clip-path: polygon(0 30%, 100% 30%, 100% 32%, 0 32%); }
-      96% { opacity: 0.08; transform: translateX(4px) scaleY(0.03); clip-path: polygon(0 60%, 100% 60%, 100% 63%, 0 63%); }
-      97% { opacity: 0; transform: translateX(0) scaleY(1); }
-    }
-    .glitch:hover::before { animation: glitchTopHover 0.3s infinite linear alternate-reverse; }
-    .glitch:hover::after { animation: glitchBottomHover 0.25s infinite linear alternate-reverse; }
-    @keyframes glitchTopHover {
-      0%   { transform: translate(-2px, 0); clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%); }
-      25%  { transform: translate(2px, -1px); clip-path: polygon(0 15%, 100% 15%, 100% 50%, 0 50%); }
-      50%  { transform: translate(-1px, 1px); clip-path: polygon(0 5%, 100% 5%, 100% 35%, 0 35%); }
-      75%  { transform: translate(3px, 0); clip-path: polygon(0 20%, 100% 20%, 100% 55%, 0 55%); }
-      100% { transform: translate(-2px, 0); clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%); }
-    }
-    @keyframes glitchBottomHover {
-      0%   { transform: translate(2px, 0); clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%); }
-      25%  { transform: translate(-2px, 1px); clip-path: polygon(0 60%, 100% 60%, 100% 90%, 0 90%); }
-      50%  { transform: translate(1px, -1px); clip-path: polygon(0 50%, 100% 50%, 100% 85%, 0 85%); }
-      75%  { transform: translate(-3px, 0); clip-path: polygon(0 65%, 100% 65%, 100% 95%, 0 95%); }
-      100% { transform: translate(2px, 0); clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%); }
-    }
-    .hf-act-label { animation: labelGlitch 8s infinite; }
-    @keyframes labelGlitch {
-      0%, 92%, 100% { transform: translateX(0); filter: none; }
-      93% { transform: translateX(-2px); filter: drop-shadow(2px 0 var(--accent)); }
-      94% { transform: translateX(2px); filter: drop-shadow(-2px 0 var(--accent-2)); }
-      95% { transform: translateX(0); filter: none; }
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       BUTTONS
-    ═══════════════════════════════════════════════════════ */
-    .hero-actions {
-      display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
-    }
-    .btn-primary {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.85rem 1.75rem;
-      background: var(--accent);
-      color: #fff;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: opacity 0.2s, transform 0.15s;
-    }
-    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
-    .btn-secondary {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.85rem 1.75rem;
-      background: transparent;
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 0.9rem;
-      font-weight: 500;
-      border: 1px solid var(--border-light);
-      border-radius: 6px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .btn-secondary:hover { border-color: var(--accent); background: var(--accent-dim); }
-
-    /* ═══════════════════════════════════════════════════════
-       SECTION SHARED
-    ═══════════════════════════════════════════════════════ */
-    section {
-      position: relative;
-      padding: 6rem 0;
-    }
-    .section-eyebrow {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--accent);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 0.75rem;
-    }
-    .section-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      margin-bottom: 1rem;
-    }
-    .section-desc {
-      font-size: 1rem;
-      color: var(--text-dim);
-      max-width: 520px;
-      line-height: 1.65;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       PHONE MOCKUP
-    ═══════════════════════════════════════════════════════ */
-    .showcase {
-      padding: 4rem 0 6rem;
-    }
-    .showcase-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 2.5rem;
-      margin-top: 3rem;
-      align-items: start;
-    }
-    .phone-mockup {
-      position: relative;
-      width: 100%;
-      max-width: 280px;
-      margin: 0 auto;
-    }
-    .phone-frame {
-      position: relative;
-      background: #1a1a2e;
-      border-radius: 36px;
-      padding: 10px;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.08),
-        0 20px 60px rgba(0,0,0,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.06);
-    }
-    .phone-frame::before {
-      content: '';
-      position: absolute;
-      top: 10px; left: 50%;
-      transform: translateX(-50%);
-      width: 80px; height: 24px;
-      background: #1a1a2e;
-      border-radius: 0 0 16px 16px;
-      z-index: 5;
-    }
-    .phone-screen {
-      position: relative;
-      border-radius: 28px;
-      overflow: hidden;
-      aspect-ratio: 9/19.5;
-      background: #0d0d1a;
-    }
-    .phone-screen img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .phone-label {
-      text-align: center;
-      margin-top: 1.25rem;
-    }
-    .phone-label-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: 1rem;
-      color: var(--text);
-      margin-bottom: 0.25rem;
-    }
-    .phone-label-desc {
-      font-size: 0.82rem;
-      color: var(--muted-light);
-      line-height: 1.5;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       FEATURES
-    ═══════════════════════════════════════════════════════ */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-top: 3rem;
-    }
-    .feature-card {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 2rem;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    .feature-card:hover {
-      border-color: var(--border-light);
-      box-shadow: 0 0 30px var(--accent-dim);
-    }
-    .feature-icon {
-      width: 40px; height: 40px;
-      border-radius: 8px;
-      background: var(--accent-dim);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem;
-      margin-bottom: 1.25rem;
-    }
-    .feature-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-bottom: 0.6rem;
-      color: var(--text);
-    }
-    .feature-desc {
-      font-size: 0.9rem;
-      color: var(--muted-light);
-      line-height: 1.6;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       MODULES / ARCHITECTURE
-    ═══════════════════════════════════════════════════════ */
-    .modules-list {
-      margin-top: 3rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .module-item {
-      display: grid;
-      grid-template-columns: 60px 1fr auto;
-      gap: 2rem;
-      align-items: center;
-      padding: 2rem 2.5rem;
-      background: var(--surface-2);
-      transition: background 0.2s;
-    }
-    .module-item:hover { background: var(--surface-3); }
-    .module-num {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: var(--accent);
-      letter-spacing: 0.05em;
-    }
-    .module-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: 1.15rem;
-      margin-bottom: 0.4rem;
-      color: var(--text);
-    }
-    .module-desc {
-      font-size: 0.9rem;
-      color: var(--muted-light);
-      line-height: 1.6;
-    }
-    .module-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--accent-2);
-      background: rgba(79,227,238,0.08);
-      border: 1px solid rgba(79,227,238,0.15);
-      padding: 0.3rem 0.75rem;
-      border-radius: 4px;
-      white-space: nowrap;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       ARCH STEPS
-    ═══════════════════════════════════════════════════════ */
-    .arch-steps {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 3rem;
-    }
-    .arch-step {
-      padding: 2.5rem 2rem;
-      background: var(--surface-2);
-      position: relative;
-    }
-    .arch-step-num {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 2.5rem;
-      color: var(--accent);
-      opacity: 0.3;
-      line-height: 1;
-      margin-bottom: 1rem;
-    }
-    .arch-step-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-bottom: 0.6rem;
-      color: var(--text);
-    }
-    .arch-step-desc {
-      font-size: 0.88rem;
-      color: var(--muted-light);
-      line-height: 1.6;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       TERMINAL
-    ═══════════════════════════════════════════════════════ */
-    .terminal {
-      background: #0a0e14;
-      border: 1px solid var(--border-light);
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 3rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      line-height: 1.7;
-    }
-    .terminal-bar {
-      display: flex; align-items: center; gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      background: var(--surface-3);
-      border-bottom: 1px solid var(--border);
-    }
-    .terminal-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-    }
-    .terminal-dot.red { background: #ff5f57; }
-    .terminal-dot.yellow { background: #febc2e; }
-    .terminal-dot.green { background: #28c840; }
-    .terminal-title {
-      margin-left: 0.5rem;
-      color: var(--muted);
-      font-size: 0.75rem;
-    }
-    .terminal-body {
-      padding: 1.25rem 1.5rem;
-      color: var(--text-dim);
-    }
-    .terminal-body .prompt { color: var(--accent); }
-    .terminal-body .comment { color: var(--muted); }
-    .terminal-body .cursor {
-      display: inline-block;
-      width: 8px; height: 1em;
-      background: var(--accent);
-      animation: blink 1s step-end infinite;
-      vertical-align: text-bottom;
-    }
-    @keyframes blink { 50% { opacity: 0; } }
-
-    /* ═══════════════════════════════════════════════════════
-       CTA
-    ═══════════════════════════════════════════════════════ */
-    .cta-section {
-      text-align: center;
-      padding: 6rem 2rem;
-    }
-    .cta-section .section-title { margin-bottom: 1rem; }
-    .cta-section .section-desc {
-      margin: 0 auto 2.5rem;
-      text-align: center;
-    }
-    .cta-actions {
-      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       FOOTER
-    ═══════════════════════════════════════════════════════ */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2.5rem 2rem;
+      z-index: 20;
+      top: 0; left: 0; right: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
+      width: min(var(--max), calc(100% - 64px));
+      margin: 0 auto;
+      padding: 28px 0;
     }
-    .footer-logo {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--text);
-    }
-    .footer-logo span { color: var(--accent); }
-    .footer-links {
-      display: flex; gap: 1.5rem; list-style: none;
-    }
-    .footer-links a {
-      font-size: 0.82rem;
-      color: var(--muted);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .footer-links a:hover { color: var(--text); }
-    .footer-meta {
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
+    .brand { display: inline-flex; align-items: center; gap: 11px; font-family: var(--display); font-size: 16px; font-weight: 700; letter-spacing: -.04em; }
+    .brand-mark { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink); background: var(--lime); border-radius: 50%; font-family: var(--mono); font-size: 12px; font-weight: 500; box-shadow: 0 0 28px rgba(255,216,77,.22); }
+    .brand em { color: var(--lime); font-style: normal; }
+    .nav-links { display: flex; align-items: center; gap: 28px; color: var(--paper-muted); font-size: 13px; }
+    .nav-links a { transition: color .2s ease; }
+    .nav-links a:hover { color: var(--lime); }
+    .nav-download { color: var(--lime); }
+    .nav-github { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--paper); }
+    .nav-github:hover { border-color: var(--lime); color: var(--lime) !important; }
+    .nav-github svg { width: 14px; height: 14px; }
 
-    /* ═══════════════════════════════════════════════════════
-       THEME TOGGLE
-    ═══════════════════════════════════════════════════════ */
-    .theme-toggle {
-      background: none;
-      border: 1px solid var(--border-light);
-      border-radius: 6px;
-      padding: 0.4rem 0.7rem;
-      color: var(--muted-light);
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
-      font-family: 'JetBrains Mono', monospace;
+    /* Hero */
+    .hero {
+      position: relative;
+      min-height: 820px;
+      padding: 170px 0 112px;
+      background:
+        radial-gradient(ellipse 42% 58% at 76% 42%, rgba(255,92,168,.13), transparent 70%),
+        radial-gradient(ellipse 36% 52% at 24% 2%, rgba(255,216,77,.10), transparent 72%),
+        var(--ink);
     }
-    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .hero::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,92,168,.04) 50%, transparent calc(50% + 1px)); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, .94fr) minmax(470px, 1.06fr); gap: 70px; align-items: center; position: relative; z-index: 1; }
+    .eyebrow { display: flex; align-items: center; gap: 11px; color: var(--lime); font-family: var(--mono); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; }
+    .eyebrow::before { content: ''; width: 25px; height: 1px; background: currentColor; }
+    .hero h1 { max-width: 650px; margin: 24px 0 24px; font-family: var(--display); font-size: clamp(54px, 7.4vw, 105px); line-height: .91; letter-spacing: -.075em; font-weight: 600; }
+    .hero h1 .soft { color: var(--paper-muted); }
+    .hero h1 .signal { color: var(--lime); position: relative; white-space: nowrap; }
+    .hero h1 .signal::after { content: ''; position: absolute; right: -10px; bottom: -8px; width: 48%; height: 7px; background: var(--coral); transform: skewX(-28deg); opacity: .9; }
+    .hero-copy { max-width: 450px; margin: 0; color: var(--paper-muted); font-size: 18px; line-height: 1.6; }
+    .hero-actions { display: flex; align-items: center; gap: 13px; margin-top: 34px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 20px; border-radius: 6px; font-size: 14px; font-weight: 600; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease; }
+    .button:hover { transform: translateY(-2px); }
+    .button-primary { color: var(--ink); background: var(--lime); box-shadow: 0 10px 30px rgba(255,216,77,.13); }
+    .button-primary:hover { box-shadow: 0 14px 38px rgba(255,216,77,.28); }
+    .button-ghost { color: var(--paper); border: 1px solid var(--line-strong); }
+    .button-ghost:hover { border-color: var(--aqua); color: var(--aqua); }
+    .hero-footnote { display: flex; align-items: center; gap: 11px; margin-top: 27px; color: #89899a; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--aqua); box-shadow: 0 0 14px var(--aqua); }
 
-    /* ═══════════════════════════════════════════════════════
-       ANIMATIONS
-    ═══════════════════════════════════════════════════════ */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* Hero device scene */
+    .hero-visual { position: relative; min-height: 535px; }
+    .hero-visual::before { content: ''; position: absolute; width: 460px; height: 460px; top: 26px; left: 15%; border: 1px solid rgba(255,92,168,.19); border-radius: 50%; box-shadow: 0 0 90px rgba(255,92,168,.08), inset 0 0 90px rgba(255,92,168,.04); }
+    .hero-visual::after { content: ''; position: absolute; width: 610px; height: 1px; top: 250px; left: -2%; background: linear-gradient(90deg, transparent, rgba(255,92,168,.35), transparent); transform: rotate(-25deg); }
+    .orbit-label { position: absolute; z-index: 2; top: 46px; right: 22px; color: var(--aqua); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .orbit-label::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 7px 2px 0; border-radius: 50%; background: var(--aqua); }
+    .phone { position: absolute; z-index: 3; width: 276px; padding: 8px; border: 1px solid rgba(255,239,247,.3); border-radius: 36px; background: #18202f; box-shadow: -28px 45px 80px rgba(0,0,0,.48), 0 0 0 8px rgba(255,255,255,.025), 0 0 70px rgba(255,92,168,.18); transform: rotate(5deg); }
+    .phone-main { top: 42px; left: 24%; }
+    .phone-side { z-index: 2; width: 192px; top: 161px; right: 0; opacity: .75; transform: rotate(11deg) scale(.96); filter: saturate(.72); }
+    .phone::before { content: ''; position: absolute; z-index: 5; top: 8px; left: 50%; width: 76px; height: 22px; transform: translateX(-50%); border-radius: 0 0 15px 15px; background: #18202f; }
+    .phone-screen { aspect-ratio: 9 / 19.4; overflow: hidden; border-radius: 28px; background: #0d161e; }
+    .phone-screen img { width: 100%; height: 100%; object-fit: cover; }
+    .visual-readout { position: absolute; z-index: 4; bottom: 26px; left: 0; width: 214px; padding: 15px; border: 1px solid var(--line-strong); background: rgba(16,31,41,.82); backdrop-filter: blur(14px); }
+    .readout-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; color: var(--paper-muted); font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .readout-top strong { color: var(--lime); font-weight: 400; }
+    .readout-line { display: flex; align-items: center; gap: 8px; color: var(--paper); font-family: var(--mono); font-size: 11px; line-height: 1.8; }
+    .readout-line span:first-child { color: var(--coral); }
+    .readout-bar { height: 2px; margin-top: 7px; background: linear-gradient(90deg, var(--lime) 0 74%, rgba(255,255,255,.12) 74%); }
+    .visual-stamp { position: absolute; z-index: 4; right: 35px; bottom: 63px; display: grid; place-items: center; width: 85px; height: 85px; border: 1px solid rgba(255,184,92,.55); border-radius: 50%; color: var(--orange); font-family: var(--mono); font-size: 10px; line-height: 1.25; letter-spacing: .08em; text-align: center; text-transform: uppercase; transform: rotate(-15deg); }
+    .visual-stamp::after { content: ''; position: absolute; inset: 7px; border: 1px dashed rgba(255,184,92,.4); border-radius: 50%; }
+
+    /* Marquee */
+    .marquee { display: flex; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--lime); color: var(--ink); }
+    .marquee-track { display: flex; flex: none; align-items: center; gap: 34px; min-width: max-content; padding: 15px 0; animation: drift 26s linear infinite; font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -.03em; }
+    .marquee-track span:nth-child(even) { color: var(--coral); font-size: 23px; }
+    @keyframes drift { to { transform: translateX(-50%); } }
+
+    /* Intro */
+    .section { padding: 128px 0; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 55px; }
+    .section-title { max-width: 580px; margin: 15px 0 0; font-family: var(--display); font-size: clamp(39px, 5.1vw, 68px); font-weight: 600; line-height: .98; letter-spacing: -.065em; }
+    .section-title .lime { color: var(--lime); }
+    .section-lede { max-width: 330px; margin: 0; color: var(--paper-muted); font-size: 15px; line-height: 1.65; }
+
+    /* Bento features */
+    .bento { display: grid; grid-template-columns: 1.35fr .8fr .8fr; grid-template-rows: 260px 260px; gap: 14px; }
+    .bento-card { position: relative; overflow: hidden; min-height: 0; padding: 27px; border: 1px solid var(--line); background: var(--panel); }
+    .bento-card::after { content: ''; position: absolute; width: 180px; height: 180px; right: -80px; bottom: -80px; border: 1px solid rgba(255,92,168,.15); border-radius: 50%; }
+    .bento-card:hover { border-color: rgba(255,216,77,.48); }
+    .bento-large { grid-row: span 2; background: linear-gradient(145deg, #172c2c, var(--panel) 63%); }
+    .bento-number { color: var(--lime); font-family: var(--mono); font-size: 11px; }
+    .bento h3 { position: relative; z-index: 1; max-width: 280px; margin: 52px 0 10px; font-family: var(--display); font-size: 30px; line-height: .98; letter-spacing: -.05em; }
+    .bento-small h3 { margin-top: 36px; font-size: 23px; }
+    .bento p { position: relative; z-index: 1; max-width: 300px; margin: 0; color: var(--paper-muted); font-size: 13px; line-height: 1.55; }
+    .bento-large p { max-width: 320px; }
+    .bento-icon { position: absolute; z-index: 1; right: 30px; bottom: 30px; display: grid; place-items: center; width: 54px; height: 54px; border: 1px solid rgba(255,216,77,.35); border-radius: 50%; color: var(--lime); font-family: var(--mono); font-size: 17px; }
+    .bento-icon svg { width: 22px; }
+
+    /* Connection story */
+    .story-section { position: relative; background: var(--paper); color: var(--ink); }
+    .story-section .eyebrow { color: #d64d91; }
+    .story-section .section-lede, .story-section .section-copy { color: #5f6375; }
+    .story-section .section-title { max-width: 660px; }
+    .connection-map { position: relative; min-height: 420px; margin-top: 70px; border: 1px solid rgba(7,16,24,.18); background: linear-gradient(135deg, #e8f2ec, #dcebe5); overflow: hidden; }
+    .connection-map::before { content: ''; position: absolute; top: 50%; left: 10%; right: 10%; height: 1px; background: rgba(7,16,24,.10); }
+    .map-line { position: absolute; top: 37%; left: 25%; width: 50%; height: 2px; background: linear-gradient(90deg, var(--aqua), var(--coral)); transform: rotate(-12deg); transform-origin: left center; }
+    .map-line.local { top: 63%; background: linear-gradient(90deg, var(--aqua), var(--lime)); transform: rotate(12deg); }
+    .map-line::before, .map-line::after { content: ''; position: absolute; width: 9px; height: 9px; top: -4px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 5px rgba(255,113,63,.16); }
+    .map-line::before { left: 0; background: var(--aqua); box-shadow: 0 0 0 5px rgba(255,92,168,.16); }
+    .map-line::after { right: 0; }
+    .map-node { position: absolute; z-index: 1; display: flex; flex-direction: column; gap: 7px; min-width: 210px; }
+    .map-node.phone-node { top: 50%; left: 9%; transform: translateY(-50%); }
+    .map-node.server-node { top: 12%; right: 9%; }
+    .node-orb { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid rgba(7,16,24,.35); border-radius: 50%; background: var(--paper); box-shadow: 0 9px 23px rgba(7,16,24,.1); font-family: var(--mono); font-size: 16px; }
+    .server-node .node-orb { color: var(--coral); border-color: rgba(255,113,63,.55); }
+    .phone-node .node-orb { color: var(--aqua); border-color: rgba(255,92,168,.55); }
+    .node-title { font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -.04em; }
+    .node-meta { color: #6c6f80; font-family: var(--mono); font-size: 10px; }
+    .map-packet { position: absolute; top: 46%; left: 42%; display: flex; align-items: center; gap: 9px; color: var(--aqua); font-family: var(--mono); font-size: 10px; letter-spacing: .05em; transform: rotate(-16deg); }
+    .map-packet.local-packet { top: 57%; left: 42%; color: #a58cff; transform: rotate(16deg); }
+    .map-packet::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 6px rgba(255,113,63,.14); }
+    .map-packet.local-packet::before { background: var(--lime); box-shadow: 0 0 0 6px rgba(255,216,77,.14); }
+    .story-note { position: absolute; left: 9%; bottom: 22px; max-width: 300px; color: #5f6375; font-size: 12px; line-height: 1.55; }
+    .local-node { top: auto; right: 9%; bottom: 12%; }
+    .local-node .node-orb { color: #a58cff; border-color: rgba(165,140,255,.55); }
+
+    /* Gallery */
+    .gallery { display: grid; grid-template-columns: .78fr 1.22fr; gap: 65px; align-items: center; }
+    .gallery-copy .section-title { max-width: 450px; }
+    .gallery-copy p { max-width: 400px; color: var(--paper-muted); font-size: 15px; line-height: 1.65; }
+    .gallery-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0; }
+    .gallery-tab { padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--paper-muted); background: transparent; cursor: pointer; font-family: var(--mono); font-size: 10px; letter-spacing: .04em; transition: .2s ease; }
+    .gallery-tab:hover, .gallery-tab.active { border-color: var(--lime); color: var(--ink); background: var(--lime); }
+    .gallery-meta { color: #77798b; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; }
+    .gallery-stage { position: relative; min-height: 610px; padding: 30px; background: radial-gradient(circle at 50% 50%, rgba(255,92,168,.12), transparent 59%), #0b1325; border: 1px solid var(--line); overflow: hidden; }
+    .gallery-stage::before { content: 'LIVE SURFACE / 01'; position: absolute; top: 20px; left: 24px; color: var(--aqua); font-family: var(--mono); font-size: 9px; letter-spacing: .1em; }
+    .gallery-stage::after { content: ''; position: absolute; right: 24px; bottom: 20px; width: 68px; height: 68px; border: 1px dashed rgba(255,216,77,.45); border-radius: 50%; }
+    .gallery-phone { position: relative; z-index: 1; width: min(285px, 70%); margin: 32px auto 0; padding: 8px; border: 1px solid rgba(255,239,247,.3); border-radius: 36px; background: #18202f; box-shadow: 0 35px 70px rgba(0,0,0,.5), 0 0 60px rgba(255,92,168,.16); transition: opacity .2s ease, transform .2s ease; }
+    .gallery-phone.is-changing { opacity: .35; transform: scale(.97) translateY(7px); }
+    .gallery-phone::before { content: ''; position: absolute; z-index: 2; top: 8px; left: 50%; width: 76px; height: 22px; transform: translateX(-50%); border-radius: 0 0 15px 15px; background: #18202f; }
+    .gallery-phone .phone-screen { border-radius: 28px; }
+    .gallery-caption { position: absolute; z-index: 2; left: 28px; bottom: 27px; color: var(--paper); }
+    .gallery-caption strong { display: block; margin-bottom: 5px; font-family: var(--display); font-size: 18px; letter-spacing: -.04em; }
+    .gallery-caption span { color: var(--paper-muted); font-family: var(--mono); font-size: 10px; }
+
+    /* Download */
+    .download-section { padding-top: 36px; }
+    .download-card { position: relative; display: grid; grid-template-columns: .88fr 1.12fr; gap: 70px; align-items: center; padding: 64px; overflow: hidden; background: linear-gradient(120deg, #2a1c2d, #172033 62%, #241a25); border: 1px solid rgba(255,92,168,.24); }
+    .download-card::before { content: 'APK / 0.3.0'; position: absolute; top: 24px; right: 28px; color: rgba(255,216,77,.7); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; }
+    .download-card .section-title { margin-bottom: 20px; }
+    .download-card p { max-width: 430px; margin: 0; color: var(--paper-muted); font-size: 15px; line-height: 1.65; }
+    .download-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+    .download-meta { display: flex; align-items: center; gap: 15px; margin-top: 18px; color: #85869a; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; }
+    .download-meta span + span { padding-left: 15px; border-left: 1px solid var(--line-strong); }
+    .download-steps { position: relative; display: grid; gap: 12px; }
+    .download-steps::before { content: ''; position: absolute; top: 36px; bottom: 36px; left: 21px; width: 1px; background: linear-gradient(var(--lime), rgba(255,92,168,.12)); }
+    .download-step { position: relative; z-index: 1; display: grid; grid-template-columns: 44px 1fr; gap: 17px; align-items: center; padding: 17px 18px 17px 9px; border: 1px solid var(--line); background: rgba(7,16,24,.35); }
+    .download-step:hover { border-color: rgba(255,216,77,.45); }
+    .step-number { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--lime); border-radius: 50%; color: var(--lime); background: var(--ink-2); font-family: var(--mono); font-size: 10px; }
+    .step-icon { position: absolute; right: 20px; color: var(--aqua); font-family: var(--mono); font-size: 19px; }
+    .download-step strong { display: block; margin-bottom: 4px; font-family: var(--display); font-size: 18px; letter-spacing: -.04em; }
+    .download-step p { max-width: 430px; margin: 0; color: var(--paper-muted); font-size: 12px; line-height: 1.5; }
+    .download-warning { display: flex; gap: 10px; margin-top: 16px; padding: 12px 14px; border-left: 2px solid var(--orange); color: #c7c1cc; background: rgba(255,113,63,.08); font-size: 11px; line-height: 1.5; }
+    .download-warning b { color: var(--orange); font-weight: 600; }
+
+    /* Footer */
+    footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 30px 0 36px; border-top: 1px solid var(--line); color: #77798b; font-size: 12px; }
+    .footer-links { display: flex; gap: 22px; }
+    .footer-links a:hover { color: var(--lime); }
+    .footer-credit { font-family: var(--mono); font-size: 10px; }
+
+    /* Motion */
+    @keyframes float { 0%, 100% { transform: rotate(5deg) translateY(0); } 50% { transform: rotate(5deg) translateY(-10px); } }
+    .phone-main { animation: float 6s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 35px; }
+      .hero { min-height: auto; padding-bottom: 80px; }
+      .hero-visual { min-height: 500px; max-width: 600px; width: 100%; margin: 0 auto; }
+      .bento { grid-template-columns: 1fr 1fr; grid-template-rows: 270px 220px 220px; }
+      .bento-large { grid-row: span 1; grid-column: span 2; }
+      .gallery { grid-template-columns: 1fr; gap: 45px; }
+      .gallery-stage { min-height: 580px; }
+      .download-card { grid-template-columns: 1fr; gap: 40px; padding: 45px; }
     }
-    .fade-up { animation: fadeUp 0.6s ease-out both; }
-    .fade-up-1 { animation-delay: 0.1s; }
-    .fade-up-2 { animation-delay: 0.2s; }
-    .fade-up-3 { animation-delay: 0.3s; }
-    .fade-up-4 { animation-delay: 0.4s; }
-
-    /* ═══════════════════════════════════════════════════════
-       SCROLLBAR
-    ═══════════════════════════════════════════════════════ */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--surface); }
-    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-    /* ═══════════════════════════════════════════════════════
-       RESPONSIVE
-    ═══════════════════════════════════════════════════════ */
-    @media (max-width: 768px) {
-      .nav-links { gap: 1rem; }
-      .nav-links a { font-size: 0.78rem; }
-      .arch-steps { grid-template-columns: 1fr; }
-      .module-item { grid-template-columns: 1fr; gap: 0.5rem; }
-      .module-tag { justify-self: start; }
-      footer { flex-direction: column; text-align: center; }
-      .hf-acts { min-height: 420px; }
-      .hf-title { font-size: clamp(2rem, 9vw, 3.5rem); }
-      .hf-hint { font-size: 0.58rem; }
-      .showcase-grid { grid-template-columns: 1fr; }
+    @media (max-width: 640px) {
+      .container, .nav { width: min(100% - 36px, var(--max)); }
+      .nav { padding: 20px 0; }
+      .nav-links a:not(.nav-github):not(.nav-download) { display: none; }
+      .nav-github { padding: 9px 12px; font-size: 12px; }
+      .hero { padding-top: 122px; }
+      .hero h1 { font-size: clamp(49px, 14vw, 76px); }
+      .hero-copy { font-size: 16px; }
+      .hero-actions { align-items: stretch; flex-direction: column; width: min(100%, 280px); }
+      .button { width: 100%; }
+      .hero-visual { min-height: 438px; }
+      .hero-visual::before { width: 310px; height: 310px; top: 36px; left: 12%; }
+      .phone { width: 210px; border-radius: 29px; }
+      .phone-main { left: 17%; top: 49px; }
+      .phone-side { width: 145px; right: -4px; top: 155px; }
+      .phone-screen { border-radius: 22px; }
+      .visual-readout { bottom: 0; width: 185px; padding: 12px; }
+      .visual-stamp { right: 0; bottom: 22px; width: 67px; height: 67px; font-size: 8px; }
+      .section { padding: 84px 0; }
+      .section-head { display: block; margin-bottom: 36px; }
+      .section-lede { margin-top: 20px; }
+      .bento { display: flex; flex-direction: column; }
+      .bento-card, .bento-large { min-height: 235px; }
+      .connection-map { min-height: 520px; margin-top: 35px; }
+      .map-line { left: 26%; width: 48%; transform: rotate(-30deg); }
+      .map-line.local { top: 63%; transform: rotate(30deg); }
+      .map-packet { top: 41%; left: 43%; transform: rotate(-30deg); }
+      .map-packet.local-packet { top: 58%; left: 43%; transform: rotate(30deg); }
+      .map-node { min-width: 0; }
+      .map-node.phone-node { top: 10%; left: 50%; transform: translateX(-50%); align-items: center; text-align: center; }
+      .map-node.server-node { top: auto; right: auto; left: 8%; bottom: 14%; }
+      .map-node.local-node { top: auto; right: 8%; bottom: 14%; }
+      .story-note { left: 8%; bottom: 4%; max-width: 84%; font-size: 11px; }
+      .node-orb { width: 60px; height: 60px; }
+      .node-title { font-size: 15px; }
+      .gallery-stage { min-height: 520px; padding: 18px; }
+      .gallery-phone { width: min(240px, 78%); margin-top: 40px; }
+      .download-card { padding: 30px 22px; }
+      pre { padding: 18px; font-size: 10px; }
+      footer { flex-direction: column; align-items: flex-start; padding-top: 25px; }
+      .footer-links { flex-wrap: wrap; gap: 12px 18px; }
     }
   </style>
 </head>
 <body>
-  <!-- ═══════════════════════════════════════════════════════
-       NAVIGATION
-  ═══════════════════════════════════════════════════════ -->
-  <nav>
-    <a href="#" class="nav-logo">AURA<span>·</span>DROID</a>
-    <ul class="nav-links">
-      <li><a href="#screenshots">Screenshots</a></li>
-      <li><a href="#features">Features</a></li>
-      <li><a href="#architecture">Architecture</a></li>
-      <li><a href="#get-started">Get Started</a></li>
-      <li><a href="https://github.com/DusanCar-sudo/aura-droid" class="accent-link" target="_blank" rel="noopener">GitHub →</a></li>
-      <li><button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">◐</button></li>
-    </ul>
-  </nav>
-
-  <!-- ═══════════════════════════════════════════════════════
-       HERO — HYPERFRAMES RUNTIME
-  ═══════════════════════════════════════════════════════ -->
-  <section class="hero" id="hero">
-    <div class="hero-bg-grid"></div>
-    <div class="hero-glow"></div>
-    <div class="hero-glow-2"></div>
-    <div class="vignette"></div>
-    <div class="grain"></div>
-    <div class="scanlines"></div>
-
-    <div class="container" style="position:relative;z-index:10;">
-
-      <!-- HUD -->
-      <div class="hf-hud">
-        <span class="hf-hud-label">HYPERFRAMES RUNTIME</span>
-        <span class="hf-hud-sep">·</span>
-        <span class="hf-hud-frame" id="hfFrame">FRAME 0000</span>
-      </div>
-
-      <!-- Acts -->
-      <div class="hf-acts" id="hfActs">
-
-        <!-- ACT I — CONTROL -->
-        <div class="hf-act" data-act="0">
-          <div class="hf-act-label glitch" data-text="ACT I · CONTROL">ACT I · CONTROL</div>
-          <h1 class="hf-title">
-            <span class="glitch glitch-slice" data-text="Control your">Control your</span><br>computer <span class="accent glitch" data-text="from your phone.">from your phone.</span>
-          </h1>
-          <p class="hf-subtitle">
-            Aura Droid connects to your local Aura server over Wi-Fi and lets you run autonomous coding sessions — read, plan, execute, verify — all from your Android device.
-          </p>
-          <div class="hero-actions">
-            <a href="https://github.com/DusanCar-sudo/aura-droid" class="btn-primary" target="_blank" rel="noopener">
-              View on GitHub
-            </a>
-            <a href="#get-started" class="btn-secondary">
-              Get Started
-            </a>
-          </div>
-        </div>
-
-        <!-- ACT II — CODE -->
-        <div class="hf-act" data-act="1">
-          <div class="hf-act-label glitch" data-text="ACT II · CODE">ACT II · CODE</div>
-          <h1 class="hf-title">
-            <span class="glitch glitch-slice" data-text="Code from">Code from</span><br><span class="accent glitch" data-text="your phone.">your phone.</span>
-          </h1>
-          <p class="hf-subtitle">
-            Full Jetpack Compose UI with markdown rendering, syntax highlighting, and streaming responses. Review diffs, inspect code blocks, and ship patches — no laptop needed.
-          </p>
-          <div class="hero-actions">
-            <a href="https://github.com/DusanCar-sudo/aura-droid" class="btn-primary" target="_blank" rel="noopener">
-              View on GitHub
-            </a>
-            <a href="#modules" class="btn-secondary">
-              Explore Modules
-            </a>
-          </div>
-        </div>
-
-        <!-- ACT III — CHAT -->
-        <div class="hf-act" data-act="2">
-          <div class="hf-act-label glitch" data-text="ACT III · CHAT">ACT III · CHAT</div>
-          <h1 class="hf-title">
-            <span class="glitch glitch-slice" data-text="Chat with Aura,">Chat with Aura,</span><br><span class="accent glitch" data-text="anywhere.">anywhere.</span>
-          </h1>
-          <p class="hf-subtitle">
-            Claude-like conversational UI with persistent sessions. Pin important conversations, archive old ones, and pick up exactly where you left off — on the bus, in a café, at 2 AM.
-          </p>
-          <div class="hero-actions">
-            <a href="https://github.com/DusanCar-sudo/aura-droid" class="btn-primary" target="_blank" rel="noopener">
-              View on GitHub
-            </a>
-            <a href="#screenshots" class="btn-secondary">
-              See Screenshots
-            </a>
-          </div>
-        </div>
-
-        <!-- ACT IV — CONFIGURE -->
-        <div class="hf-act" data-act="3">
-          <div class="hf-act-label glitch" data-text="ACT IV · CONFIGURE">ACT IV · CONFIGURE</div>
-          <h1 class="hf-title">
-            <span class="glitch glitch-slice" data-text="Your stack,">Your stack,</span><br><span class="accent glitch" data-text="your rules.">your rules.</span>
-          </h1>
-          <p class="hf-subtitle">
-            Switch between Coder, Gazelle, and Architect modes. Point it at any LLM provider — DeepSeek, Claude, GPT, Gemini, Ollama. One app, every model.
-          </p>
-          <div class="hero-actions">
-            <a href="https://github.com/DusanCar-sudo/aura-droid" class="btn-primary" target="_blank" rel="noopener">
-              View on GitHub
-            </a>
-            <a href="#architecture" class="btn-secondary">
-              How It Works
-            </a>
-          </div>
-        </div>
-
-      </div><!-- /hf-acts -->
-
-      <!-- Progress dots -->
-      <div class="hf-progress" id="hfProgress">
-        <span class="hf-dot active" data-idx="0"></span>
-        <span class="hf-dot" data-idx="1"></span>
-        <span class="hf-dot" data-idx="2"></span>
-        <span class="hf-dot" data-idx="3"></span>
-      </div>
-
-      <div class="hf-hint">← → to scrub · hover to pause</div>
-
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       SCREENSHOTS — PHONE MOCKUPS
-  ═══════════════════════════════════════════════════════ -->
-  <section class="showcase" id="screenshots" style="background: var(--surface-2);">
-    <div class="container">
-      <div class="section-eyebrow">Screenshots</div>
-      <h2 class="section-title">The real app.<br><span class="accent">On your phone.</span></h2>
-      <p class="section-desc">
-        Aura Droid is in active development. Here's what it looks like right now — sessions, chat, and settings.
-      </p>
-
-      <div class="showcase-grid">
-
-        <!-- Sessions -->
-        <div class="phone-mockup">
-          <div class="phone-frame">
-            <div class="phone-screen">
-              <img src="screenshot-sessions.jpg" alt="Aura Droid — Sessions list showing 3 active sessions with coder, gazelle, and architect modes" loading="lazy" />
-            </div>
-          </div>
-          <div class="phone-label">
-            <div class="phone-label-title">Sessions</div>
-            <div class="phone-label-desc">Your Sessions — 3 active conversations with mode badges, timestamps, and message counts.</div>
-          </div>
-        </div>
-
-        <!-- Chat — Gazelle mode -->
-        <div class="phone-mockup">
-          <div class="phone-frame">
-            <div class="phone-screen">
-              <img src="screenshot-chat.jpg" alt="Aura Droid — Chat interface in gazelle mode with Aura responding about the Probe Project" loading="lazy" />
-            </div>
-          </div>
-          <div class="phone-label">
-            <div class="phone-label-title">Chat — Gazelle Mode</div>
-            <div class="phone-label-desc">Claude-like conversational UI. Aura responds with markdown — tables, lists, code blocks, all rendered live.</div>
-          </div>
-        </div>
-
-        <!-- Chat — Coder mode -->
-        <div class="phone-mockup">
-          <div class="phone-frame">
-            <div class="phone-screen">
-              <img src="screenshot-chat2.jpg" alt="Aura Droid — Chat interface in coder mode with Aura explaining project capabilities" loading="lazy" />
-            </div>
-          </div>
-          <div class="phone-label">
-            <div class="phone-label-title">Chat — Coder Mode</div>
-            <div class="phone-label-desc">Switch modes mid-conversation. Coder mode focuses on file operations, shell commands, and code changes.</div>
-          </div>
-        </div>
-
-        <!-- Chat — Architect mode -->
-        <div class="phone-mockup">
-          <div class="phone-frame">
-            <div class="phone-screen">
-              <img src="screenshot-chat3.jpg" alt="Aura Droid — Chat interface in architect mode" loading="lazy" />
-            </div>
-          </div>
-          <div class="phone-label">
-            <div class="phone-label-title">Chat — Architect Mode</div>
-            <div class="phone-label-desc">Architect mode for planning and design. Same streaming UI, different behavior — one app, three personalities.</div>
-          </div>
-        </div>
-
-        <!-- Settings -->
-        <div class="phone-mockup">
-          <div class="phone-frame">
-            <div class="phone-screen">
-              <img src="screenshot-settings.jpg" alt="Aura Droid — Settings screen showing paired desktop, project, model, and identity configuration" loading="lazy" />
-            </div>
-          </div>
-          <div class="phone-label">
-            <div class="phone-label-title">Settings</div>
-            <div class="phone-label-desc">Paired desktop, project name, model, and identity. Configure once — connect anywhere on the same network.</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       FEATURES
-  ═══════════════════════════════════════════════════════ -->
-  <section id="features">
-    <div class="container">
-      <div class="section-eyebrow">Features</div>
-      <h2 class="section-title">Everything Aura,<br>on Android.</h2>
-      <p class="section-desc">
-        Aura Droid brings the full power of Aura Code to your Android device — no desktop required.
-      </p>
-
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🤖</div>
-          <div class="feature-title">Full Aura Integration</div>
-          <div class="feature-desc">
-            Connect to your local Aura instance or a remote server. Same autonomous agent, same model-agnostic power, now in your hand.
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <div class="feature-title">Claude-like Chat Interface</div>
-          <div class="feature-desc">
-            A conversational UI that feels like Claude. Message history, streaming responses, and a clean reading experience for code and prose alike.
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📁</div>
-          <div class="feature-title">Session Management</div>
-          <div class="feature-desc">
-            Create, pin, archive, and delete chat sessions. Your conversations stay organized — pick up exactly where you left off.
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🔧</div>
-          <div class="feature-title">Three Modes</div>
-          <div class="feature-desc">
-            Switch between Coder, Gazelle, and Architect modes. Each tailors Aura's behavior — file ops and diffs, fast iteration, or planning and design.
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📝</div>
-          <div class="feature-title">Markdown + Syntax Highlight</div>
-          <div class="feature-desc">
-            Render markdown messages with full syntax highlighting. Tables, lists, code blocks, and diffs — all rendered natively.
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🌐</div>
-          <div class="feature-title">Wi-Fi Pairing</div>
-          <div class="feature-desc">
-            Pair your phone with your desktop over the local network. One identity handshake, then you're connected — no cloud, no accounts.
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">⚙️</div>
-          <div class="feature-title">Configurable</div>
-          <div class="feature-desc">
-            Set up API keys, models, providers, and behavior settings. Connect to any LLM provider — DeepSeek, Claude, GPT, Gemini, and more.
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🌙</div>
-          <div class="feature-title">Dark / Light Theme</div>
-          <div class="feature-desc">
-            Material 3 design with automatic theme switching. Comfortable coding at 2 AM or on a sunny balcony — your eyes decide.
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       ARCHITECTURE
-  ═══════════════════════════════════════════════════════ -->
-  <section id="architecture" style="background: var(--surface-2);">
-    <div class="container">
-      <div class="section-eyebrow">Architecture</div>
-      <h2 class="section-title">Three pillars.<br>One ecosystem.</h2>
-      <p class="section-desc">
-        Built on a clean, layered architecture — from the UI down to the network layer.
-      </p>
-
-      <div class="modules-list">
-        <div class="module-item">
-          <div class="module-num">01</div>
-          <div>
-            <div class="module-title">Chat Interface</div>
-            <div class="module-desc">
-              Claude-like conversational UI with message history, streaming responses, and markdown rendering. Built entirely in Jetpack Compose with Material 3 theming.
-            </div>
-          </div>
-          <div class="module-tag">JETPACK COMPOSE</div>
-        </div>
-
-        <div class="module-item">
-          <div class="module-num">02</div>
-          <div>
-            <div class="module-title">Session Management</div>
-            <div class="module-desc">
-              Create, pin, archive, and delete chat sessions. Room database with Flow-based reactive queries keeps your conversation list always up to date.
-            </div>
-          </div>
-          <div class="module-tag">ROOM · FLOW</div>
-        </div>
-
-        <div class="module-item">
-          <div class="module-num">03</div>
-          <div>
-            <div class="module-title">Network Layer</div>
-            <div class="module-desc">
-              Retrofit + OkHttp for HTTP, with coroutines for async. Handles streaming responses, connection retries, and transparent routing to any Aura-compatible endpoint.
-            </div>
-          </div>
-          <div class="module-tag">RETROFIT · COROUTINES</div>
-        </div>
-      </div>
-
-      <!-- How it works -->
-      <div style="margin-top: 4rem;">
-        <div class="section-eyebrow">How it works</div>
-        <h2 class="section-title">Three steps.<br>Zero friction.</h2>
-
-        <div class="arch-steps">
-          <div class="arch-step">
-            <div class="arch-step-num">01</div>
-            <div class="arch-step-title">Pair</div>
-            <div class="arch-step-desc">
-              Open the app, go to Settings, and scan or enter the pairing code from <code class="mono" style="color:var(--accent-2);font-size:0.82rem;">aura serve --lan</code> on your desktop.
-            </div>
-          </div>
-          <div class="arch-step">
-            <div class="arch-step-num">02</div>
-            <div class="arch-step-title">Configure</div>
-            <div class="arch-step-desc">
-              Set your project, model, and provider. The identity handshake ensures only your phone can talk to your desktop — no cloud, no accounts.
-            </div>
-          </div>
-          <div class="arch-step">
-            <div class="arch-step-num">03</div>
-            <div class="arch-step-title">Code</div>
-            <div class="arch-step-desc">
-              Start a new session, pick your mode — Coder, Gazelle, or Architect — and let Aura read, plan, execute, and verify right from your phone.
-            </div>
-          </div>
-        </div>
-
-        <!-- Terminal -->
-        <div class="terminal">
-          <div class="terminal-bar">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-            <span class="terminal-title">bash — pair &amp; connect</span>
-          </div>
-          <div class="terminal-body">
-            <span class="comment"># On your desktop — start Aura with LAN access</span><br>
-            <span class="prompt">$ </span>aura serve --lan<br><br>
-            <span class="comment"># Output:</span><br>
-            <span class="highlight">→ </span>LAN server running at 100.69.237.108:7337<br>
-            <span class="highlight">→ </span>Identity: 3FBC3939<br><br>
-            <span class="comment"># In Aura Droid — paste the address and identity</span><br>
-            <span class="prompt">$ </span><span class="cursor"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       TECH STACK
-  ═══════════════════════════════════════════════════════ -->
-  <section id="tech-stack" style="background: var(--surface-2);">
-    <div class="container">
-      <div class="section-eyebrow">Stack</div>
-      <h2 class="section-title">Built with modern Android.</h2>
-      <p class="section-desc">
-        100% Kotlin, fully declarative UI, and a reactive data layer — the way Android development should be.
-      </p>
-
-      <div class="features-grid" style="margin-top: 3rem;">
-        <div class="feature-card">
-          <div class="feature-icon" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;">K</div>
-          <div class="feature-title">Kotlin</div>
-          <div class="feature-desc">100% Kotlin codebase. Null-safe, coroutine-ready, and idiomatic throughout.</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;">JC</div>
-          <div class="feature-title">Jetpack Compose</div>
-          <div class="feature-desc">Modern declarative UI. Every screen is a composable — reactive, testable, and fast.</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;">M3</div>
-          <div class="feature-title">Material 3</div>
-          <div class="feature-desc">Latest Material Design components with dynamic color and adaptive layouts.</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;">HI</div>
-          <div class="feature-title">Hilt</div>
-          <div class="feature-desc">Dependency injection done right. Scoped, testable, and zero boilerplate at the call site.</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;">DB</div>
-          <div class="feature-title">Room</div>
-          <div class="feature-desc">Local database for sessions and messages. Flow-powered reactive queries keep the UI in sync.</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;">CF</div>
-          <div class="feature-title">Coroutines &amp; Flow</div>
-          <div class="feature-desc">Reactive programming end to end. Structured concurrency, no callbacks, no leaks.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       CTA
-  ═══════════════════════════════════════════════════════ -->
-  <section id="get-started" class="cta-section">
-    <div class="container">
-      <div class="section-eyebrow">Get Started</div>
-      <h2 class="section-title">Aura Code,<br><span class="accent">in your pocket.</span></h2>
-      <p class="section-desc">
-        Clone the repo, build the APK, pair with your desktop, and start coding. Android 8.0+ required.
-      </p>
-      <div class="cta-actions">
-        <a href="https://github.com/DusanCar-sudo/aura-droid" class="btn-primary" target="_blank" rel="noopener">
-          View on GitHub →
-        </a>
-        <a href="https://github.com/DusanCar-sudo/aura-code" class="btn-secondary" target="_blank" rel="noopener">
-          Aura Code →
+  <div class="site-shell">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="#top"><span class="brand-mark">a/</span><span>AURA<em>·</em>DROID</span></a>
+      <div class="nav-links">
+        <a href="#surface">The surface</a>
+        <a href="#connection">How it connects</a>
+        <a href="#screens">Screens</a>
+        <a class="nav-download" href="#download">Download</a>
+        <a class="nav-github" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.76-.24.76-.54v-2.1c-3.1.68-3.76-1.32-3.76-1.32-.51-1.3-1.24-1.65-1.24-1.65-1.01-.69.08-.67.08-.67 1.12.08 1.71 1.15 1.71 1.15 1 1.7 2.63 1.21 3.27.93.1-.72.39-1.21.72-1.49-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.43-2.21 1.15-2.99-.12-.28-.5-1.42.11-2.95 0 0 .94-.3 3.08 1.14a10.7 10.7 0 0 1 5.6 0c2.14-1.45 3.08-1.14 3.08-1.14.61 1.53.23 2.67.11 2.95.72.78 1.15 1.77 1.15 2.99 0 4.3-2.62 5.24-5.11 5.52.4.35.76 1.04.76 2.1v3.11c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></svg>
+          GitHub ↗
         </a>
       </div>
-    </div>
-  </section>
+    </nav>
 
-  <!-- ═══════════════════════════════════════════════════════
-       FOOTER
-  ═══════════════════════════════════════════════════════ -->
-  <footer>
-    <div class="footer-logo">AURA<span>·</span>DROID</div>
-    <ul class="footer-links">
-      <li><a href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub</a></li>
-      <li><a href="https://github.com/DusanCar-sudo/aura-code" target="_blank" rel="noopener">Aura Code</a></li>
-      <li><a href="https://aurawebsite-eta.vercel.app" target="_blank" rel="noopener">Aura Website</a></li>
-      <li><a href="https://enables.vercel.app" target="_blank" rel="noopener">Aura Enables</a></li>
-    </ul>
-    <div class="footer-meta">
-      MIT License · Built by <a href="https://github.com/DusanCar-sudo" target="_blank" rel="noopener" style="color:var(--muted-light);text-decoration:none;">Dušan Milosavljević</a>
-    </div>
-  </footer>
+    <main id="top">
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy-block">
+            <div class="eyebrow">Aura Droid / mobile client</div>
+            <h1>Your codebase.<br><span class="soft">Your signal.</span><br><span class="signal">Everywhere.</span></h1>
+            <p class="hero-copy">A full agentic coding client in your pocket. Connect to Aura on your PC, or run Aura locally beside Termux — with tools, memory, shell access, and the permissions you choose.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#download">Download APK <span>↓</span></a>
+              <a class="button button-ghost" href="#screens">See the surface <span>↓</span></a>
+            </div>
+            <div class="hero-footnote"><span class="status-dot"></span>LOCAL-FIRST / ANDROID 8+ / OPEN SOURCE</div>
+          </div>
 
-  <!-- ═══════════════════════════════════════════════════════
-       JAVASCRIPT
-  ═══════════════════════════════════════════════════════ -->
+          <div class="hero-visual" aria-label="Aura Droid app preview">
+            <div class="orbit-label">signal locked / 01</div>
+            <div class="phone phone-side"><div class="phone-screen"><img src="site-assets/02-sessions.jpg" alt="Aura Droid sessions screen"></div></div>
+            <div class="phone phone-main"><div class="phone-screen"><img src="site-assets/01-chat-empty.jpg" alt="Aura Droid chat screen"></div></div>
+            <div class="visual-readout">
+              <div class="readout-top"><span>active session</span><strong>ONLINE</strong></div>
+              <div class="readout-line"><span>→</span><span>on this phone</span></div>
+              <div class="readout-line"><span>↳</span><span>standalone mode</span></div>
+              <div class="readout-bar"></div>
+            </div>
+            <div class="visual-stamp">READ<br>PLAN<br>SHIP</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track"><span>FULL AGENT LOOP</span><span>✳</span><span>TERMUX LOCAL</span><span>✳</span><span>TOOLS + MEMORY</span><span>✳</span><span>PC OR PHONE</span><span>✳</span><span>FULL AGENT LOOP</span><span>✳</span><span>TERMUX LOCAL</span><span>✳</span><span>TOOLS + MEMORY</span><span>✳</span><span>PC OR PHONE</span><span>✳</span></div>
+      </div>
+
+      <section class="section" id="surface">
+        <div class="container">
+          <div class="section-head">
+            <div><div class="eyebrow">01 / The surface</div><h2 class="section-title">Small screen.<br><span class="lime">Big agency.</span></h2></div>
+            <p class="section-lede">Aura Droid keeps the interface close and the complexity out of the way. Everything you need to steer the session, nothing that gets between you and the work.</p>
+          </div>
+          <div class="bento">
+            <article class="bento-card bento-large">
+              <div class="bento-number">A / 01</div><h3>One conversation for the whole project.</h3><p>Stream responses, read markdown, inspect code, and keep a clean thread from first question to finished patch.</p>
+              <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 6.5h14M5 12h9M5 17.5h6"/><circle cx="18" cy="17.5" r="2.5"/></svg></div>
+            </article>
+            <article class="bento-card bento-small"><div class="bento-number">A / 02</div><h3>Three ways to think.</h3><p>Coder, Gazelle, or Architect. Change the posture, not the project.</p><div class="bento-icon">03</div></article>
+            <article class="bento-card bento-small"><div class="bento-number">A / 03</div><h3>Your models, your rules.</h3><p>Claude, GPT, Gemini, DeepSeek, Ollama — point Aura at the stack you trust.</p><div class="bento-icon">∞</div></article>
+            <article class="bento-card bento-small"><div class="bento-number">A / 04</div><h3>Sessions with memory.</h3><p>Pin the important work. Archive the rest. Resume without re-explaining.</p><div class="bento-icon">↺</div></article>
+            <article class="bento-card bento-small"><div class="bento-number">A / 05</div><h3>Two runtimes. One agent.</h3><p>Connect over Wi-Fi or USB, or run Aura beside Termux on the phone. Same agentic loop, different workspace.</p><div class="bento-icon">⌁</div></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section story-section" id="connection">
+        <div class="container">
+          <div class="section-head">
+            <div><div class="eyebrow">02 / Choose your runtime</div><h2 class="section-title">Full agency.<br><span style="color:var(--coral)">Two ways to run it.</span></h2></div>
+            <p class="section-lede">Put Aura next to the project on your PC, or bring the agent onto the phone with Termux. Either way, the agent can plan, call tools, use memory, inspect files, and carry work through to an outcome.</p>
+          </div>
+          <div class="connection-map">
+            <div class="map-line"></div><div class="map-line local"></div><div class="map-packet">encrypted pairing</div><div class="map-packet local-packet">127.0.0.1 / local</div>
+            <div class="map-node phone-node"><div class="node-orb">a/</div><div class="node-title">Aura Droid</div><div class="node-meta">THE PHONE CLIENT</div></div>
+            <div class="map-node server-node"><div class="node-orb">✳</div><div class="node-title">PC / remote Aura</div><div class="node-meta">FULL PROJECT + DESKTOP TOOLS</div></div>
+            <div class="map-node local-node"><div class="node-orb">$</div><div class="node-title">Termux / local Aura</div><div class="node-meta">LINUX TOOLS + YOUR PERMISSIONS</div></div>
+            <p class="story-note">On the phone, Termux supplies the Linux workspace. If you grant `sudo` or root access there, Aura can use that authority too — within the boundary you set.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="screens">
+        <div class="container gallery">
+          <div class="gallery-copy">
+            <div class="eyebrow">03 / Inside the app</div>
+            <h2 class="section-title">Designed for<br><span class="lime">the in-between.</span></h2>
+            <p>On the train. In the queue. Away from the desk but still in the flow. The Android client turns small moments into useful ones.</p>
+            <div class="gallery-tabs" role="tablist" aria-label="App screens">
+              <button class="gallery-tab active" data-image="site-assets/01-chat-empty.jpg" data-title="Chat / ready state" data-meta="LIVE SURFACE / 01">chat</button>
+              <button class="gallery-tab" data-image="site-assets/02-sessions.jpg" data-title="Sessions / seven threads" data-meta="PERSISTENT CONTEXT / 02">sessions</button>
+              <button class="gallery-tab" data-image="site-assets/04-chat-thread.jpg" data-title="Chat / pinned context" data-meta="MEMORY IN THE THREAD / 03">thread</button>
+              <button class="gallery-tab" data-image="site-assets/07-settings-dark.jpg" data-title="Settings / your stack" data-meta="PAIR + CONFIGURE / 04">settings</button>
+              <button class="gallery-tab" data-image="site-assets/08-memory.jpg" data-title="Memory / what Aura remembers" data-meta="LONG-TERM CONTEXT / 05">memory</button>
+              <button class="gallery-tab" data-image="site-assets/09-standalone-setup.jpg" data-title="Standalone / no desktop needed" data-meta="ON-DEVICE MODE / 06">standalone</button>
+              <button class="gallery-tab" data-image="site-assets/03-pinned-memory.jpg" data-title="Memory / pinned item" data-meta="KEEP IT CLOSE / 07">pinned</button>
+              <button class="gallery-tab" data-image="site-assets/05-quick-menu.jpg" data-title="Quick menu / more surfaces" data-meta="TOOLS ON DEMAND / 08">menu</button>
+              <button class="gallery-tab" data-image="site-assets/06-settings-light.jpg" data-title="Settings / light theme" data-meta="DYNAMIC APPEARANCE / 09">light</button>
+            </div>
+            <div class="gallery-meta" id="galleryMeta">LIVE SURFACE / 01</div>
+          </div>
+          <div class="gallery-stage">
+            <div class="gallery-phone" id="galleryPhone"><div class="phone-screen"><img id="galleryImage" src="site-assets/01-chat-empty.jpg" alt="Aura Droid chat screen preview"></div></div>
+            <div class="gallery-caption"><strong id="galleryTitle">Chat / ready state</strong><span>REAL APP / CURRENT BUILD</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section download-section" id="download">
+        <div class="container">
+          <div class="download-card">
+            <div>
+              <div class="eyebrow">04 / Download the client</div>
+              <h2 class="section-title">Take Aura<br><span class="lime">with you.</span></h2>
+              <p>This is the Android APK for Aura Droid 0.3.0. Run the full agent through Aura on your PC, or use Termux to run Aura locally on the phone. In local mode, the agent can use Linux tools, memory, files, shell commands, and any `sudo` / root permissions you explicitly grant to that Termux environment.</p>
+              <div class="download-actions"><a class="button button-primary" href="droid-0.3.0.apk" download="aura-droid-0.3.0.apk">Download APK <span>↓</span></a><a class="button button-ghost" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">View source ↗</a></div>
+              <div class="download-meta"><span>VERSION 0.3.0</span><span>ANDROID 8+</span><span>~19 MB</span></div>
+              <div class="download-warning"><b>Why Android may warn you:</b><span>This APK is distributed directly instead of through Google Play. If Android blocks the install, allow your browser or file manager to install from this source, then retry.</span></div>
+            </div>
+            <div class="download-steps" aria-label="APK installation steps">
+              <div class="download-step"><span class="step-number">01</span><div><strong>Download the file</strong><p>Tap the button and keep <code>aura-droid-0.3.0.apk</code> in your Downloads folder.</p></div><span class="step-icon">↓</span></div>
+              <div class="download-step"><span class="step-number">02</span><div><strong>Allow this source</strong><p>When Android shows the install warning, open Settings and allow your browser or file manager for this one install.</p></div><span class="step-icon">⌁</span></div>
+              <div class="download-step"><span class="step-number">03</span><div><strong>Choose where Aura runs</strong><p>Pair to your PC over Wi-Fi or USB, or start <code>aura serve</code> in Termux for a local agent with the permissions you choose.</p></div><span class="step-icon">✳</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <div class="brand"><span class="brand-mark">a/</span><span>AURA<em>·</em>DROID</span></div>
+      <div class="footer-links"><a href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/DusanCar-sudo/aura-code" target="_blank" rel="noopener">Aura Code</a><a href="https://aurawebsite-eta.vercel.app" target="_blank" rel="noopener">Aura website</a></div>
+      <div class="footer-credit">MIT / built by Dušan</div>
+    </footer>
+  </div>
+
   <script>
-    /* ═══════════════════════════════════════════════════════
-       HYPERFRAMES RUNTIME
-    ═══════════════════════════════════════════════════════ */
-    (() => {
-      const acts    = document.querySelectorAll('.hf-act');
-      const dots    = document.querySelectorAll('.hf-dot');
-      const frameEl = document.getElementById('hfFrame');
-      const actsEl  = document.getElementById('hfActs');
-      const TOTAL   = acts.length;
-      const HOLD    = 5000;
+    const tabs = document.querySelectorAll('.gallery-tab');
+    const image = document.querySelector('#galleryImage');
+    const title = document.querySelector('#galleryTitle');
+    const meta = document.querySelector('#galleryMeta');
+    const phone = document.querySelector('#galleryPhone');
 
-      let current = 0;
-      let frame   = 0;
-      let timer   = null;
-      let paused  = false;
-      let lastTs  = null;
-
-      function pad(n) { return String(n).padStart(4, '0'); }
-
-      function goTo(idx) {
-        if (idx < 0) idx = TOTAL - 1;
-        if (idx >= TOTAL) idx = 0;
-        current = idx;
-        acts.forEach((a, i) => a.classList.toggle('active', i === idx));
-        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-      }
-
-      function tick(ts) {
-        if (paused) { lastTs = ts; return; }
-        if (lastTs === null) lastTs = ts;
-        const elapsed = ts - lastTs;
-        frame = Math.floor(elapsed / 100);
-        if (frameEl) frameEl.textContent = 'FRAME ' + pad(frame);
-        if (elapsed >= HOLD) { lastTs = ts; goTo(current + 1); }
-        timer = requestAnimationFrame(tick);
-      }
-
-      function start() { lastTs = null; timer = requestAnimationFrame(tick); }
-      function stop()  { if (timer) cancelAnimationFrame(timer); timer = null; }
-
-      dots.forEach(dot => {
-        dot.addEventListener('click', () => {
-          goTo(parseInt(dot.dataset.idx, 10));
-          lastTs = null;
-        });
-      });
-
-      document.addEventListener('keydown', e => {
-        if (e.key === 'ArrowRight') { goTo(current + 1); lastTs = null; }
-        if (e.key === 'ArrowLeft')  { goTo(current - 1); lastTs = null; }
-      });
-
-      actsEl.addEventListener('mouseenter', () => { paused = true;  actsEl.classList.add('paused'); });
-      actsEl.addEventListener('mouseleave', () => { paused = false; actsEl.classList.remove('paused'); });
-
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) { stop(); } else { start(); }
-      });
-
-      goTo(0);
-      start();
-    })();
-
-    // ── Theme toggle ──
-    const toggle = document.getElementById('themeToggle');
-    const html = document.documentElement;
-    toggle.addEventListener('click', () => {
-      const current = html.getAttribute('data-theme');
-      html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
-    });
-
-    // ── Smooth scroll ──
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-      a.addEventListener('click', e => {
-        const target = document.querySelector(a.getAttribute('href'));
-        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.classList.remove('active'));
+        tab.classList.add('active');
+        phone.classList.add('is-changing');
+        window.setTimeout(() => {
+          image.src = tab.dataset.image;
+          image.alt = `Aura Droid ${tab.dataset.title} screen`;
+          title.textContent = tab.dataset.title;
+          meta.textContent = tab.dataset.meta;
+          phone.classList.remove('is-changing');
+        }, 160);
       });
     });
   </script>
