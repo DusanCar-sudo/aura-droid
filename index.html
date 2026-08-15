@@ -173,6 +173,28 @@
   .loop-step h3 { margin-bottom: .4rem; }
   .loop-step p { color: var(--muted); line-height: 1.6; max-width: 60ch; }
 
+  /* showcase video */
+  .showcase { margin-top: 3.5rem; position: relative; }
+  .showcase-frame {
+    position: relative; border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.09);
+    background: #000;
+    box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  }
+  .showcase-frame video {
+    display: block; width: 100%; height: auto;
+  }
+  .showcase-frame::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    border-radius: 16px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .showcase-caption {
+    display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: .9rem; color: var(--muted); font-size: .8rem; letter-spacing: .04em;
+  }
+  .showcase-caption .dot { color: var(--accent); }
+
   /* gallery — devices */
   .gallery-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 4rem; align-items: center; margin-top: 1rem; }
   .gallery-tabs { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 2rem; }
@@ -294,6 +316,7 @@
   <ul>
     <li><a href="#features">Features</a></li>
     <li><a href="#loop">The Loop</a></li>
+    <li><a href="#showcase">Showcase</a></li>
     <li><a href="#screens">Screens</a></li>
     <li><a href="#belief">Belief</a></li>
     <li class="keep"><a class="nav-cta" href="#download">Download</a></li>
@@ -348,6 +371,23 @@
       <div class="loop-step reveal d2"><div class="loop-num">03</div><div><h3>Execute</h3><p>Changes are made surgically. No rewrites for the sake of rewrites.</p></div></div>
       <div class="loop-step reveal d3"><div class="loop-num">04</div><div><h3>Verify</h3><p>The gauntlet fires: tests, checks, screenshots. If it doesn't pass, it doesn't ship.</p></div></div>
       <div class="loop-step reveal d3"><div class="loop-num">05</div><div><h3>Repeat</h3><p>Failures are analyzed, not hidden. The loop runs until the work is genuinely done.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="showcase">
+  <div class="block-inner">
+    <p class="kicker reveal">The Showcase</p>
+    <h2 class="reveal d1">See it move.</h2>
+    <div class="showcase reveal d2">
+      <div class="showcase-frame">
+        <video id="showcaseVideo" src="assets/showcase.mp4" muted loop playsinline preload="metadata"
+               aria-label="Aura Droid app showcase video"></video>
+      </div>
+      <div class="showcase-caption">
+        <span><span class="dot">●</span> 44s walkthrough — chat, sessions, modes, pairing</span>
+        <span>RENDERED FROM THE REAL APP</span>
+      </div>
     </div>
   </div>
 </section>
@@ -485,6 +525,18 @@
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
   }, { threshold: 0.15 });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  /* Showcase video — autoplay only while in view */
+  const showcaseVideo = document.getElementById('showcaseVideo');
+  if (showcaseVideo) {
+    const vio = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { showcaseVideo.play().catch(() => {}); }
+        else { showcaseVideo.pause(); }
+      });
+    }, { threshold: 0.35 });
+    vio.observe(showcaseVideo);
+  }
 
   /* Gallery tabs */
   const tabs = document.querySelectorAll('.gallery-tab');
