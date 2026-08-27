@@ -173,6 +173,32 @@ fun SettingsScreen(
                         onCheckedChange = viewModel::setAutoApproveAll,
                     )
                 }
+                Text(
+                    "All actions require approval unless this is on. It changes " +
+                        "the default in every conversation.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Section("Sandbox") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Sandbox out", fontWeight = FontWeight.Medium)
+                        Text(
+                            "Let Aura reach beyond the app sandbox on request: " +
+                                "read/write files elsewhere on the phone and move " +
+                                "anywhere the device user can. Sensitive app data " +
+                                "stays off-limits.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = state.sandboxOut,
+                        onCheckedChange = viewModel::setSandboxOut,
+                    )
+                }
             }
 
             Section("Standalone") {

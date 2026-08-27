@@ -37,6 +37,8 @@ data class SettingsUiState(
     val appearance: Appearance = Appearance(),
     /** Whether every tool runs without asking, in any conversation. */
     val autoApproveAll: Boolean = false,
+    /** Whether the agent may reach beyond the app's sandbox when asked. */
+    val sandboxOut: Boolean = false,
 )
 
 @HiltViewModel
@@ -62,6 +64,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             approvalRepo.autoApproveAll.collect { on ->
                 _state.value = _state.value.copy(autoApproveAll = on)
+            }
+        }
+        viewModelScope.launch {
+            approvalRepo.sandboxOut.collect { on ->
+                _state.value = _state.value.copy(sandboxOut = on)
             }
         }
         refresh()
@@ -184,5 +191,9 @@ class SettingsViewModel @Inject constructor(
 
     fun setAutoApproveAll(enabled: Boolean) {
         viewModelScope.launch { approvalRepo.setAutoApproveAll(enabled) }
+    }
+
+    fun setSandboxOut(enabled: Boolean) {
+        viewModelScope.launch { approvalRepo.setSandboxOut(enabled) }
     }
 }

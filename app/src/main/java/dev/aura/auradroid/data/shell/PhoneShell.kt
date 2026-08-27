@@ -46,7 +46,14 @@ class PhoneShell @Inject constructor(
         Regex("""\|\s*(ba)?sh\b"""),
         Regex("""\b(curl|wget)\b.*\|\s*(ba)?sh""", RegexOption.IGNORE_CASE),
         Regex("""\bpm\s+(uninstall|clear)\b""", RegexOption.IGNORE_CASE),
+        // The app's own private state. Never legitimate for the agent or the
+        // user to touch from a shell: the conversation database and the
+        // encrypted pairing token are the two things this app protects.
+        Regex("""aura_database""", RegexOption.IGNORE_CASE),
+        Regex("""aura_pairing""", RegexOption.IGNORE_CASE),
     )
+
+
 
     /**
      * Run one command.
@@ -64,10 +71,17 @@ class PhoneShell @Inject constructor(
         if (cmd.isEmpty()) return@withContext ShellResult("", 0, here)
 
         refused.firstOrNull { it.containsMatchIn(cmd) }?.let {
-            return@withContext ShellResult(
-                "refused: this would destroy data and cannot be undone from here.",
-                126, here,
-            )
+            return@withContext when {
+                it.pattern.contains("aura_database") || it.pattern.contains("aura_pairing") ->
+                    ShellResult(
+                        "refused: this touches the app's private data and is never allowed.",
+                        126, here,
+                    )
+                else -> ShellResult(
+                    "refused: this would destroy data and cannot be undone from here.",
+                    126, here,
+                )
+            }
         }
 
         // cd is handled here, not by the shell: each command is its own

@@ -34,7 +34,21 @@ class ApprovalRepository @Inject constructor(
         context.approvalStore.edit { it[KEY_AUTO_APPROVE_ALL] = enabled }
     }
 
+    /**
+     * True lets the agent reach beyond the app sandbox: its workspace is no
+     * longer the ceiling, and it may read/write elsewhere on request and cd
+     * anywhere the device user can. Sensitive app-internal paths stay closed.
+     */
+    val sandboxOut: Flow<Boolean> = context.approvalStore.data.map { prefs ->
+        prefs[KEY_SANDBOX_OUT] ?: false
+    }
+
+    suspend fun setSandboxOut(enabled: Boolean) {
+        context.approvalStore.edit { it[KEY_SANDBOX_OUT] = enabled }
+    }
+
     private companion object {
         val KEY_AUTO_APPROVE_ALL = booleanPreferencesKey("auto_approve_all")
+        val KEY_SANDBOX_OUT = booleanPreferencesKey("sandbox_out")
     }
 }

@@ -7,9 +7,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.aura.auradroid.data.export.CodeBlocks
 import dev.aura.auradroid.data.memory.AgentMemory
 import dev.aura.auradroid.data.security.TokenVault
+import dev.aura.auradroid.data.settings.ApprovalRepository
 import dev.aura.auradroid.data.shell.PhoneShell
 import dev.aura.auradroid.data.standalone.ToolSpec
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -46,6 +48,7 @@ class PhoneTools @Inject constructor(
     private val memory: AgentMemory,
     private val vault: TokenVault,
     private val desktop: DesktopBridge,
+    private val approvalRepo: ApprovalRepository,
 ) {
 
     private val http = OkHttpClient.Builder()
@@ -53,8 +56,22 @@ class PhoneTools @Inject constructor(
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    /** Tools whose effects the user should see coming. */
-    fun needsApproval(name: String): Boolean = name == RUN_SHELL || name == ASK_DESKTOP
+    /**
+     * Whether this call must be approved first.
+     *
+     * Shell and desktop handoff always need it. File tools normally live
+     * inside the workspace and are safe; with "Sandbox out" on they can reach
+     * outside it, and a call whose path leaves the workspace is treated like
+     * the shell — the user sees it coming.
+     */
+    suspend fun needsApproval(name: String, arguments: String): Boolean = when (name) {
+        RUN_SHELL, ASK_DESKTOP -> true
+        READ_FILE, WRITE_FILE, LIST_FILES -> sandboxAllowed() && escapes(arguments)
+        else -> false
+    }
+
+    private fun escapes(arguments: String): Boolean =
+        PathGuard.escapes(parse(arguments).stringOr("path", ""))
 
     fun specs(): List<ToolSpec> = listOf(
         ToolSpec(
@@ -114,9 +131,10 @@ class PhoneTools @Inject constructor(
         ),
         ToolSpec(
             name = RUN_SHELL,
-            description = "Run one shell command in your workspace on this phone. " +
+            description = "Run one shell command on this phone. " +
                 "Standard toybox tools only (ls, cat, grep, find, wc, head, tail). " +
-                "No root, and nothing outside the app's own storage.",
+                "No root. With 'Sandbox out' the command may leave the app " +
+                "workspace, like a terminal the person typed into.",
             parameters = schema(
                 required = listOf("command"),
                 "command" to string("The command line to run."),
@@ -255,11 +273,21 @@ class PhoneTools @Inject constructor(
     private suspend fun doShell(args: JsonObject): ToolOutcome {
         val command = args.stringOr("command", "")
         if (command.isBlank()) return ToolOutcome("run_shell needs a command.", failed = true)
-        // Pinned to the workspace. The shell's own working directory is the
-        // app's files root, which also holds the conversation database and the
-        // encrypted credentials — not what the tool description promises, and
-        // not somewhere the model has any business poking around.
-        val result = shell.run(command, inDirectory = workspace())
+        // Pinned to the workspace unless "Sandbox out" is on. The shell's own
+        // working directory is the app's files root, which also holds the
+        // conversation database and the encrypted credentials — not what the
+        // tool description promises, and not somewhere the model has any
+        // business poking around.
+        // With sandbox-out the shell may leave the workspace, but it starts
+        // there — the app's own files root is where the conversation database
+        // and credentials live, and the full-size terminal keeps that as its
+        // home too. Only the user's own terminal has reason to sit there.
+        val here = if (sandboxAllowed()) {
+            if (shell.cwd == shell.home()) workspace() else shell.cwd
+        } else {
+            workspace()
+        }
+        val result = shell.run(command, inDirectory = here)
         val body = result.output.take(MAX_READ).ifBlank { "(no output)" }
         return ToolOutcome(
             output = "exit ${result.exitCode}\n$body",
@@ -343,15 +371,34 @@ class PhoneTools @Inject constructor(
      * caught rather than merely looking wrong. The model has no business
      * reading the conversation database or the encrypted pairing token, and it
      * will happily try if asked to "find your config".
+     *
+     * With "Sandbox out" on, paths that escape the workspace are allowed —
+     * that is the whole point of the setting — but the app's own private
+     * data (conversation database, pairing token, provider key) stays closed
+     * no matter what, from an agent that can now read anything else.
      */
-    private fun resolve(path: String): File? {
+    private suspend fun resolve(path: String): File? {
         val root = workspace().canonicalFile
         val target = if (path.isBlank()) root else File(root, path.trimStart('/')).canonicalFile
-        return target.takeIf { it == root || it.path.startsWith(root.path + File.separator) }
+        val inside = target == root || target.path.startsWith(root.path + File.separator)
+        if (inside) return target
+
+        if (!sandboxAllowed()) return null
+
+        val private = context.filesDir.canonicalFile
+        val isPrivate = target == private || target.path.startsWith(private.path + File.separator)
+        return target.takeIf { !isPrivate }
     }
 
-    private fun relative(file: File): String =
-        file.path.removePrefix(workspace().canonicalFile.path).trimStart('/')
+    private suspend fun sandboxAllowed(): Boolean =
+        approvalRepo.sandboxOut.first()
+
+    private fun relative(file: File): String {
+        val root = workspace().canonicalFile.path
+        val p = file.path
+        return if (p.startsWith(root + File.separator)) p.removePrefix(root).trimStart('/')
+        else p
+    }
 
     private fun outsideWorkspace() =
         ToolOutcome("That path is outside your workspace.", failed = true)

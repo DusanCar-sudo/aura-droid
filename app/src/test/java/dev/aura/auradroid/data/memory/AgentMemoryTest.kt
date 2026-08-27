@@ -35,6 +35,11 @@ private class FakeMemoryDao : MemoryDao {
 
     override suspend fun byId(id: String): Memory? = rows[id]
 
+    override suspend fun recentByTag(tag: String, limit: Int): List<Memory> =
+        rows.values.filter { it.tag == tag }
+            .sortedByDescending { it.lastUsedAt }
+            .take(limit)
+
     override suspend fun all(): List<Memory> = rows.values.toList()
 
     override suspend fun upsert(memory: Memory) {

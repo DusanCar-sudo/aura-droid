@@ -104,3 +104,11 @@ lint-results*.html
 .tmp-design/
 .zcode/
 .aura/
+
+# Local working materials — not part of the app or its site
+videos/
+dreams/
+commit_types_chart.png
+commits_chart.png
+cumulative_commits_chart.png
+project_stats_chart.png

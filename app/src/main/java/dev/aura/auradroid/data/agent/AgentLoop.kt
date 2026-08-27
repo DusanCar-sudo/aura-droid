@@ -108,7 +108,7 @@ class AgentLoop @Inject constructor(
                 emit(AgentEvent.ToolStarted(call.id, call.name, label))
 
                 val startedAt = System.currentTimeMillis()
-                val outcome = if (tools.needsApproval(call.name) && !approve(call.name, label)) {
+                val outcome = if (tools.needsApproval(call.name, call.arguments) && !approve(call.name, label)) {
                     // A refusal is a result, not an error. Told plainly, the
                     // model works around it; left as a failure it retries.
                     ToolOutcome(
