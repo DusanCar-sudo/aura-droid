@@ -12,6 +12,8 @@ Aura Droid is the official Android client for [Aura Code](https://github.com/Dus
 - 💬 **Chat Interface** - Claude-like conversational UI with message history
 - 📁 **Session Management** - Create, pin, archive, and delete chat sessions
 - ⚙️ **Configurable** - Set up API keys, models, providers, and behavior settings
+- ✅ **Approval Control** - Choose whether Aura asks for approval on every action or auto-approves them
+- 🔓 **Sandbox-Out Mode** - Let Aura work beyond the app's sandbox when you ask for it
 - 🌙 **Dark/Light Theme** - Material 3 design with automatic theme switching
 - 📝 **Markdown Support** - Render markdown messages with code highlighting
 - 🔧 **Multiple Modes** - Switch between Coder, Gazelle, and Architect modes
