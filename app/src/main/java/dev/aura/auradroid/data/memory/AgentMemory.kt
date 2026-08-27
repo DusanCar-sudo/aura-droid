@@ -19,118 +19,124 @@ import javax.inject.Singleton
  * and a phone talking to a small model has little of it to spend.
  */
 @Singleton
-class AgentMemory @Inject constructor(
-    private val dao: MemoryDao,
-) {
+class AgentMemory @Inject constructor(private val dao: MemoryDao) {
+  fun observeAll(): Flow<List<Memory>> = dao.observeAll()
 
-    fun observeAll(): Flow<List<Memory>> = dao.observeAll()
+  suspend fun count(): Int = dao.count()
 
-    suspend fun count(): Int = dao.count()
+  /**
+   * Store a fact, or refresh the one that already says it.
+   *
+   * Models restate the same thing in slightly different words across turns —
+   * "prefers Kotlin", "the user likes Kotlin" — and stored verbatim each time
+   * the prompt fills with the same fact five ways. A near-duplicate updates
+   * the existing row instead, which also refreshes its recency.
+   */
+  suspend fun remember(
+      text: String,
+      tag: String = "note",
+      sessionId: String? = null
+  ): Memory? {
+    val clean = text.trim().replace(WHITESPACE, " ")
+    if (clean.length < MIN_LENGTH) return null
 
-    /**
-     * Store a fact, or refresh the one that already says it.
-     *
-     * Models restate the same thing in slightly different words across turns —
-     * "prefers Kotlin", "the user likes Kotlin" — and stored verbatim each time
-     * the prompt fills with the same fact five ways. A near-duplicate updates
-     * the existing row instead, which also refreshes its recency.
-     */
-    suspend fun remember(text: String, tag: String = "note", sessionId: String? = null): Memory? {
-        val clean = text.trim().replace(WHITESPACE, " ")
-        if (clean.length < MIN_LENGTH) return null
-
-        val trimmed = clean.take(MAX_TEXT)
-        val existing = dao.all().firstOrNull { similar(it.text, trimmed) }
-
-        val row = existing?.copy(
+    val trimmed = clean.take(MAX_TEXT)
+    // Limit near-duplicate checks to recent same-tag candidates instead of
+    // loading the full memory table on every remember() call. This used to
+    // happen on every tool result the agent wanted to store.
+    val similarTag = tag.trim().ifBlank { "note" }.take(TAG_LIMIT)
+    val candidates = dao.recentByTag(similarTag, DEDUP_CANDIDATES)
+    val existing = candidates.firstOrNull { similar(it.text, trimmed) }
+    val row =
+        existing?.copy(
             text = trimmed,
             tag = tag.trim().ifBlank { existing.tag },
             lastUsedAt = System.currentTimeMillis(),
             useCount = existing.useCount + 1,
-        ) ?: Memory(
-            id = UUID.randomUUID().toString(),
-            text = trimmed,
-            tag = tag.trim().ifBlank { "note" }.take(24),
-            sessionId = sessionId,
         )
-
-        dao.upsert(row)
-
-        // Trim after inserting rather than before: the fact just learned is the
-        // one most likely to matter, and should not lose a race against rows
-        // that are on their way out anyway.
-        val over = dao.count() - MAX_ROWS
-        if (over > 0) dao.trimOldest(over)
-
-        return row
-    }
-
-    /**
-     * Look something up, and count the hit.
-     *
-     * The counting is the point: rows that keep answering questions rise to the
-     * top of what gets injected, and rows that never do sink until they are
-     * trimmed. It makes the cap self-sorting rather than arbitrary.
-     */
-    suspend fun recall(query: String, limit: Int = SEARCH_LIMIT): List<Memory> {
-        val clean = query.trim()
-        val hits = if (clean.isEmpty()) dao.top(limit) else dao.search(clean, limit)
-        if (hits.isNotEmpty()) dao.markUsed(hits.map { it.id })
-        return hits
-    }
-
-    suspend fun forget(id: String) = dao.deleteById(id)
-
-    suspend fun forgetAll() = dao.deleteAll()
-
-    /**
-     * The block that goes into the system prompt, or null when there is nothing
-     * worth spending the tokens on.
-     */
-    suspend fun promptBlock(): String? {
-        val rows = dao.top(PROMPT_LIMIT)
-        if (rows.isEmpty()) return null
-        return buildString {
-            append("What you remember about this person and their work:\n")
-            for (row in rows) append("- [${row.tag}] ${row.text}\n")
-            append(
-                "Treat these as things you already know — do not re-ask. " +
-                    "Use `remember` when you learn something durable, " +
-                    "`forget` when one of them turns out to be wrong.",
+            ?: Memory(
+                id = UUID.randomUUID().toString(),
+                text = trimmed,
+                tag = tag.trim().ifBlank { "note" }.take(24),
+                sessionId = sessionId,
             )
-        }
+
+    dao.upsert(row)
+
+    // Trim after inserting rather than before: the fact just learned is the
+    // one most likely to matter, and should not lose a race against rows
+    // that are on their way out anyway.
+    val over = dao.count() - MAX_ROWS
+    if (over > 0) dao.trimOldest(over)
+
+    return row
+  }
+
+  /**
+   * Look something up, and count the hit.
+   *
+   * The counting is the point: rows that keep answering questions rise to the
+   * top of what gets injected, and rows that never do sink until they are
+   * trimmed. It makes the cap self-sorting rather than arbitrary.
+   */
+  suspend fun recall(query: String, limit: Int = SEARCH_LIMIT): List<Memory> {
+    val clean = query.trim()
+    val hits = if (clean.isEmpty()) dao.top(limit) else dao.search(clean, limit)
+    if (hits.isNotEmpty()) dao.markUsed(hits.map { it.id })
+    return hits
+  }
+
+  suspend fun forget(id: String) = dao.deleteById(id)
+
+  suspend fun forgetAll() = dao.deleteAll()
+
+  /** The block that goes into the system prompt, or null when there is nothing worth spending the tokens on. */
+  suspend fun promptBlock(): String? {
+    val rows = dao.top(PROMPT_LIMIT)
+    if (rows.isEmpty()) return null
+    return buildString {
+      append("What you remember about this person and their work:\n")
+      for (row in rows) append("- [${row.tag}] ${row.text}\n")
+      append(
+          "Treat these as things you already know — do not re-ask. " +
+              "Use `remember` when you learn something durable, " +
+              "`forget` when one of them turns out to be wrong.",
+      )
     }
+  }
 
-    /**
-     * Whether two notes say the same thing.
-     *
-     * Word overlap rather than string distance: the restatements that matter
-     * here differ by filler words ("the user", "prefers to") while sharing the
-     * nouns that carry the fact, and Jaccard over the word sets catches exactly
-     * that while leaving genuinely different facts alone.
-     */
-    private fun similar(a: String, b: String): Boolean {
-        if (a.equals(b, ignoreCase = true)) return true
-        val wordsA = words(a)
-        val wordsB = words(b)
-        if (wordsA.isEmpty() || wordsB.isEmpty()) return false
-        val shared = wordsA.intersect(wordsB).size.toDouble()
-        return shared / minOf(wordsA.size, wordsB.size) >= DUPLICATE_OVERLAP
-    }
+  /**
+   * Whether two notes say the same thing.
+   *
+   * Word overlap rather than string distance: the restatements that matter
+   * here differ by filler words ("the user", "prefers to") while sharing the
+   * nouns that carry the fact, and Jaccard over the word sets catches exactly
+   * that while leaving genuinely different facts alone.
+   */
+  private fun similar(a: String, b: String): Boolean {
+    if (a.equals(b, ignoreCase = true)) return true
+    val wordsA = words(a)
+    val wordsB = words(b)
+    if (wordsA.isEmpty() || wordsB.isEmpty()) return false
+    val shared = wordsA.intersect(wordsB).size.toDouble()
+    return shared / minOf(wordsA.size, wordsB.size) >= DUPLICATE_OVERLAP
+  }
 
-    private fun words(text: String): Set<String> =
-        text.lowercase().split(NON_WORD).filter { it.length > 2 }.toSet()
+  private fun words(text: String): Set<String> =
+      text.lowercase().split(NON_WORD).filter { it.length > 2 }.toSet()
 
-    private companion object {
-        /** Below this it is not a fact, it is a fragment. */
-        const val MIN_LENGTH = 3
-        const val MAX_TEXT = 280
-        const val MAX_ROWS = 200
-        const val PROMPT_LIMIT = 24
-        const val SEARCH_LIMIT = 10
-        const val DUPLICATE_OVERLAP = 0.7
+  private companion object {
+    /** Below this it is not a fact, it is a fragment. */
+    const val MIN_LENGTH = 3
+    const val MAX_TEXT = 280
+    const val MAX_ROWS = 200
+    const val PROMPT_LIMIT = 24
+    const val SEARCH_LIMIT = 10
+    const val DUPLICATE_OVERLAP = 0.7
+    const val DEDUP_CANDIDATES = 20
+    const val TAG_LIMIT = 24
 
-        val WHITESPACE = Regex("""\s+""")
-        val NON_WORD = Regex("""[^\p{L}\p{N}]+""")
-    }
+    val WHITESPACE = Regex("""\s+""")
+    val NON_WORD = Regex("""[^\p{L}\p{N}]+""")
+  }
 }

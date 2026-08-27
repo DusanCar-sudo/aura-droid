@@ -206,16 +206,47 @@
 </p>
 
 <div class="note">
-  <b>Before you start</b> — Aura Code installed and working on the desktop, and
-  both devices to hand. You never type a long key: the code you enter is six
-  characters, and the phone swaps it for the real one.
+  <b>Before you start</b> — Aura Code installed either in Termux on this phone
+  or on a desktop. You never type a long key: the code you enter is six
+  characters, and the APK swaps it for the real one.
 </div>
 
 <div class="route">
-  <h2>Over USB <span class="tag">most reliable</span></h2>
+  <h2>On the phone with Termux <span class="tag">local agent</span></h2>
+  <p class="why">
+    Aura CLI runs beside the APK on the same device. Traffic stays on
+    127.0.0.1, while Termux provides the shell, packages and permissions you
+    grant to it.
+  </p>
+  <ol>
+    <li>
+      <span class="where">In Termux</span>
+      Start the server:
+<pre>aura serve</pre>
+    </li>
+    <li>
+      <span class="where">In Termux</span>
+      Ask for a pairing code — it prints six characters:
+<pre>aura devices add "Aura APK"</pre>
+    </li>
+    <li>
+      <span class="where">On the phone</span>
+      Open Aura, choose <b>With my desktop</b>, and fill in:
+      <table class="field">
+        <tr><td>Address</td><td>127.0.0.1</td></tr>
+        <tr><td>Port</td><td>7337</td></tr>
+        <tr><td>Pairing code</td><td>the six characters</td></tr>
+      </table>
+      Tap <b>Connect</b>.
+    </li>
+  </ol>
+</div>
+
+<div class="route">
+  <h2>Over USB <span class="tag">desktop without Wi-Fi</span></h2>
   <p class="why">
     Traffic runs down the cable and never touches the network — nothing to
-    misconfigure, and it works on a café Wi-Fi that blocks devices from seeing
+    misconfigure, and it works on a cafe Wi-Fi that blocks devices from seeing
     each other.
   </p>
   <ol>
@@ -232,18 +263,12 @@
     </li>
     <li>
       <span class="where">On the desktop</span>
-      Ask for a pairing code — it prints six characters:
+      Ask for a pairing code:
 <pre>aura devices add "my phone"</pre>
     </li>
     <li>
       <span class="where">On the phone</span>
-      Open Aura, choose <b>With my desktop</b>, and fill in:
-      <table class="field">
-        <tr><td>Address</td><td>127.0.0.1</td></tr>
-        <tr><td>Port</td><td>7337</td></tr>
-        <tr><td>Pairing code</td><td>the six characters</td></tr>
-      </table>
-      Tap <b>Connect</b>.
+      Use Address <b>127.0.0.1</b>, Port <b>7337</b>, and the six-character code.
     </li>
   </ol>
 </div>

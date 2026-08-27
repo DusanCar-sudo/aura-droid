@@ -102,7 +102,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[MIT](LICENSE)
+[Apache-2.0](LICENSE)
 
 ## Related
 

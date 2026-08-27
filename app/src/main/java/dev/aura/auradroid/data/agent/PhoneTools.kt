@@ -6,6 +6,7 @@ import com.google.gson.JsonParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.aura.auradroid.data.export.CodeBlocks
 import dev.aura.auradroid.data.memory.AgentMemory
+import dev.aura.auradroid.data.security.TokenVault
 import dev.aura.auradroid.data.shell.PhoneShell
 import dev.aura.auradroid.data.standalone.ToolSpec
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +44,8 @@ class PhoneTools @Inject constructor(
     @ApplicationContext private val context: Context,
     private val shell: PhoneShell,
     private val memory: AgentMemory,
+    private val vault: TokenVault,
+    private val desktop: DesktopBridge,
 ) {
 
     private val http = OkHttpClient.Builder()
@@ -51,7 +54,7 @@ class PhoneTools @Inject constructor(
         .build()
 
     /** Tools whose effects the user should see coming. */
-    fun needsApproval(name: String): Boolean = name == RUN_SHELL
+    fun needsApproval(name: String): Boolean = name == RUN_SHELL || name == ASK_DESKTOP
 
     fun specs(): List<ToolSpec> = listOf(
         ToolSpec(
@@ -139,6 +142,19 @@ class PhoneTools @Inject constructor(
                 "url" to string("The full https URL to fetch."),
             ),
         ),
+        ToolSpec(
+            name = ASK_DESKTOP,
+            description = "Ask the paired desktop Aura agent to do work on the computer. " +
+                "Use this when the task needs the real project files, desktop shell, git, " +
+                "or tools that the Android app cannot access. Requires the person's approval.",
+            parameters = schema(
+                required = listOf("task"),
+                "task" to string(
+                    "A specific desktop task. Include the goal, files or commands to inspect, " +
+                        "and what result should come back.",
+                ),
+            ),
+        ),
     )
 
     /** A one-line description of a pending call, for the approval sheet. */
@@ -149,6 +165,7 @@ class PhoneTools @Inject constructor(
             WRITE_FILE -> "write ${args.stringOr("path", "?")}"
             SAVE_DOWNLOAD -> "save ${args.stringOr("filename", "?")} to Downloads"
             FETCH_URL -> "fetch ${args.stringOr("url", "?")}"
+            ASK_DESKTOP -> "send to desktop: ${args.stringOr("task", "").take(160)}"
             else -> "$name ${arguments.take(120)}"
         }
     }
@@ -165,6 +182,7 @@ class PhoneTools @Inject constructor(
             RUN_SHELL -> doShell(args)
             SAVE_DOWNLOAD -> doSaveDownload(args)
             FETCH_URL -> doFetch(args)
+            ASK_DESKTOP -> doAskDesktop(args)
             else -> ToolOutcome("No tool called $name.", failed = true)
         }
     }
@@ -282,6 +300,17 @@ class PhoneTools @Inject constructor(
         }
     }
 
+    // ── Desktop handoff ────────────────────────────────────────────────────
+
+    private suspend fun doAskDesktop(args: JsonObject): ToolOutcome {
+        val endpoint = vault.load()
+            ?: return ToolOutcome(
+                "No paired desktop is configured. Pair one from Settings first.",
+                failed = true,
+            )
+        return desktop.ask(endpoint, args.stringOr("task", ""))
+    }
+
     /**
      * HTML down to the words on the page.
      *
@@ -378,6 +407,7 @@ class PhoneTools @Inject constructor(
         const val RUN_SHELL = "run_shell"
         const val SAVE_DOWNLOAD = "save_to_downloads"
         const val FETCH_URL = "fetch_url"
+        const val ASK_DESKTOP = "ask_desktop"
 
         private const val WORKSPACE = "workspace"
         private const val MAX_READ = 24_000

@@ -44,9 +44,13 @@ import com.google.gson.Gson
 import dev.aura.auradroid.data.model.MessageRole
 import dev.aura.auradroid.data.model.SessionMode
 import dev.aura.auradroid.data.network.ConnState
+import dev.aura.auradroid.data.repository.ArtifactPayload
 import dev.aura.auradroid.data.repository.PlanPayload
 import dev.aura.auradroid.data.repository.ToolPayload
 import dev.aura.auradroid.ui.theme.AuraLogo
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun ChatScreen(
@@ -70,6 +74,7 @@ fun ChatScreen(
     val standalone by viewModel.standalone.collectAsState()
     val autoApprove by viewModel.autoApprove.collectAsState()
     val attachments by viewModel.attachments.collectAsState()
+    val pinned by viewModel.pinned.collectAsState()
     val notice by viewModel.notice.collectAsState()
     val projectName by viewModel.projectName.collectAsState()
 
@@ -134,7 +139,7 @@ fun ChatScreen(
                 connection = connection,
                 standalone = standalone != null,
                 autoApprove = autoApprove,
-                onRevokeAutoApprove = { viewModel.setAutoApprove(false) },
+                onToggleAutoApprove = { viewModel.setAutoApprove(false) },
                 onMenuClick = onNavigateToSessions,
                 onSettingsClick = onNavigateToSettings,
                 onMemosClick = onNavigateToMemos,
@@ -176,26 +181,34 @@ fun ChatScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        LazyColumn(
-            state = listState,
+        Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            if (messages.isEmpty()) {
-                item { EmptyState(standalone = standalone != null) }
-            }
-            items(messages, key = { it.id }) { message ->
-                MessageRow(
-                    message = message,
-                    speaking = speakingId == message.id.toString(),
-                    onSpeak = { viewModel.speak(message.id.toString(), message.content) },
-                )
-            }
-            if (thinking) {
-                item { ThinkingRow() }
+            PinnedRail(pinned, onUnpin = viewModel::unpinMessage)
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentPadding = PaddingValues(start = 6.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                if (messages.isEmpty()) {
+                    item { EmptyState(standalone = standalone != null) }
+                }
+                items(messages, key = { it.id }) { message ->
+                    MessageRow(
+                        message = message,
+                        speaking = speakingId == message.id.toString(),
+                        onSpeak = { viewModel.speak(message.id.toString(), message.content) },
+                        onPin = { viewModel.pinMessage(message) },
+                    )
+                }
+                if (thinking) {
+                    item { ThinkingRow() }
+                }
             }
         }
     }
@@ -221,7 +234,7 @@ private fun ChatTopBar(
     connection: ConnState,
     standalone: Boolean = false,
     autoApprove: Boolean = false,
-    onRevokeAutoApprove: () -> Unit = {},
+    onToggleAutoApprove: () -> Unit = {},
     onMenuClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onMemosClick: () -> Unit,
@@ -261,11 +274,13 @@ private fun ChatTopBar(
             IconButton(onClick = onMenuClick) { Icon(Icons.Default.Menu, "Sessions") }
         },
         actions = {
-            // Only while it is on, and it is the off switch. A standing
-            // permission the user cannot see they granted is the part of this
-            // that would actually bite them.
+            // While the per-chat grant is on, show it and make it the off
+            // switch. A standing permission the user cannot see they granted
+            // is the part of this that would actually bite them. The global
+            // setting lives in Settings; this only reflects this chat's own
+            // "don't ask again" grant, if any.
             if (autoApprove) {
-                IconButton(onClick = onRevokeAutoApprove) {
+                IconButton(onClick = onToggleAutoApprove) {
                     Icon(
                         Icons.Default.LockOpen,
                         contentDescription = "Tools are auto-approved in this chat — " +
@@ -380,11 +395,213 @@ private fun MessageRow(
     message: MessageItem,
     speaking: Boolean = false,
     onSpeak: () -> Unit = {},
+    onPin: () -> Unit = {},
 ) {
-    when (message.role) {
-        MessageRole.TOOL -> ToolRow(message)
-        MessageRole.SYSTEM -> SystemRow(message)
-        else -> BubbleRow(message, speaking, onSpeak)
+    val artifact = remember(message.metadata) {
+        runCatching {
+            Gson().fromJson(message.metadata, ArtifactPayload::class.java)
+        }.getOrNull()
+    }
+
+    when {
+        message.role == MessageRole.TOOL -> ToolRow(message)
+        artifact != null && artifact.type == "artifact" -> ArtifactRow(artifact)
+        message.role == MessageRole.SYSTEM -> SystemRow(message)
+        else -> BubbleRow(message, speaking, onSpeak, onPin)
+    }
+}
+
+@Composable
+private fun PinnedRail(pinned: List<PinnedBubble>, onUnpin: (String) -> Unit) {
+    var selected by remember { mutableStateOf<PinnedBubble?>(null) }
+    Column(
+        modifier = Modifier
+            .width(38.dp)
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f))
+            .padding(top = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            Icons.Default.PushPin,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+            modifier = Modifier.size(16.dp),
+        )
+        pinned.forEachIndexed { index, pin ->
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                shape = CircleShape,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable { selected = pin },
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        (index + 1).toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
+    }
+
+    selected?.let { pin ->
+        AlertDialog(
+            onDismissRequest = { selected = null },
+            confirmButton = {
+                TextButton(onClick = { selected = null }) { Text("Close") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    onUnpin(pin.id)
+                    selected = null
+                }) {
+                    Text("Unpin", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            icon = { Icon(Icons.Default.PushPin, null) },
+            title = { Text("Pinned memory") },
+            text = {
+                SelectionContainer {
+                    Text(pin.text, style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ArtifactRow(artifact: ArtifactPayload) {
+    val context = LocalContext.current
+    var showPreview by remember { mutableStateOf(false) }
+    var showCode by remember { mutableStateOf(false) }
+    var saved by remember(artifact.id) { mutableStateOf<String?>(null) }
+
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.25f),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.InsertDriveFile,
+                    null,
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.tertiary,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    artifact.name.orEmpty(),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = { showPreview = !showPreview }, modifier = Modifier.size(28.dp)) {
+                    Icon(
+                        imageVector = if (showPreview) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (showPreview) "Hide preview" else "Show preview",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+                IconButton(onClick = { showCode = !showCode }, modifier = Modifier.size(28.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Code,
+                        contentDescription = "Show code",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+
+            if (showPreview) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                ) {
+                    AndroidView(
+                        factory = { context ->
+                            WebView(context).apply {
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                webViewClient = WebViewClient()
+                                loadDataWithBaseURL(null, artifact.content.orEmpty(), "text/html", "utf-8", null)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+
+            if (showCode) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    SelectionContainer {
+                        Text(
+                            artifact.content.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(10.dp),
+                        )
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = {
+                    saved = dev.aura.auradroid.data.export.CodeBlocks
+                        .saveToDownloads(context, artifact.name.orEmpty(), artifact.content.orEmpty())
+                        ?: "could not save"
+                }) {
+                    Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Save")
+                }
+                TextButton(onClick = {
+                    dev.aura.auradroid.data.export.Sharing.openFile(
+                        context = context,
+                        fileName = artifact.name.orEmpty(),
+                        content = artifact.content.orEmpty(),
+                    )
+                }) {
+                    Icon(Icons.Default.OpenInNew, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Open")
+                }
+                TextButton(onClick = {
+                    dev.aura.auradroid.data.export.Sharing.shareText(
+                        context = context,
+                        fileName = artifact.name.orEmpty(),
+                        content = artifact.content.orEmpty(),
+                        subject = artifact.name.orEmpty(),
+                    )
+                }) {
+                    Icon(Icons.Default.Share, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Share")
+                }
+            }
+            saved?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
 }
 
@@ -393,6 +610,7 @@ private fun BubbleRow(
     message: MessageItem,
     speaking: Boolean = false,
     onSpeak: () -> Unit = {},
+    onPin: () -> Unit = {},
 ) {
     val isUser = message.role == MessageRole.USER
 
@@ -437,6 +655,15 @@ private fun BubbleRow(
                                 clipboard.setText(AnnotatedString(message.content))
                             },
                     )
+                    Spacer(Modifier.width(6.dp))
+                    Icon(
+                        Icons.Default.PushPin,
+                        contentDescription = "Pin to memory",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier
+                            .size(15.dp)
+                            .clickable(onClick = onPin),
+                    )
                 }
                 if (!isUser && !message.isStreaming && message.content.isNotBlank()) {
                     Spacer(Modifier.width(6.dp))
@@ -463,15 +690,33 @@ private fun BubbleRow(
                 shape = RoundedCornerShape(14.dp),
             ) {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Bottom) {
-                    // Selectable, so text can be picked out by hand. The copy
-                    // button below covers the whole message; this covers the
-                    // one sentence someone actually wants.
-                    SelectionContainer {
-                        Text(
-                            message.content,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                    // While streaming, render plain text: re-parsing partial
+                    // markdown every token would flicker, and a half-written
+                    // fence is not structure yet. Once done, assistant prose
+                    // is rendered as markdown and the fenced blocks it held
+                    // move to the saveable cards below — so they are stripped
+                    // here to avoid showing the same code twice.
+                    val shown = if (!isUser && !message.isStreaming) {
+                        remember(message.content) {
+                            dev.aura.auradroid.data.export.CodeBlocks
+                                .withoutFencedBlocks(message.content)
+                        }
+                    } else {
+                        message.content
+                    }
+                    if (!isUser && !message.isStreaming) {
+                        dev.aura.auradroid.ui.markdown.MarkdownText(
+                            shown,
+                            modifier = Modifier.weight(1f),
                         )
+                    } else {
+                        SelectionContainer {
+                            Text(
+                                shown,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                     // Cursor shows the answer is still arriving, so a pause
                     // reads as thinking rather than as a finished short reply.
@@ -538,6 +783,17 @@ private fun SaveableBlock(block: dev.aura.auradroid.data.export.CodeBlock) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("Save")
+                }
+                TextButton(onClick = {
+                    dev.aura.auradroid.data.export.Sharing.openFile(
+                        context = context,
+                        fileName = block.fileName,
+                        content = block.code,
+                    )
+                }) {
+                    Icon(Icons.Default.OpenInNew, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Open")
                 }
                 TextButton(onClick = {
                     dev.aura.auradroid.data.export.Sharing.shareText(

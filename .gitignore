@@ -1,5 +1,6 @@
 # Built application files
 *.apk
+!droid-0.3.0.apk
 *.aar
 *.ap_
 *.aab
@@ -96,3 +97,10 @@ lint-results*.html
 # Local env files
 .env
 .env.local
+.vercel
+
+# Local tooling — never commit
+.gradle_home/
+.tmp-design/
+.zcode/
+.aura/
