@@ -33,6 +33,7 @@ import dev.aura.auradroid.data.repository.PendingConfirm
 import dev.aura.auradroid.data.repository.ToolPayload
 import dev.aura.auradroid.data.security.TokenVault
 import dev.aura.auradroid.data.session.SessionNamer
+import dev.aura.auradroid.data.settings.ApprovalRepository
 import dev.aura.auradroid.data.standalone.Turn
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -58,6 +59,7 @@ class ChatViewModel @Inject constructor(
     val speaker: Speaker,
     private val agent: AgentLoop,
     private val memory: AgentMemory,
+    private val approvalRepo: ApprovalRepository,
 ) : ViewModel() {
 
     private val sink = EventSink(repository, gson)
@@ -74,6 +76,9 @@ class ChatViewModel @Inject constructor(
     /** Files and photos staged for the next message. */
     private val _attachments = MutableStateFlow<List<Attachment>>(emptyList())
     val attachments: StateFlow<List<Attachment>> = _attachments.asStateFlow()
+
+    private val _pinned = MutableStateFlow<List<PinnedBubble>>(emptyList())
+    val pinned: StateFlow<List<PinnedBubble>> = _pinned.asStateFlow()
 
     /** Set when the phone talks to a model itself, with no desktop. */
     private val _thinkingLocal = MutableStateFlow(false)
@@ -130,19 +135,32 @@ class ChatViewModel @Inject constructor(
     private val _autoApprove = MutableStateFlow(false)
     val autoApprove: StateFlow<Boolean> = _autoApprove.asStateFlow()
 
+    /**
+     * The Settings switch: approve everything, in every conversation.
+     *
+     * Collected here so a change in Settings takes effect without the app being
+     * restarted — the chat screen sits behind the settings screen on the back
+     * stack, and its ViewModel is still alive.
+     */
+    private val _autoApproveAll = MutableStateFlow(false)
+    val autoApproveAll: StateFlow<Boolean> = _autoApproveAll.asStateFlow()
+
+    /** True when no prompt is needed: the Setting is on, or this chat was granted. */
+    private fun effectivelyAutoApprove(): Boolean = _autoApproveAll.value || _autoApprove.value
+
     // Straight through from the socket and the sink.
     val connection: StateFlow<ConnState> = socket.state
     val thinking: StateFlow<Boolean> =
         combine(sink.thinking, _thinkingLocal) { a, b -> a || b }
             .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val pendingConfirm: StateFlow<PendingConfirm?> =
-        combine(sink.pendingConfirm, _localConfirm, _autoApprove) { remote, local, auto ->
+        combine(sink.pendingConfirm, _localConfirm, _autoApprove, _autoApproveAll) { remote, local, chat, all ->
             // A local approval never gets this far while auto-approve is on:
             // askApproval checks the flag before raising one at all. A request
             // from the desktop arrives unbidden, so it is hidden here and
             // answered by observeRemoteApprovals — hiding it in the same breath
             // as answering it, or the sheet flashes up for a frame first.
-            local ?: remote?.takeUnless { auto }
+            local ?: remote?.takeUnless { chat || all }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val contextHealth: StateFlow<ContextSnapshot?> = sink.contextHealth
 
@@ -156,8 +174,22 @@ class ChatViewModel @Inject constructor(
 
     init {
         configure()
+        viewModelScope.launch {
+            approvalRepo.autoApproveAll.collect { on ->
+                _autoApproveAll.value = on
+            }
+        }
         // Photos are read into the message and the file has no further use.
         Attachments.sweepCameraCache(appContext)
+
+        // Observe pinned items reactively from long-term memory so they are never forgotten
+        viewModelScope.launch {
+            memory.observeAll().collect { all ->
+                _pinned.value = all
+                    .filter { it.tag == "pinned" }
+                    .map { PinnedBubble(it.id, it.text.removePrefix("Pinned chat item: ").take(360)) }
+            }
+        }
     }
 
     /**
@@ -277,7 +309,7 @@ class ChatViewModel @Inject constructor(
     private fun observeRemoteApprovals() {
         viewModelScope.launch {
             sink.pendingConfirm.collect { confirm ->
-                if (confirm != null && _autoApprove.value) {
+                if (confirm != null && effectivelyAutoApprove()) {
                     socket.sendConfirm(confirm.id, true)
                     sink.clearPendingConfirm()
                 }
@@ -356,6 +388,12 @@ class ChatViewModel @Inject constructor(
                     // One file can be several: a PDF arrives as a page each.
                     _attachments.value =
                         (_attachments.value + result.attachments).takeLast(MAX_ATTACHMENTS)
+                    val readable = result.attachments.mapNotNull { it.textPath }.distinct()
+                    _notice.value = if (readable.isNotEmpty()) {
+                        "Attached and copied into agent workspace: ${readable.joinToString(", ")}"
+                    } else {
+                        "Attached and copied into app storage."
+                    }
                     result.attachments.firstOrNull { it.truncated }?.let {
                         _notice.value = "${it.name} was long — only the first part was attached."
                     }
@@ -366,6 +404,26 @@ class ChatViewModel @Inject constructor(
 
     fun removeAttachment(id: String) {
         _attachments.value = _attachments.value.filterNot { it.id == id }
+    }
+
+    fun pinMessage(message: MessageItem) {
+        val text = message.content.trim()
+        if (text.isBlank()) return
+        viewModelScope.launch {
+            memory.remember(
+                text = "Pinned chat item: ${text.take(240)}",
+                tag = "pinned",
+                sessionId = _currentSession.value?.id,
+            ) ?: return@launch
+            _notice.value = "Pinned into Aura memory."
+        }
+    }
+
+    fun unpinMessage(id: String) {
+        viewModelScope.launch {
+            memory.forget(id)
+            _notice.value = "Forgotten from Aura memory."
+        }
     }
 
     // ── Dictation ───────────────────────────────────────────────────────────
@@ -732,7 +790,7 @@ class ChatViewModel @Inject constructor(
      * command should not have run by the time its approval appears.
      */
     private suspend fun askApproval(name: String, description: String): Boolean {
-        if (_autoApprove.value) return true
+        if (effectivelyAutoApprove()) return true
 
         val deferred = CompletableDeferred<Boolean>()
         awaitingApproval = deferred
@@ -769,6 +827,9 @@ class ChatViewModel @Inject constructor(
                 when (attachment.kind) {
                     AttachmentKind.TEXT -> {
                         append("\n\n--- ").append(attachment.name).append(" ---\n")
+                        attachment.textPath?.let {
+                            append("[Agent workspace path: ").append(it).append("]\n")
+                        }
                         append(attachment.text.orEmpty())
                         if (attachment.truncated) append("\n…(truncated)")
                     }
@@ -794,7 +855,9 @@ class ChatViewModel @Inject constructor(
     private fun describeForTranscript(text: String, staged: List<Attachment>): String {
         if (staged.isEmpty()) return text
         val names = staged.joinToString(", ") {
-            if (it.kind == AttachmentKind.IMAGE) "📷 ${it.name}" else "📎 ${it.name}"
+            val prefix = if (it.kind == AttachmentKind.IMAGE) "[photo]" else "[file]"
+            val path = it.textPath?.let { path -> " -> $path" }.orEmpty()
+            "$prefix ${it.name}$path"
         }
         return if (text.isBlank()) names else "$text\n\n$names"
     }
@@ -838,6 +901,11 @@ class ChatViewModel @Inject constructor(
         const val FLUSH_INTERVAL_MS = 100L
     }
 }
+
+data class PinnedBubble(
+    val id: String,
+    val text: String,
+)
 
 data class MessageItem(
     val id: Long,

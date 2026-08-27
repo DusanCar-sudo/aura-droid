@@ -1,19 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Aura mark: cyan ring with ruby core, matching the brand favicon. -->
+<!-- Aura launcher mark: kept inside the adaptive-icon safe zone for clean masking. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Outer ring -->
     <path
-        android:strokeWidth="5"
-        android:strokeColor="#6ED0EA"
-        android:pathData="M 54,32 A 22,22 0 1 1 53.99,32" />
+        android:strokeWidth="13"
+        android:strokeColor="@color/aura_cyan"
+        android:strokeAlpha="0.16"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M 23,77 C 31,57 40,36 49,23 C 52,18 57,18 60,23 C 69,37 78,57 86,77 C 73,69 60,65 47,66 C 36,67 28,72 23,77" />
 
-    <!-- Ruby core -->
     <path
-        android:fillColor="#D24B30"
-        android:pathData="M 54,45 A 9,9 0 1 1 53.99,45" />
+        android:strokeWidth="7"
+        android:strokeColor="@color/aura_cyan"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M 23,77 C 31,57 40,36 49,23 C 52,18 57,18 60,23 C 69,37 78,57 86,77 C 73,69 60,65 47,66 C 36,67 28,72 23,77" />
+
+    <path
+        android:strokeWidth="3.5"
+        android:strokeColor="@color/aura_ruby"
+        android:strokeAlpha="0.95"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M 23,77 C 31,71 39,67 47,66 C 60,65 73,69 86,77" />
+
+    <path
+        android:strokeWidth="2.5"
+        android:strokeColor="#EAF1F7"
+        android:strokeAlpha="0.82"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M 40,40 C 43,33 46,28 49,23" />
+
+    <path
+        android:fillColor="#D98E63"
+        android:pathData="M 54,61.5 C 55.38,61.5 56.5,62.62 56.5,64 C 56.5,65.38 55.38,66.5 54,66.5 C 52.62,66.5 51.5,65.38 51.5,64 C 51.5,62.62 52.62,61.5 54,61.5 Z" />
 </vector>

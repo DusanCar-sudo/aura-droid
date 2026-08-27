@@ -7,7 +7,10 @@ import dev.aura.auradroid.data.repository.AuraRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,6 +22,31 @@ class SessionsViewModel @Inject constructor(
     private val _sessions = MutableStateFlow<List<dev.aura.auradroid.data.model.Session>>(emptyList())
     val sessions: StateFlow<List<dev.aura.auradroid.data.model.Session>> = _sessions.asStateFlow()
 
+    /** What the search field has typed; empty means "show everything". */
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
+
+    /**
+     * Sessions matching the current query, pinned first then by recency.
+     *
+     * Filtering is title-only: it is the field a person recognises, and a
+     * full-text search across every message would be slow on a phone and
+     * noisy in the list. Mirrors MemoryDao's deliberate choice of LIKE over
+     * FTS for a small table.
+     */
+    val visibleSessions: StateFlow<List<dev.aura.auradroid.data.model.Session>> =
+        combine(sessions, _query) { list, q ->
+            val needle = q.trim()
+            val filtered = if (needle.isEmpty()) list
+            else list.filter { it.title.contains(needle, ignoreCase = true) }
+            // Pinned always rises to the top so a kept conversation is never
+            // pushed off-screen by the weight of newer ones.
+            filtered.sortedWith(
+                compareByDescending<dev.aura.auradroid.data.model.Session> { it.isPinned }
+                    .thenByDescending { it.updatedAt }
+            )
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     init {
         loadSessions()
     }
@@ -29,6 +57,10 @@ class SessionsViewModel @Inject constructor(
                 _sessions.value = sessionList.sortedByDescending { it.updatedAt }
             }
         }
+    }
+
+    fun setQuery(value: String) {
+        _query.value = value
     }
 
     /**

@@ -51,6 +51,28 @@ object CodeBlocks {
             )
         }.toList()
 
+    /**
+     * The prose with fenced code blocks taken out.
+     *
+     * Fenced blocks are rendered as separate saveable cards below the bubble,
+     * so they should not also sit inside it as a wall of literal backticks.
+     * Any fence too short to become a card is kept, since it has nowhere else
+     * to go — a one-liner shown inline is information the user would lose.
+     */
+    fun withoutFencedBlocks(content: String): String {
+        val kept = StringBuilder()
+        var last = 0
+        for (m in FENCE.findAll(content)) {
+            val code = m.groupValues[2].trimEnd()
+            // Mirror extract()'s threshold: only strip the ones it would save.
+            if (code.count { it == '\n' } < 2) continue
+            kept.append(content, last, m.range.first)
+            last = m.range.last + 1
+        }
+        kept.append(content, last, content.length)
+        return kept.toString().trim().replace(Regex("\n{3,}"), "\n\n")
+    }
+
     private fun nameFor(lang: String, code: String, index: Int): String {
         val ext = EXTENSIONS[lang] ?: guessExtension(code) ?: "txt"
         // An HTML page is nearly always the page, so give it the name a

@@ -43,4 +43,35 @@ object Sharing {
             Intent.createChooser(send, subject).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }
+
+    /**
+     * Save the file temporarily to the exports cache and open it in a system app.
+     */
+    fun openFile(context: Context, fileName: String, content: String) {
+        try {
+            val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+            val file = File(dir, fileName).apply { writeText(content) }
+
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file,
+            )
+
+            val view = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, CodeBlocks.mimeFor(fileName))
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            context.startActivity(view)
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(
+                context,
+                "No app found to open $fileName",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 }
+

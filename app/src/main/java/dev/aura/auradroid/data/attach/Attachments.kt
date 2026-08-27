@@ -34,6 +34,10 @@ data class Attachment(
     val name: String,
     val mimeType: String,
     val kind: AttachmentKind,
+    /** App-owned copy of the original file, if one could be made. */
+    val storedPath: String? = null,
+    /** Text snapshot inside the agent workspace, readable by phone tools. */
+    val textPath: String? = null,
     /** Text content, for anything readable as text. */
     val text: String? = null,
     /** JPEG bytes, base64, already downscaled — for images. */
@@ -89,7 +93,7 @@ object Attachments {
         val extension = name.substringAfterLast('.', "").lowercase()
 
         try {
-            when {
+            val parsed = when {
                 mime.startsWith("image/") ->
                     readImage(context, uri, name)
                         ?.let { ReadResult.Ok(listOf(it)) }
@@ -111,6 +115,7 @@ object Attachments {
                         "or a text file.",
                 )
             }
+            persist(context, uri, parsed)
         } catch (e: OutOfMemoryError) {
             // Its own branch because it is not an Exception and would otherwise
             // take the whole app down on a large scan.
@@ -119,6 +124,43 @@ object Attachments {
             ReadResult.Failed("Could not read $name: ${e.message ?: e.javaClass.simpleName}")
         }
     }
+
+    private fun persist(context: Context, uri: Uri, result: ReadResult): ReadResult {
+        if (result !is ReadResult.Ok) return result
+        val stored = copyOriginal(context, uri, result.attachments.firstOrNull()?.name ?: "attachment")
+        return ReadResult.Ok(
+            result.attachments.map { attachment ->
+                val textPath = attachment.text?.takeIf { it.isNotBlank() }?.let {
+                    writeTextSnapshot(context, attachment.id, attachment.name, it)
+                }
+                attachment.copy(storedPath = stored, textPath = textPath)
+            },
+        )
+    }
+
+    private fun copyOriginal(context: Context, uri: Uri, name: String): String? = runCatching {
+        val dir = File(context.filesDir, ATTACHMENT_DIR).apply { mkdirs() }
+        val file = File(dir, "${System.currentTimeMillis()}_${safeName(name)}")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output -> input.copyTo(output) }
+        } ?: return@runCatching null
+        file.absolutePath
+    }.getOrNull()
+
+    private fun writeTextSnapshot(
+        context: Context,
+        id: String,
+        name: String,
+        text: String,
+    ): String? = runCatching {
+        val dir = File(File(context.filesDir, WORKSPACE_DIR), ATTACHMENT_DIR).apply { mkdirs() }
+        val file = File(dir, "${id.take(8)}_${safeName(name)}.txt")
+        file.writeText(text)
+        file.relativeTo(File(context.filesDir, WORKSPACE_DIR)).path
+    }.getOrNull()
+
+    private fun safeName(name: String): String =
+        name.replace(Regex("""[^A-Za-z0-9._-]+"""), "_").take(80).ifBlank { "attachment" }
 
     /** Where a photo about to be taken should be written. */
     fun newCameraTarget(context: Context): Pair<File, Uri> {
@@ -479,6 +521,8 @@ object Attachments {
     private const val JPEG_QUALITY = 80
     private const val MAX_TEXT_BYTES = 200_000
     private const val CAMERA_DIR = "camera"
+    private const val ATTACHMENT_DIR = "attachments"
+    private const val WORKSPACE_DIR = "workspace"
     private const val CAMERA_KEEP_MS = 60 * 60 * 1000L
 
     /** Larger than a photo: small print in a document has to survive. */

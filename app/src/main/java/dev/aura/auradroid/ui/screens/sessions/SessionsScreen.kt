@@ -44,7 +44,9 @@ fun SessionsScreen(
     /** Open this conversation in the chat screen. */
     onSessionSelected: (String) -> Unit,
 ) {
-    val sessions by viewModel.sessions.collectAsState()
+    val sessions by viewModel.visibleSessions.collectAsState()
+    val query by viewModel.query.collectAsState()
+    val total by viewModel.sessions.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -79,19 +81,43 @@ fun SessionsScreen(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    // When filtering, the count shows how many matched out of
+                    // the total — "3 of 12" — so an empty result is clearly a
+                    // miss rather than no conversations existing.
                     Text(
-                        text = "${sessions.size} session${if (sessions.size != 1) "s" else ""}",
+                        text = if (query.isBlank()) {
+                            "${total.size} session${if (total.size != 1) "s" else ""}"
+                        } else {
+                            "${sessions.size} of ${total.size}"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
             }
 
+            // Only worth searching once there is something to look through.
+            item {
+                if (total.size > 1) {
+                    SessionSearchField(
+                        query = query,
+                        onChange = viewModel::setQuery,
+                    )
+                }
+            }
+
             if (sessions.isEmpty()) {
                 item {
-                    AuraEmptySessionsState(
-                        onCreateNew = { viewModel.createNewSession(onSessionSelected) },
-                    )
+                    // A search that found nothing is different from having no
+                    // conversations: the former is a dead end with a way out
+                    // (clear the query), the latter is a first-run welcome.
+                    if (query.isBlank()) {
+                        AuraEmptySessionsState(
+                            onCreateNew = { viewModel.createNewSession(onSessionSelected) },
+                        )
+                    } else {
+                        NoSearchResults(query = query)
+                    }
                 }
             } else {
                 items(sessions) { session ->
@@ -536,6 +562,59 @@ fun AuraEmptySessionsState(onCreateNew: () -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
             Text("Start New Session")
         }
+    }
+}
+
+/**
+ * Filter the list by name. Appears only when there is more than one session.
+ *
+ * Title-only by design: a per-message search would be slow on a phone and
+ * noisy in a conversation list, where the title is what a person scans for.
+ */
+@Composable
+private fun SessionSearchField(
+    query: String,
+    onChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("Search conversations") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onChange("") }) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear search")
+                }
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(14.dp),
+    )
+}
+
+@Composable
+private fun NoSearchResults(query: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            Icons.Default.SearchOff,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(36.dp),
+        )
+        Text(
+            "No conversations match \"$query\"",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }
 

@@ -1,5 +1,6 @@
 package dev.aura.auradroid.ui.screens.settings
 
+import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,6 +33,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.aura.auradroid.data.settings.ThemeMode
 import dev.aura.auradroid.ui.theme.AuraLogo
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,6 +145,33 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.error,
                         )
                     }
+                }
+            }
+
+            Section("Appearance") {
+                AppearanceSection(
+                    mode = state.appearance.themeMode,
+                    dynamicColor = state.appearance.dynamicColor,
+                    onModeChange = viewModel::setThemeMode,
+                    onDynamicColor = viewModel::setDynamicColor,
+                )
+            }
+
+            Section("Approvals") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Approve all actions", fontWeight = FontWeight.Medium)
+                        Text(
+                            "Let Aura run every tool without asking. Off means it " +
+                                "asks before each action, as usual.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = state.autoApproveAll,
+                        onCheckedChange = viewModel::setAutoApproveAll,
+                    )
                 }
             }
 
@@ -385,6 +415,62 @@ private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) 
                 verticalArrangement = Arrangement.spacedBy(9.dp),
                 content = content,
             )
+        }
+    }
+}
+
+/**
+ * Theme mode + dynamic colour.
+ *
+ * System is first because it is the safe default — it already matches what the
+ * phone is in. Dynamic colour is offered only on Android 12+, the only version
+ * that supports it; on older devices the toggle would do nothing, so it is
+ * omitted rather than shown disabled.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppearanceSection(
+    mode: ThemeMode,
+    dynamicColor: Boolean,
+    onModeChange: (ThemeMode) -> Unit,
+    onDynamicColor: (Boolean) -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            Icons.Default.Palette, null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text("Theme", fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        SingleChoiceSegmentedButtonRow {
+            val options = listOf(
+                ThemeMode.SYSTEM to "System",
+                ThemeMode.DARK to "Dark",
+                ThemeMode.LIGHT to "Light",
+            )
+            options.forEachIndexed { i, (value, label) ->
+                SegmentedButton(
+                    selected = mode == value,
+                    onClick = { onModeChange(value) },
+                    shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                ) { Text(label) }
+            }
+        }
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Dynamic colour", fontWeight = FontWeight.Medium)
+                Text(
+                    "Match the palette to your wallpaper.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = dynamicColor, onCheckedChange = onDynamicColor)
         }
     }
 }

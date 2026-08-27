@@ -98,3 +98,9 @@ lint-results*.html
 .env
 .env.local
 .vercel
+
+# Local tooling — never commit
+.gradle_home/
+.tmp-design/
+.zcode/
+.aura/

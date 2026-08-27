@@ -116,9 +116,9 @@ class PairingViewModel @Inject constructor(
                                     "same Wi-Fi."
                             } else {
                                 "That code was not accepted. Codes last about ten " +
-                                    "minutes and work once — run `aura devices add` on " +
-                                    "the desktop for a fresh one. Also check `adb " +
-                                    "reverse tcp:$port tcp:$port` is set up."
+                                    "minutes and work once — run `aura devices add` in " +
+                                    "Termux or on the desktop for a fresh one. If using " +
+                                    "USB, also check `adb reverse tcp:$port tcp:$port`."
                             },
                         )
                     }
@@ -149,9 +149,9 @@ class PairingViewModel @Inject constructor(
                                 "Check the desktop is running `aura serve --lan` and " +
                                     "that both are on the same Wi-Fi."
                             } else {
-                                "Check that `aura serve` is running, and — over USB — " +
-                                    "that `adb reverse tcp:${endpoint.port} " +
-                                    "tcp:${endpoint.port}` is set up."
+                                "Check that `aura serve` is running in Termux or on " +
+                                    "the desktop. If using USB, also check `adb reverse " +
+                                    "tcp:${endpoint.port} tcp:${endpoint.port}`."
                             },
                     )
                 }

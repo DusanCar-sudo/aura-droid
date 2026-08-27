@@ -6,6 +6,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.aura.auradroid.data.memory.AgentMemory
 import dev.aura.auradroid.data.network.AuraHttp
 import dev.aura.auradroid.data.security.TokenVault
+import dev.aura.auradroid.data.settings.Appearance
+import dev.aura.auradroid.data.settings.AppearanceRepository
+import dev.aura.auradroid.data.settings.ApprovalRepository
+import dev.aura.auradroid.data.settings.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +34,9 @@ data class SettingsUiState(
     /** How many things the agent has remembered, for the memory row. */
     val memoryCount: Int = 0,
     val saveError: String? = null,
+    val appearance: Appearance = Appearance(),
+    /** Whether every tool runs without asking, in any conversation. */
+    val autoApproveAll: Boolean = false,
 )
 
 @HiltViewModel
@@ -37,12 +44,26 @@ class SettingsViewModel @Inject constructor(
     private val vault: TokenVault,
     private val http: AuraHttp,
     private val memory: AgentMemory,
+    private val appearanceRepo: AppearanceRepository,
+    private val approvalRepo: ApprovalRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
     init {
+        // Appearance is read reactively: a change here updates the theme of the
+        // whole app (handled in MainActivity) as well as this screen.
+        viewModelScope.launch {
+            appearanceRepo.appearance.collect { ap ->
+                _state.value = _state.value.copy(appearance = ap)
+            }
+        }
+        viewModelScope.launch {
+            approvalRepo.autoApproveAll.collect { on ->
+                _state.value = _state.value.copy(autoApproveAll = on)
+            }
+        }
         refresh()
     }
 
@@ -151,5 +172,17 @@ class SettingsViewModel @Inject constructor(
             memory.forgetAll()
             _state.value = _state.value.copy(memoryCount = 0)
         }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { appearanceRepo.setThemeMode(mode) }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch { appearanceRepo.setDynamicColor(enabled) }
+    }
+
+    fun setAutoApproveAll(enabled: Boolean) {
+        viewModelScope.launch { approvalRepo.setAutoApproveAll(enabled) }
     }
 }

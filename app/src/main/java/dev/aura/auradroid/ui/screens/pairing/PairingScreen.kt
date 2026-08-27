@@ -373,9 +373,8 @@ private fun ErrorNote(message: String) {
 }
 
 /**
- * The USB path needs `adb reverse`, which nobody guesses. Showing the two
- * commands here is the difference between pairing working and the user
- * bouncing off an unreachable-host error.
+ * Loopback is either Termux on the phone or USB to a desktop. Showing both
+ * keeps the default 127.0.0.1 address understandable instead of mysterious.
  */
 @Composable
 private fun SetupHint() {
@@ -389,7 +388,19 @@ private fun SetupHint() {
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                "Over USB",
+                "On this phone with Termux",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                "aura serve\naura devices add \"Aura APK\"",
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Or over USB to a computer:",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,

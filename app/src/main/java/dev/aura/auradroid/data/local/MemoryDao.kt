@@ -43,6 +43,9 @@ interface MemoryDao {
     @Query("SELECT * FROM agent_memory WHERE id = :id")
     suspend fun byId(id: String): Memory?
 
+    /** Recent same-tag candidates for near-duplicate check. */
+    @Query("SELECT * FROM agent_memory WHERE tag = :tag ORDER BY lastUsedAt DESC LIMIT :limit")
+    suspend fun recentByTag(tag: String, limit: Int): List<Memory>
     /** Used to spot a near-duplicate before writing another copy of a fact. */
     @Query("SELECT * FROM agent_memory")
     suspend fun all(): List<Memory>
