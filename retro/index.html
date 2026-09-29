@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0000D7">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Aura Droid, retro edition. An autonomous, model-agnostic coding agent on your Android phone, presented as an early-80s home computer. Open source, Apache-2.0.">
+  <title>AURA DROID — Your coding agent, in your pocket. (Retro edition)</title>
+  <link rel="canonical" href="https://aura-droid-site.vercel.app/">
+  <link rel="icon" href="/retro/img/mark.png" type="image/png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Aura Droid">
+  <meta property="og:url" content="https://aura-droid-site.vercel.app/">
+  <meta property="og:title" content="AURA DROID — Your coding agent, in your pocket. (Retro edition)">
+  <meta property="og:description" content="The Android client for Aura Code, loaded from tape. Pair it with your PC or run it on the phone alone.">
+  <meta property="og:image" content="https://aura-droid-site.vercel.app/retro/og.jpg?v=2">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AURA DROID: Your coding agent, in your pocket.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AURA DROID — Your coding agent, in your pocket. (Retro edition)">
+  <meta name="twitter:description" content="The Android client for Aura Code, loaded from tape.">
+  <meta name="twitter:image" content="https://aura-droid-site.vercel.app/retro/og.jpg?v=2">
+  <link rel="preload" href="/retro/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/retro/fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
+  <script>document.documentElement.classList.add('js')</script>
+  <style>
+    @font-face { font-family: 'Press Start 2P'; font-style: normal; font-weight: 400; font-display: swap; src: url(/retro/fonts/press-start-2p.woff2) format('woff2'); }
+    @font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/retro/fonts/geist-mono.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/retro/fonts/geist-mono-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+    /* ── The 8 colours, two brightnesses ───────────────────────────────── */
+    :root {
+      --k: #000000;
+      --b: #0000D7; --r: #D70000; --m: #D700D7; --g: #00D700; --c: #00D7D7; --y: #D7D700; --w: #D7D7D7;
+      --bb: #0000FF; --br: #FF0000; --bm: #FF00FF; --bg: #00FF00; --bc: #00FFFF; --by: #FFFF00; --bw: #FFFFFF;
+      --px: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+      --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --ink: #F2F2F2;
+      --soft: #BDBDBD;
+      --border: #0000D7;
+      --edge: clamp(8px, 4.5vw, 72px);
+      --step: polygon(0 8px, 4px 8px, 4px 4px, 8px 4px, 8px 0, calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0 calc(100% - 8px));
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body { margin: 0; padding: var(--edge) 0; background: var(--border); color: var(--ink); font: 400 17px/1.65 var(--mono); overflow-x: hidden; }
+    img, canvas { display: block; max-width: 100%; }
+    a { color: inherit; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    h1, h2, h3, p, ul, ol, dl, dd, figure, pre { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+    code { font-family: var(--mono); font-size: .95em; color: var(--bc); }
+    ::selection { background: var(--by); color: var(--k); }
+    :focus-visible { outline: 4px solid var(--by); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+    section[id] { scroll-margin-top: 76px; }
+
+    .screen { position: relative; width: min(1100px, 100% - var(--edge) * 2); margin: 0 auto; background: var(--k); }
+    .pad { padding-inline: clamp(16px, 4vw, 48px); }
+    .skip { position: absolute; left: 8px; top: -80px; z-index: 200; padding: 12px 16px; background: var(--by); color: var(--k); font: 12px/1.3 var(--px); }
+    .skip:focus { top: 8px; }
+
+    /* ── Motifs ────────────────────────────────────────────────────────── */
+    .stripes { display: inline-flex; height: 1em; font-size: 32px; transform: translateZ(0); }
+    .stripes i { display: block; width: .5em; height: 100%; margin-right: -.05em; transform: skewX(-38deg); }
+    .stripes i:nth-child(1) { background: var(--br); }
+    .stripes i:nth-child(2) { background: var(--by); }
+    .stripes i:nth-child(3) { background: var(--bg); }
+    .stripes i:nth-child(4) { background: var(--bc); }
+    .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; font: 400 clamp(12px, 2.2vw, 18px)/1.35 var(--px); text-transform: uppercase; }
+    .bar .stripes { font-size: 20px; flex: none; }
+    .bar-r { background: var(--r); color: var(--bw); } .bar-m { background: var(--bm); color: var(--k); }
+    .bar-g { background: var(--bg); color: var(--k); } .bar-c { background: var(--bc); color: var(--k); }
+    .bar-y { background: var(--by); color: var(--k); } .bar-b { background: var(--b); color: var(--bw); }
+    .bar-w { background: var(--bw); color: var(--k); }
+    .cursor { display: inline-block; width: .6em; height: 1.05em; vertical-align: -.16em; background: var(--bw); animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .lede { max-width: 38em; font-size: clamp(17px, 1.7vw, 19px); color: var(--ink); }
+    .spin { display: inline-block; line-height: 0; flex: none; }
+    .spin canvas { image-rendering: pixelated; }
+
+    /* ── Buttons: key caps ─────────────────────────────────────────────── */
+    .key { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 56px; padding: 12px 22px; border: 0; background: var(--bw); color: var(--k); font: 400 13px/1.3 var(--px); text-transform: uppercase; text-decoration: none; box-shadow: 6px 6px 0 var(--r); transition: transform .08s steps(2), box-shadow .08s steps(2); }
+    .key:hover { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--r); }
+    .key:active { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--r); }
+    .key-y { background: var(--by); box-shadow: 6px 6px 0 var(--b); } .key-y:hover { box-shadow: 3px 3px 0 var(--b); } .key-y:active { box-shadow: 0 0 0 var(--b); }
+    .key-o { background: var(--k); color: var(--bw); border: 4px solid var(--bw); box-shadow: 6px 6px 0 var(--m); } .key-o:hover { box-shadow: 3px 3px 0 var(--m); } .key-o:active { box-shadow: 0 0 0 var(--m); }
+    .key small { font: 500 12px/1 var(--mono); opacity: .85; text-transform: none; }
+
+    /* ── Nav ───────────────────────────────────────────────────────────── */
+    .nav { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; padding: 8px clamp(16px, 4vw, 48px); background: var(--k); border-bottom: 4px solid var(--bw); }
+    .nav::after { content: ''; position: absolute; left: 0; right: 0; bottom: -12px; height: 8px; background: linear-gradient(90deg, var(--br) 0 25%, var(--by) 25% 50%, var(--bg) 50% 75%, var(--bc) 75%); }
+    .brand { display: inline-flex; align-items: center; gap: 12px; font: 400 14px/1 var(--px); text-decoration: none; text-transform: uppercase; }
+    .brand em { font-style: normal; color: var(--bc); }
+    .nav-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; font: 600 13px/1 var(--mono); text-transform: uppercase; }
+    .nav-links a { text-decoration: none; padding: 9px 6px; }
+    .nav-links a:hover { background: var(--bc); color: var(--k); }
+    .nav-links a b { color: var(--by); font-weight: 600; margin-right: 6px; }
+    .nav-links a:hover b { color: var(--k); }
+    .toggle { padding: 9px 11px; border: 2px solid var(--bw); background: var(--k); font: 600 12px/1 var(--mono); text-transform: uppercase; }
+    .toggle[aria-pressed="true"] { background: var(--bg); color: var(--k); border-color: var(--bg); }
+    .toggle:hover { border-color: var(--by); }
+
+    /* ── Hero ──────────────────────────────────────────────────────────── */
+    .hero { position: relative; padding-block: 28px 56px; }
+    .boot { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 20px; font: 400 14px/1.4 var(--mono); color: var(--soft); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(24px, 4vw, 56px); align-items: center; }
+    .brand-row { display: flex; align-items: center; gap: 18px; font: 400 clamp(15px, 2.3vw, 22px)/1.2 var(--px); text-transform: uppercase; }
+    .brand-row em { font-style: normal; color: var(--bc); }
+    .hero h1 { font: 400 clamp(20px, 3.5vw, 34px)/1.7 var(--px); text-transform: uppercase; margin: 22px 0 22px; }
+    .hero h1 .c { color: var(--bc); } .hero h1 .y { color: var(--by); }
+    .listing { white-space: pre-wrap; margin-top: 26px; padding: 16px 18px; border: 4px solid var(--w); font: 500 clamp(13px, 1.5vw, 16px)/1.9 var(--mono); letter-spacing: .04em; text-transform: uppercase; background: var(--k); min-height: 10.5em; }
+    .listing .n { color: var(--by); } .listing .kw { color: var(--bc); } .listing .s { color: var(--bg); }
+    .cta { display: flex; flex-wrap: wrap; gap: 20px 24px; margin-top: 30px; }
+    .pphone { position: relative; width: min(100%, 320px); margin: 0 auto; }
+    .pphone::before { content: ''; position: absolute; inset: 14px -14px -14px 14px; background: var(--acc, var(--r)); clip-path: var(--step); }
+    .pphone-in { position: relative; padding: 12px; background: var(--bw); clip-path: var(--step); }
+    .pphone img { width: 100%; height: auto; aspect-ratio: 9 / 20; background: var(--k); object-fit: cover; }
+    .pphone img.px8 { image-rendering: pixelated; }
+    .hero .pphone { --acc: var(--b); }
+    .cap { margin-top: 26px; font: 500 12px/1.6 var(--mono); text-align: center; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
+
+    /* ── Model strip ───────────────────────────────────────────────────── */
+    .strip { padding: 14px clamp(16px, 4vw, 48px); background: var(--by); color: var(--k); border-block: 4px solid var(--bw); font: 600 14px/1.55 var(--mono); text-transform: uppercase; text-align: center; letter-spacing: .03em; }
+
+    /* ── Sections ──────────────────────────────────────────────────────── */
+    .sec { padding-block: 64px 24px; }
+    .sec-in { padding-top: 32px; }
+    .sec h3 { font: 600 clamp(19px, 2.3vw, 24px)/1.3 var(--mono); }
+
+    /* App menu (the 128K-style menu) */
+    .app { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 32px; align-items: start; }
+    .menu { border: 4px solid var(--bw); }
+    .menu-h { padding: 10px 12px; background: var(--b); color: var(--bw); font: 600 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+    .menu [role="tab"] { display: block; width: 100%; padding: 14px 12px; border: 0; border-top: 4px solid var(--k); background: var(--k); text-align: left; font: 600 15px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+    .menu [role="tab"] b { color: var(--by); font-weight: 600; margin-right: 10px; }
+    .menu [role="tab"]:hover { background: var(--bc); color: var(--k); }
+    .menu [role="tab"]:hover b { color: var(--k); }
+    .menu [role="tab"][aria-selected="true"] { background: var(--bw); color: var(--k); }
+    .menu [role="tab"][aria-selected="true"] b { color: var(--r); }
+    .panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 32px; align-items: start; }
+    .panel .pphone { --acc: var(--r); width: min(100%, 288px); }
+    .panel p { margin: 14px 0 20px; max-width: 32em; color: var(--ink); }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tags li { padding: 6px 10px; background: var(--b); color: var(--bw); font: 500 13px/1.3 var(--mono); }
+
+    /* Two ways to run it: cassettes */
+    .decks { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+    .deck { display: flex; flex-direction: column; gap: 22px; padding: 20px; border: 4px solid var(--bw); }
+    .cassette { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding: 12px; background: #1c1c1c; border: 4px solid var(--w); }
+    .label { padding: 12px 14px 22px; background: var(--bw); color: var(--k); font: 600 13px/1.5 var(--mono); text-transform: uppercase; position: relative; }
+    .label b { display: block; font: 400 18px/1.4 var(--px); }
+    .label::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: linear-gradient(90deg, var(--br) 0 25%, var(--by) 25% 50%, var(--bg) 50% 75%, var(--bc) 75%); }
+    .reels { display: flex; gap: 10px; }
+    .reels i { width: 26px; height: 26px; background: var(--bw); box-shadow: inset 0 0 0 8px var(--k), inset 0 0 0 12px var(--bw); animation: spin 1.2s steps(4) infinite; }
+    @keyframes spin { to { transform: rotate(90deg); } }
+    .dia { display: flex; align-items: center; gap: 0; padding: 22px 0 12px; }
+    .node { flex: none; padding: 12px; min-width: 100px; border: 4px solid var(--bc); text-align: center; font: 600 13px/1.4 var(--mono); text-transform: uppercase; }
+    .node small { display: block; font: 400 12.5px/1.3 var(--mono); color: var(--soft); text-transform: none; margin-top: 4px; }
+    .node.h { border-color: var(--by); }
+    .wire { position: relative; flex: 1; min-width: 40px; height: 4px; margin-inline: -4px; background: repeating-linear-gradient(90deg, var(--bw) 0 8px, transparent 8px 16px); animation: wire .6s steps(2) infinite; }
+    .wire span { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: var(--k); font: 600 11px/1.2 var(--mono); text-transform: uppercase; color: var(--bg); white-space: nowrap; }
+    @keyframes wire { to { background-position: 16px 0; } }
+    .deck ul { display: grid; gap: 12px; }
+    .deck li { position: relative; padding-left: 24px; color: var(--ink); font-size: 16px; }
+    .deck li::before { content: '>'; position: absolute; left: 0; color: var(--by); font-weight: 700; }
+    .deck li b { color: var(--bw); font-weight: 600; }
+    pre { padding: 14px 16px; overflow-x: auto; border: 4px solid var(--w); background: var(--k); font: 400 14.5px/1.6 var(--mono); color: var(--bg); white-space: pre; }
+    pre .c { color: var(--soft); }
+    .foot { margin-top: auto; color: var(--soft); font-size: 15px; }
+    .foot a { color: var(--bc); }
+
+    /* Control */
+    .ctl { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 40px; align-items: start; }
+    .lines { border: 4px solid var(--w); padding: 16px 18px; font: 500 15px/1.7 var(--mono); text-transform: uppercase; letter-spacing: .03em; }
+    .lines .n { color: var(--by); } .lines .kw { color: var(--bc); } .lines .rem { display: block; color: var(--soft); text-transform: none; letter-spacing: 0; font: 400 15px/1.5 var(--mono); padding: 2px 0 14px 3em; }
+    .lines .tag { background: var(--bm); color: var(--k); padding: 2px 6px; font-size: 12px; margin-left: 6px; letter-spacing: 0; }
+    .set { border: 4px solid var(--bw); }
+    .set-h { padding: 10px 14px; background: var(--b); font: 600 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; display: flex; justify-content: space-between; }
+    .row { padding: 18px 16px; border-top: 4px solid var(--k); display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
+    .row + .row { border-top-color: var(--w); }
+    .row h3 { font-size: 17px; }
+    .row p { grid-column: 1; color: var(--ink); font-size: 15px; line-height: 1.55; }
+    .row .state { grid-column: 1 / -1; padding: 9px 12px; background: #141414; border-left: 8px solid var(--br); color: var(--bw); font-size: 14px; line-height: 1.5; }
+    .row.is-on .state { border-left-color: var(--bg); }
+    .sw { min-width: 92px; padding: 11px 12px; border: 4px solid var(--bw); background: var(--r); color: var(--bw); font: 400 12px/1 var(--px); text-transform: uppercase; }
+    .sw[aria-checked="true"] { background: var(--bg); color: var(--k); border-color: var(--bg); }
+    .sw:hover { border-color: var(--by); }
+
+    /* Features: attribute blocks */
+    .cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .cell { display: flex; flex-direction: column; border: 4px solid var(--bw); }
+    .cell h3 { padding: 10px; font-size: 14px; line-height: 1.4; text-transform: uppercase; letter-spacing: .03em; }
+    .cell p { padding: 12px; color: var(--ink); font-size: 15px; line-height: 1.6; }
+    .cell:nth-child(8n+1) h3 { background: var(--by); color: var(--k); } .cell:nth-child(8n+2) h3 { background: var(--bc); color: var(--k); }
+    .cell:nth-child(8n+3) h3 { background: var(--bg); color: var(--k); } .cell:nth-child(8n+4) h3 { background: var(--bm); color: var(--k); }
+    .cell:nth-child(8n+5) h3 { background: var(--r); color: var(--bw); } .cell:nth-child(8n+6) h3 { background: var(--b); color: var(--bw); }
+    .cell:nth-child(8n+7) h3 { background: var(--by); color: var(--k); } .cell:nth-child(8n+8) h3 { background: var(--bc); color: var(--k); }
+
+    /* Tape player (video) */
+    .player { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 40px; align-items: center; }
+    .press { display: block; margin-top: 24px; font: 400 14px/1.6 var(--px); color: var(--by); text-transform: uppercase; animation: blink 1.2s steps(1) infinite; }
+    #tape { position: relative; }
+    #tape img, #tape video { width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; background: var(--k); }
+    #tape img.px8 { image-rendering: pixelated; }
+    #tapePlay { position: absolute; inset: 0; display: grid; place-content: center; gap: 14px; width: 100%; border: 0; background: rgba(0,0,0,.35); text-align: center; }
+    #tapePlay b { display: block; padding: 14px 16px; background: var(--by); color: var(--k); font: 400 13px/1.4 var(--px); text-transform: uppercase; box-shadow: 6px 6px 0 var(--r); }
+    #tapePlay span { font: 600 14px/1 var(--mono); background: var(--k); padding: 4px 10px; }
+    #tapePlay:hover b { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--r); }
+
+    /* Download */
+    .load { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; align-items: start; }
+    .prog { padding: 18px; border: 4px solid var(--w); font: 500 15px/1.9 var(--mono); }
+    .prog .k { color: var(--bc); } .prog div { display: block; overflow-wrap: anywhere; }
+    .prog .sha { font: 400 13.5px/1.5 var(--mono); color: var(--bw); display: block; margin: 4px 0 12px; overflow-wrap: anywhere; }
+    .copy { padding: 10px 12px; border: 3px solid var(--bw); background: var(--k); font: 600 12px/1 var(--mono); text-transform: uppercase; }
+    .copy:hover { border-color: var(--by); }
+    .copy.done { background: var(--bg); color: var(--k); border-color: var(--bg); }
+    .steps { display: grid; gap: 18px; margin-top: 32px; counter-reset: s; }
+    .steps li { display: grid; grid-template-columns: 52px 1fr; gap: 8px; counter-increment: s; }
+    .steps li::before { content: counter(s) '0'; font: 400 14px/1.6 var(--px); color: var(--by); }
+    .steps b { display: block; font: 600 15px/1.5 var(--mono); text-transform: uppercase; color: var(--bw); letter-spacing: .03em; }
+    .steps p { color: var(--ink); font-size: 15.5px; }
+    .note { margin-top: 28px; padding: 14px 16px; border-left: 12px solid var(--by); background: #141414; color: var(--ink); font-size: 15px; line-height: 1.6; }
+    .note b { color: var(--by); font-weight: 600; }
+    .note p + p { margin-top: 10px; }
+    .src { margin-top: 20px; }
+    .src-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font: 600 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--soft); }
+
+    /* FAQ */
+    .faq { max-width: 860px; }
+    details { border-bottom: 4px solid var(--w); }
+    details:first-child { border-top: 4px solid var(--w); }
+    summary { display: flex; align-items: center; gap: 16px; padding: 18px 4px; list-style: none; cursor: pointer; font: 600 clamp(16px, 2vw, 19px)/1.4 var(--mono); }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: '?'; flex: none; width: 32px; height: 32px; display: grid; place-items: center; background: var(--by); color: var(--k); font: 400 16px/1 var(--px); }
+    details[open] summary::before { content: '!'; background: var(--bg); }
+    summary:hover { color: var(--bc); }
+    details p { padding: 0 8px 22px 52px; max-width: 46em; color: var(--ink); font-size: 16px; }
+    details p a { color: var(--bc); }
+
+    /* Footer */
+    footer { padding-block: 40px 56px; }
+    .report { font: 400 14px/1.6 var(--px); }
+    .foot-links { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 28px 0 24px; font: 600 13px/1.4 var(--mono); text-transform: uppercase; }
+    .foot-links a { text-decoration: none; padding: 6px 0; border-bottom: 4px solid var(--bc); }
+    .foot-links a:hover { background: var(--bc); color: var(--k); }
+    .fine { max-width: 48em; color: var(--soft); font-size: 14.5px; }
+
+    /* Download click: the border does its tape thing */
+    @keyframes crawl { to { background-position: 0 40px; } }
+    html.tape body { background: repeating-linear-gradient(0deg, var(--r) 0 20px, var(--c) 20px 40px); animation: crawl .15s steps(2) infinite; }
+
+    /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 960px) {
+      .hero-grid, .ctl, .load, .player, .decks { grid-template-columns: minmax(0, 1fr); }
+      .app { grid-template-columns: minmax(0, 1fr); }
+      .menu { display: grid; grid-template-columns: 1fr 1fr; }
+      .menu-h { grid-column: 1 / -1; }
+      .panel { grid-template-columns: minmax(0, 1fr); }
+      .cells { grid-template-columns: 1fr 1fr; }
+      .player .pphone { order: -1; }
+    }
+    @media (max-width: 640px) {
+      .nav { position: relative; row-gap: 12px; padding-block: 10px 14px; }
+      .nav-links a:not(.keep) { display: none; }
+      .nav-links { gap: 8px; }
+      .brand { font-size: 12px; }
+      section[id] { scroll-margin-top: 16px; }
+      .cells { grid-template-columns: 1fr; }
+      .boot { flex-direction: column; gap: 0; }
+      .brand-row { flex-wrap: wrap; gap: 10px 16px; }
+      .brand-row .stripes { display: none; }
+      .key { width: 100%; }
+      .dia { flex-direction: column; }
+      .wire { width: 4px; min-width: 0; height: 56px; margin: -4px 0; flex: none; background: repeating-linear-gradient(180deg, var(--bw) 0 8px, transparent 8px 16px); }
+      .wire span { top: 50%; left: 14px; transform: translateY(-50%); }
+      .strip { font-size: 12.5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <div class="screen" id="top">
+    <header class="nav">
+      <a class="brand" href="#top" aria-label="Aura Droid, top of page"><span class="spin" data-px="20" data-scale="2"><img src="/retro/img/mark.png" width="32" height="32" alt=""></span>AURA <em>DROID</em></a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#app"><b>1</b>App</a>
+        <a href="#run"><b>2</b>Run</a>
+        <a href="#control"><b>3</b>Control</a>
+        <a href="#faq"><b>?</b>Help</a>
+        <a class="keep" href="#download" style="background:var(--by);color:var(--k)">Download</a>
+        <button class="toggle keep" id="look" type="button" aria-pressed="false" title="Crush the screenshots to 8 Spectrum colours">8-bit look</button>
+        <button class="toggle keep" id="sound" type="button" aria-pressed="false" title="Beeper sound effects">Sound</button>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- ═════════ HERO ═════════ -->
+      <section class="hero pad" data-border="#0000D7" aria-label="Introduction">
+        <div class="boot"><span>&copy; 2026 AURA</span><span>32K RAM OK</span></div>
+        <div class="hero-grid">
+          <div>
+            <div class="brand-row"><span class="spin" data-px="40" data-scale="3"><img src="/retro/img/mark.png" width="64" height="64" alt=""></span><span>Aura <em>Droid</em></span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+            <h1>Your coding <span class="c">agent</span> in your <span class="y">pocket.</span></h1>
+            <p class="lede">The Android client for Aura Code: an autonomous, model-agnostic coding agent. Pair it with Aura on your PC, or run it on the phone alone. She asks before she acts, and remembers what you tell her.</p>
+            <div class="listing" id="listing" role="img" aria-label="Program listing. Platform: Android 8 plus. Licence: Apache 2.0. Size: 19,386,943 bytes. Load Aura Droid."><span class="n">10</span> <span class="kw">LET</span> PLATFORM$=<span class="s">"ANDROID 8+"</span>
+<span class="n">20</span> <span class="kw">LET</span> LICENCE$=<span class="s">"APACHE-2.0"</span>
+<span class="n">30</span> <span class="kw">LET</span> SIZE=19386943
+<span class="n">40</span> <span class="kw">LOAD</span> <span class="s">"AURA-DROID"</span>
+<span class="cursor" aria-hidden="true"></span></div>
+            <div class="cta">
+              <a class="key key-y" href="#download" data-beep>Download APK <small>v0.3.0</small></a>
+              <a class="key key-o" href="#app" data-beep>See the app</a>
+            </div>
+          </div>
+          <div>
+            <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/04-chat-thread.jpg" data-zx="/retro/img/zx-04-chat-thread.png" src="/site-assets/04-chat-thread.jpg" width="576" height="1280" alt="Aura Droid chat: Aura runs list_files and read_file, then explains a JSON parsing error." fetchpriority="high"></div></div>
+            <p class="cap">Real app screenshot</p>
+          </div>
+        </div>
+      </section>
+
+      <p class="strip">Bring your own model: Claude / GPT / Gemini / DeepSeek / Ollama / any OpenAI-compatible endpoint</p>
+
+      <!-- ═════════ 1 THE APP ═════════ -->
+      <section class="sec pad" id="app" data-border="#D70000" aria-labelledby="h-app">
+        <h2 class="bar bar-r" id="h-app"><span>1 &mdash; The app</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
+        <div class="sec-in">
+          <p class="lede" style="margin-bottom:32px">Real screens from the current build. Pick one from the menu. Want them crushed down to 8 Spectrum colours? Flip the 8-bit look switch at the top.</p>
+          <div class="app">
+            <div class="menu" role="tablist" aria-label="App screens" aria-orientation="vertical">
+              <div class="menu-h">Aura Droid menu</div>
+              <button role="tab" id="t0" aria-controls="p0" aria-selected="true" data-beep><b>1</b>Ask</button>
+              <button role="tab" id="t1" aria-controls="p1" aria-selected="false" tabindex="-1" data-beep><b>2</b>Resume</button>
+              <button role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1" data-beep><b>3</b>Remember</button>
+              <button role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1" data-beep><b>4</b>Reach</button>
+              <button role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1" data-beep><b>5</b>Configure</button>
+            </div>
+            <div>
+              <div class="panel" role="tabpanel" id="p0" aria-labelledby="t0">
+                <div>
+                  <h3>One thread, first question to finished patch.</h3>
+                  <p>Aura reads files and runs commands, and every tool call shows up inline with how long it took. On the phone her answers are short by design: the answer first, detail when you ask for it. Hold the mic to talk, or use + to attach a photo or a file.</p>
+                  <ul class="tags"><li>list_files</li><li>read_file</li><li>write_file</li><li>run_shell</li></ul>
+                </div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/04-chat-thread.jpg" data-zx="/retro/img/zx-04-chat-thread.png" src="/site-assets/04-chat-thread.jpg" width="576" height="1280" alt="Aura Droid chat with inline tool calls." loading="lazy"></div></div>
+              </div>
+              <div class="panel" role="tabpanel" id="p1" aria-labelledby="t1">
+                <div>
+                  <h3>Sessions that stay put.</h3>
+                  <p>Pin the important threads, search the rest, rename or export any of them as Markdown or JSON. Each session runs in a mode you choose: Coder, Gazelle for quick answers, or Architect for thinking a plan through.</p>
+                  <ul class="tags"><li>coder</li><li>gazelle</li><li>architect</li></ul>
+                </div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/02-sessions.jpg" data-zx="/retro/img/zx-02-sessions.png" src="/site-assets/02-sessions.jpg" width="576" height="1280" alt="Aura Droid sessions list with pinned, coder, gazelle and architect sessions." loading="lazy"></div></div>
+              </div>
+              <div class="panel" role="tabpanel" id="p2" aria-labelledby="t2">
+                <div>
+                  <h3>Pin what matters. She keeps it.</h3>
+                  <p>Pin any message into Aura's memory. She also saves facts herself as you talk (preferences, decisions, what you're building) and you can read, delete or clear all of it whenever you like.</p>
+                  <ul class="tags"><li>remember</li><li>recall</li><li>forget all</li></ul>
+                </div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/08-memory.jpg" data-zx="/retro/img/zx-08-memory.png" src="/site-assets/08-memory.jpg" width="576" height="1280" alt="Aura's memory screen listing pinned chat items." loading="lazy"></div></div>
+              </div>
+              <div class="panel" role="tabpanel" id="p3" aria-labelledby="t3">
+                <div>
+                  <h3>Memos and a shell, one tap away.</h3>
+                  <p>Record a memo by voice and start a project from it later. Open the built-in shell when you'd rather look under the hood yourself.</p>
+                  <ul class="tags"><li>memos</li><li>shell</li><li>voice</li></ul>
+                </div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/05-quick-menu.jpg" data-zx="/retro/img/zx-05-quick-menu.png" src="/site-assets/05-quick-menu.jpg" width="576" height="1280" alt="Aura Droid overflow menu showing Memos and Shell." loading="lazy"></div></div>
+              </div>
+              <div class="panel" role="tabpanel" id="p4" aria-labelledby="t4">
+                <div>
+                  <h3>Your stack, your keys.</h3>
+                  <p>Pair a desktop or run without one. Point the app at your own model endpoint; your API key is stored encrypted on the device. Follow the system theme, or force dark or light.</p>
+                  <ul class="tags"><li>paired desktop</li><li>standalone</li><li>dynamic colour</li></ul>
+                </div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/07-settings-dark.jpg" data-zx="/retro/img/zx-07-settings-dark.png" src="/site-assets/07-settings-dark.jpg" width="576" height="1280" alt="Aura Droid settings: paired desktop, appearance and standalone mode." loading="lazy"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ 2 RUN ═════════ -->
+      <section class="sec pad" id="run" data-border="#D700D7" aria-labelledby="h-run">
+        <h2 class="bar bar-m" id="h-run"><span>2 &mdash; Two ways to run it</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
+        <div class="sec-in">
+          <p class="lede" style="margin-bottom:32px">Aura Droid is the client. The agent itself is Aura Code. Put it beside your project on a PC, or skip the computer and talk to a model straight from the phone. Two sides of the tape.</p>
+          <div class="decks">
+            <article class="deck">
+              <div class="cassette"><div class="label"><b>Side A</b>Paired</div><div class="reels" aria-hidden="true"><i></i><i></i></div></div>
+              <h3>Aura Code on your PC, steered from your phone.</h3>
+              <div class="dia" role="img" aria-label="Diagram: Aura Droid connects to Aura Code over a pinned TLS link">
+                <div class="node">Aura Droid<small>the phone</small></div>
+                <div class="wire"><span>pinned TLS</span></div>
+                <div class="node h">Aura Code<small>PC or Termux</small></div>
+              </div>
+              <ul>
+                <li><b>Your real project.</b> The agent works on your files with the desktop's tools; the phone is the control surface.</li>
+                <li><b>Wi-Fi or USB.</b> Pair with a 6-character code. Over Wi-Fi the phone pins the desktop's identity; if it changes without you re-pairing, something else is answering.</li>
+                <li><b>Termux works too.</b> Run <code>aura serve</code> on the phone and pair to <code>127.0.0.1</code>. Whatever permissions you give that environment, sudo or root included if you choose, are the ceiling for what she can do there.</li>
+              </ul>
+<pre tabindex="0"><span class="c">REM USB, from the computer</span>
+adb reverse tcp:7337 tcp:7337
+aura serve
+aura devices add "my phone"</pre>
+              <p class="foot">Wi-Fi uses <code>aura serve --lan</code>. Step by step: <a href="/docs/connect-to-desktop.pdf">pairing guide (PDF)</a></p>
+            </article>
+            <article class="deck">
+              <div class="cassette"><div class="label"><b>Side B</b>Phone alone</div><div class="reels" aria-hidden="true"><i></i><i></i></div></div>
+              <h3>No computer. Just you, a key, a model.</h3>
+              <div class="dia" role="img" aria-label="Diagram: Aura Droid talks directly to a model API with your key">
+                <div class="node">Aura Droid<small>on-device</small></div>
+                <div class="wire"><span>your API key</span></div>
+                <div class="node h">Model API<small>OpenAI-style</small></div>
+              </div>
+              <ul>
+                <li><b>Turn on "Run without a desktop."</b> Give it a base URL, a model ID and a key. The key is stored encrypted on the device, and kept even if you later pair and unpair a desktop.</li>
+                <li><b>Tools of her own.</b> Aura works in a workspace folder on the phone: read, write and list files, run shell commands, fetch a URL, save a file to Downloads, and remember things between chats.</li>
+                <li><b>Need your actual repo?</b> Pair a desktop, or run Aura Code in Termux. She'll tell you plainly when a task needs one.</li>
+              </ul>
+<pre tabindex="0"><span class="c">REM Settings > Standalone</span>
+Base URL   https://api.deepseek.com
+Model ID   any chat model
+API key    stored encrypted on device</pre>
+              <p class="foot">Nothing to install on a computer.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ 3 CONTROL ═════════ -->
+      <section class="sec pad" id="control" data-border="#00D700" aria-labelledby="h-ctl">
+        <h2 class="bar bar-g" id="h-ctl"><span>3 &mdash; Control</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
+        <div class="sec-in">
+          <div class="ctl">
+            <div>
+              <p class="lede" style="margin-bottom:28px">Aura asks first. You decide when she doesn't. By default, every action needs your approval. Loosen it as far as you like, one chat at a time or everywhere.</p>
+              <div class="lines" role="list">
+                <span role="listitem"><span class="n">10</span> <span class="kw">ASK</span> EVERY TIME<span class="rem">The default. Each tool call waits for Allow or Deny.</span></span>
+                <span role="listitem"><span class="n">20</span> <span class="kw">ALLOW</span> FOR THIS CHAT<span class="rem">Choose "Allow all" on a prompt and tools run for the rest of that conversation.</span></span>
+                <span role="listitem"><span class="n">30</span> <span class="kw">APPROVE</span> ALL ACTIONS <span class="tag">0.4.0</span><span class="rem">A setting that changes the default in every conversation.</span></span>
+                <span role="listitem"><span class="n">40</span> <span class="kw">SANDBOX</span> OUT <span class="tag">0.4.0</span><span class="rem" style="padding-bottom:0">Lets Aura reach past the app sandbox when you ask. Sensitive app data stays off-limits.</span></span>
+              </div>
+            </div>
+            <div class="set" role="group" aria-label="Interactive preview of the Approvals and Sandbox settings">
+              <div class="set-h"><span>Settings</span><span>Try it</span></div>
+              <div class="row" id="s-approve">
+                <h3>Approve all actions</h3>
+                <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Approve all actions" data-beep>OFF</button>
+                <p>Let Aura run every tool without asking. Off means it asks before each action, as usual.</p>
+                <div class="state" aria-live="polite" data-off="OFF. Aura asks before each action." data-on="ON. Aura runs every tool without asking, in every conversation."></div>
+              </div>
+              <div class="row" id="s-sandbox">
+                <h3>Sandbox out</h3>
+                <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Sandbox out" data-beep>OFF</button>
+                <p>Let Aura reach beyond the app sandbox on request: read and write files elsewhere on the phone, and move anywhere the device user can.</p>
+                <div class="state" aria-live="polite" data-off="OFF. Aura stays inside her own workspace." data-on="ON, on request. Sensitive app data stays off-limits."></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ 4 FEATURES ═════════ -->
+      <section class="sec pad" id="more" data-border="#00D7D7" aria-labelledby="h-more">
+        <h2 class="bar bar-c" id="h-more"><span>4 &mdash; And the rest</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
+        <div class="sec-in">
+          <div class="cells">
+            <div class="cell"><h3>01 Hold to talk</h3><p>Hold the mic to speak, and have Aura read her answers back aloud.</p></div>
+            <div class="cell"><h3>02 Photos &amp; files</h3><p>Attach a photo or a file. PDFs and Office documents are read, and if something fails, she says why.</p></div>
+            <div class="cell"><h3>03 Live previews</h3><p>HTML artifacts render inline in a WebView, with a code view a tap away.</p></div>
+            <div class="cell"><h3>04 Code you keep</h3><p>Code blocks arrive with filenames, ready to save or share. Export whole chats as Markdown or JSON.</p></div>
+            <div class="cell"><h3>05 Self-naming</h3><p>Threads name themselves from the conversation. Rename them whenever you like.</p></div>
+            <div class="cell"><h3>06 Voice memos</h3><p>Capture a thought by voice, then start a project from it when you're at a keyboard.</p></div>
+            <div class="cell"><h3>07 A shell</h3><p>A built-in terminal for the moments you'd rather type the command yourself.</p></div>
+            <div class="cell"><h3>08 Dark, light</h3><p>Follow the system theme or pick one, with dynamic colour that matches your wallpaper.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ 5 TAPE ═════════ -->
+      <section class="sec pad" id="demo" data-border="#D7D700" aria-labelledby="h-demo">
+        <h2 class="bar bar-y" id="h-demo"><span>5 &mdash; In motion</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
+        <div class="sec-in">
+          <div class="player">
+            <div>
+              <p class="lede">Recorded on a phone, not rendered. A short screen recording of the app running. It's a 26&nbsp;MB file, so it only loads if you press play.</p>
+              <span class="press" aria-hidden="true">Press PLAY on tape</span>
+            </div>
+            <div class="pphone" style="--acc:var(--y)"><div class="pphone-in" id="tape">
+              <img class="shot" data-clear="/site-assets/aura-droid-app-demo-poster.jpg" data-zx="/retro/img/zx-demo-poster.png" src="/site-assets/aura-droid-app-demo-poster.jpg" width="720" height="1280" alt="Poster frame of the Aura Droid screen recording." loading="lazy">
+              <button id="tapePlay" type="button" aria-label="Play the screen recording (26 MB)"><b>Play &gt;</b><span>26 MB</span></button>
+            </div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ 6 DOWNLOAD ═════════ -->
+      <section class="sec pad" id="download" data-border="#0000D7" aria-labelledby="h-dl">
+        <h2 class="bar bar-b" id="h-dl"><span>6 &mdash; LOAD "AURA-DROID"</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
+        <div class="sec-in">
+          <div class="load">
+            <div>
+              <p class="lede">An APK for Android 8 and up, distributed directly rather than through Google Play. Free and open source.</p>
+              <div class="cta">
+                <a class="key key-y" id="loadBtn" href="/droid-0.3.0.apk" download="aura-droid-0.3.0.apk">Download APK</a>
+                <a class="key key-o" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener" data-beep>Source &gt;</a>
+              </div>
+              <ol class="steps">
+                <li><div><b>Download the file</b><p>Tap the button. The APK lands in your Downloads folder.</p></div></li>
+                <li><div><b>Allow this source</b><p>When Android warns you, open Settings and allow your browser or file manager for this one install.</p></div></li>
+                <li><div><b>Choose where Aura runs</b><p>Pair a desktop over Wi-Fi or USB, or turn on "Run without a desktop" and add a key.</p></div></li>
+              </ol>
+            </div>
+            <div>
+              <div class="prog">
+                <div><span class="k">Program:</span> AURA-DROID</div>
+                <div><span class="k">File:</span> aura-droid-0.3.0.apk</div>
+                <div><span class="k">Bytes:</span> 19386943 (18.5 MiB)</div>
+                <div><span class="k">Needs:</span> Android 8.0+</div>
+                <div><span class="k">SHA-256:</span> <span class="sha" id="sha">048af99e735e0332768891aa182fe7dde574ea0fb8b1ce587862a7f3abbe3677</span></div>
+                <button class="copy" type="button" data-copy="#sha" data-beep><span>Copy checksum</span></button>
+              </div>
+              <div class="note">
+                <p><b>Why does Android warn me?</b> The app isn't on Google Play, so Android treats it as an unknown source. Compare the SHA-256 above with the file you downloaded if you'd like to be sure.</p>
+                <p><b>Newer than the APK.</b> The source is at 0.4.0, which adds Approve all actions and Sandbox out. Build it yourself to get them today:</p>
+              </div>
+              <div class="src">
+                <div class="src-h">Build from source <button class="copy" type="button" data-copy="#build" data-beep><span>Copy</span></button></div>
+<pre id="build" tabindex="0">git clone https://github.com/DusanCar-sudo/aura-droid.git
+cd aura-droid
+./gradlew assembleDebug</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ 7 FAQ ═════════ -->
+      <section class="sec pad" id="faq" data-border="#D7D7D7" aria-labelledby="h-faq">
+        <h2 class="bar bar-w" id="h-faq"><span>? &mdash; Help</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
+        <div class="sec-in faq">
+          <details name="faq" open>
+            <summary>Do I need a computer?</summary>
+            <p>No. Turn on "Run without a desktop," give the app a base URL, a model ID and an API key, and Aura runs on the phone with her own tools and memory. To work on your real repository, pair a desktop running Aura Code, or run Aura Code in Termux.</p>
+          </details>
+          <details name="faq">
+            <summary>Which models does it use?</summary>
+            <p>When paired, whichever model your Aura Code instance is set up with: Claude, GPT, Gemini, DeepSeek, Ollama and others. On the phone alone, any OpenAI-compatible endpoint you point it at.</p>
+          </details>
+          <details name="faq">
+            <summary>What can Aura do on my phone?</summary>
+            <p>By default she stays in her own workspace folder and asks before every action. "Allow all" relaxes that for one chat. In 0.4.0, Sandbox out lets her reach elsewhere on request, and sensitive app data stays off-limits regardless.</p>
+          </details>
+          <details name="faq">
+            <summary>Where do my API key and chats live?</summary>
+            <p>API keys are held in the Android Keystore, and chat history is stored locally in the app. Requests go to the model endpoint or the desktop you configure, plus any page you ask Aura to fetch. Over Wi-Fi the phone pins the desktop's identity, so it can tell if something else starts answering.</p>
+          </details>
+          <details name="faq">
+            <summary>How does it relate to Aura Code?</summary>
+            <p>Aura Code is the agent, a model-agnostic autonomous coding tool for the command line. Aura Droid is its Android client. Agent behaviour lives in <a href="https://github.com/DusanCar-sudo/aura-code" target="_blank" rel="noopener">aura-code</a>; this app is the phone-sized surface for it.</p>
+          </details>
+          <details name="faq">
+            <summary>Is it open source?</summary>
+            <p>Yes, Apache-2.0. Read it, build it, fork it on <a href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub</a>.</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pad" data-border="#0000D7">
+      <p class="report">0 OK, 0:1 <span class="cursor" aria-hidden="true"></span></p>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/DusanCar-sudo/aura-code" target="_blank" rel="noopener">Aura Code</a>
+        <a href="https://aurawebsite-eta.vercel.app" target="_blank" rel="noopener">Aura website</a>
+        <a href="/docs/connect-to-desktop.pdf">Pairing guide</a>
+        <a href="/modern/">Modern edition</a>
+        <a href="https://github.com/DusanCar-sudo/aura-droid/blob/main/LICENSE" target="_blank" rel="noopener">Apache-2.0</a>
+      </nav>
+      <p class="fine">Built by Dušan Milosavljević. This edition is a tribute to the 8-bit home computers of the early 1980s. It is not affiliated with, or endorsed by, Sinclair, Amstrad or any of their successors. The screenshots are real; the palette is borrowed.</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var $ = function (s, r) { return (r || document).querySelector(s); };
+      var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+      var root = document.documentElement;
+      var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var store = {
+        get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+        set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+      };
+
+      // ── Spinning wireframe triangle: the logo, in old vector style ──
+      // A tetrahedron drawn pixel by pixel on a tiny canvas, then scaled up
+      // without smoothing. Nearer edges are brighter, like depth-cued vector displays.
+      function spin(el) {
+        var N = +el.dataset.px || 40, S = +el.dataset.scale || 3;
+        var c = document.createElement('canvas');
+        c.width = N; c.height = N; c.style.width = c.style.height = (N * S) + 'px';
+        c.setAttribute('role', 'img'); c.setAttribute('aria-label', 'Spinning wireframe triangle: the Aura mark');
+        var g = c.getContext('2d');
+        var V = [[0, -1.05, 0], [0, .62, 1.05], [-.91, .62, -.525], [.91, .62, -.525]];
+        var E = [[0, 1, 0], [0, 2, 0], [0, 3, 0], [1, 2, 1], [2, 3, 1], [3, 1, 1]];
+        var COL = [['#008B8B', '#00FFFF'], ['#8B0000', '#FF0000']];
+        function line(x0, y0, x1, y1, w, col) {
+          x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+          var dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx + dy;
+          g.fillStyle = col;
+          for (;;) {
+            g.fillRect(x0, y0, w, w);
+            if (x0 === x1 && y0 === y1) break;
+            var e2 = 2 * err;
+            if (e2 >= dy) { err += dy; x0 += sx; }
+            if (e2 <= dx) { err += dx; y0 += sy; }
+          }
+        }
+        function frame(a) {
+          g.clearRect(0, 0, N, N);
+          var ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(.42), st = Math.sin(.42);
+          var P = V.map(function (v) {
+            var X = v[0] * ca + v[2] * sa, Z = -v[0] * sa + v[2] * ca, Y = v[1];
+            var Y2 = Y * ct - Z * st, Z2 = Y * st + Z * ct, f = 3.4 / (3.4 + Z2);
+            return [N / 2 + X * f * N * .36, N / 2 + N * .03 + Y2 * f * N * .36, Z2];
+          });
+          var w = N >= 32 ? 2 : 1;
+          E.map(function (e) { return { e: e, z: (P[e[0]][2] + P[e[1]][2]) / 2 }; })
+            .sort(function (p, q) { return q.z - p.z; })
+            .forEach(function (o) {
+              var near = o.z < 0.05 ? 1 : 0;
+              line(P[o.e[0]][0], P[o.e[0]][1], P[o.e[1]][0], P[o.e[1]][1], near ? w : 1, COL[o.e[2]][near]);
+            });
+        }
+        var a = 0.6; frame(a);
+        el.textContent = ''; el.appendChild(c);
+        if (!calm) setInterval(function () { if (!document.hidden) { a += 0.1; frame(a); } }, 80);
+      }
+      $$('.spin').forEach(spin);
+
+      // ── Beeper (off by default) ──
+      var ac = null, soundOn = false;
+      function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ac; }
+      function beep(freq, ms, vol) {
+        if (!soundOn) return; var a = audio(); if (!a) return;
+        var o = a.createOscillator(), gn = a.createGain();
+        o.type = 'square'; o.frequency.value = freq; gn.gain.value = vol || 0.04;
+        o.connect(gn); gn.connect(a.destination); o.start(); o.stop(a.currentTime + ms / 1000);
+      }
+      function screech(seconds) {
+        if (!soundOn) return; var a = audio(); if (!a) return;
+        var o = a.createOscillator(), gn = a.createGain(), t = a.currentTime;
+        o.type = 'square'; gn.gain.value = 0.025; o.connect(gn); gn.connect(a.destination);
+        for (var x = 0; x < seconds; x += 0.004) o.frequency.setValueAtTime(x < seconds * 0.45 ? 807 : (Math.random() < 0.5 ? 1300 : 2600), t + x);
+        o.start(t); o.stop(t + seconds);
+      }
+      document.addEventListener('click', function (e) { if (e.target.closest('[data-beep]')) beep(880, 35); });
+      var soundBtn = $('#sound');
+      soundBtn.addEventListener('click', function () {
+        soundOn = !soundOn; soundBtn.setAttribute('aria-pressed', soundOn);
+        if (soundOn) beep(1320, 80);
+      });
+
+      // ── Border colour follows the section in view ──
+      if ('IntersectionObserver' in window) {
+        var bo = new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) root.style.setProperty('--border', e.target.dataset.border); });
+        }, { rootMargin: '-45% 0px -50% 0px' });
+        $$('[data-border]').forEach(function (s) { bo.observe(s); });
+      }
+
+      // ── 8-bit look: optional. Screenshots are clear by default. ──
+      var lookBtn = $('#look');
+      function setLook(eight) {
+        lookBtn.setAttribute('aria-pressed', eight);
+        $$('img.shot').forEach(function (img) {
+          img.src = eight ? img.dataset.zx : img.dataset.clear;
+          img.classList.toggle('px8', eight);
+        });
+        $$('.cap').forEach(function (c) { c.textContent = eight ? 'Real app, crushed to 8 colours' : 'Real app screenshot'; });
+        store.set('aura-retro-look', eight ? '8bit' : 'clear');
+      }
+      lookBtn.addEventListener('click', function () { setLook(lookBtn.getAttribute('aria-pressed') !== 'true'); beep(660, 40); });
+      if (store.get('aura-retro-look') === '8bit') setLook(true);
+
+      // ── Tabs (menu) ──
+      var tabs = $$('[role="tab"]'), panels = $$('[role="tabpanel"]');
+      function select(i, focus) {
+        tabs.forEach(function (t, k) { t.setAttribute('aria-selected', k === i); t.tabIndex = k === i ? 0 : -1; });
+        panels.forEach(function (p, k) { p.hidden = k !== i; });
+        if (focus) tabs[i].focus();
+      }
+      tabs.forEach(function (t, i) {
+        t.addEventListener('click', function () { select(i); });
+        t.addEventListener('keydown', function (e) {
+          var n = tabs.length, k = i;
+          if (e.key === 'ArrowDown' || e.key === 'ArrowRight') k = (i + 1) % n;
+          else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') k = (i - 1 + n) % n;
+          else if (e.key === 'Home') k = 0; else if (e.key === 'End') k = n - 1; else return;
+          e.preventDefault(); select(k, true);
+        });
+      });
+      select(0);
+
+      // ── Typed program listing (quick, and the full text is always in the label) ──
+      var listing = $('#listing');
+      if (listing && !calm) {
+        var html = listing.innerHTML, i = 0, out = '', inTag = false;
+        var cur = '<span class="cursor" aria-hidden="true"></span>';
+        listing.innerHTML = cur;
+        var tick = function () {
+          for (var n = 4; n > 0 && i < html.length;) {
+            var ch = html[i++]; out += ch;
+            if (ch === '<') inTag = true; else if (ch === '>') { inTag = false; continue; }
+            if (!inTag) n--;
+          }
+          if (i < html.length) { listing.innerHTML = out + cur; setTimeout(tick, 24); } else { listing.innerHTML = html; }
+        };
+        setTimeout(tick, 300);
+      }
+
+      // ── Approvals demo ──
+      $$('.row').forEach(function (row) {
+        var sw = $('.sw', row), st = $('.state', row); if (!sw) return;
+        var sync = function () {
+          var on = sw.getAttribute('aria-checked') === 'true';
+          row.classList.toggle('is-on', on); st.textContent = on ? st.dataset.on : st.dataset.off; sw.textContent = on ? 'ON' : 'OFF';
+        };
+        sw.addEventListener('click', function () { sw.setAttribute('aria-checked', sw.getAttribute('aria-checked') === 'true' ? 'false' : 'true'); sync(); });
+        sync();
+      });
+
+      // ── Copy buttons ──
+      $$('.copy').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var text = $(btn.dataset.copy).textContent.trim(), label = $('span', btn), was = label.textContent;
+          var done = function () { btn.classList.add('done'); label.textContent = 'Copied'; setTimeout(function () { btn.classList.remove('done'); label.textContent = was; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () {});
+          else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} document.body.removeChild(ta); }
+        });
+      });
+
+      // ── Download button: the border does its tape thing while the real download starts ──
+      var loadBtn = $('#loadBtn');
+      if (loadBtn && !calm) loadBtn.addEventListener('click', function () {
+        root.classList.add('tape'); screech(1.4);
+        setTimeout(function () { root.classList.remove('tape'); beep(1320, 120); }, 1500);
+      });
+
+      // ── Demo video only downloads on request ──
+      var play = $('#tapePlay');
+      if (play) play.addEventListener('click', function () {
+        var v = document.createElement('video');
+        v.src = '/site-assets/aura-droid-app-demo.mp4'; v.poster = '/site-assets/aura-droid-app-demo-poster.jpg';
+        v.controls = true; v.autoplay = true; v.playsInline = true; v.setAttribute('aria-label', 'Aura Droid screen recording');
+        var box = $('#tape'); box.textContent = ''; box.appendChild(v); if (v.play) v.play().catch(function () {});
+      });
+    })();
+  </script>
+  <script src="/aura-kb.js" defer></script>
+  <script src="/aura-chat.js" data-product="Aura Droid" defer></script>
+</body>
+</html>

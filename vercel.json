@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    {
+      "src": "^/$",
+      "has": [{ "type": "host", "value": "^aura-droid-site(-.*)?\\.vercel\\.app$" }],
+      "dest": "/retro/index.html"
+    }
+  ]
+}
