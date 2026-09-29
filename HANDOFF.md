@@ -8,7 +8,7 @@ For the Claude Code terminal CLI on your Linux machine. Read `BRAND.md` next; it
 |---|---|
 | **Nature website** | Live at https://aura-droid.vercel.app/ (`index.html`, images in `modern/img/`). `/modern/` redirects to `/`. |
 | **Spectrum (retro) website** | Live at https://aura-droid-site.vercel.app/ (`retro/`). |
-| **Android app polish** | Written, **not yet compiled or run** (see "First thing to do"). |
+| **Android app polish** | Compiles and passes unit tests on GitHub Actions (debug APK built, PR #3). **Not yet run on a phone** (see "First thing to do"). |
 | **Brand guide** | `BRAND.md` |
 | **Terminal marks** | `tools/ascii/aura-marks.py` (not yet in aura-code / aura-os) |
 
@@ -24,7 +24,7 @@ For the Claude Code terminal CLI on your Linux machine. Read `BRAND.md` next; it
 
 ## First thing to do
 
-The cloud sandbox this was written in blocks `dl.google.com`, so there was no Android SDK and **nothing was compiled**. Only a Kotlin syntax check passed (the compiler found no syntax errors; type errors can't be seen without the Android libraries). On your machine:
+The cloud sandbox this was written in blocks `dl.google.com`, so nothing could be compiled there. GitHub Actions did compile it: on PR #3 the unit tests pass and the debug APK builds (download it from the run's Artifacts, `aura-droid-debug`). It has not been run on a device. To build locally:
 
 ```sh
 git clone https://github.com/DusanCar-sudo/aura-droid && cd aura-droid
@@ -34,7 +34,7 @@ export ANDROID_HOME=$HOME/Android/Sdk    # needs platforms;android-35 and build-
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Fix whatever the compiler reports, most likely in `BrandSplash.kt`, `Type.kt` or `MainActivity.kt`. Then check on a real phone:
+Then check on a real phone:
 
 1. Cold start: system splash, then the brand splash, then chat. Try tapping during it and rotating during it.
 2. Dark and light theme (Settings). Look at chat, sessions, settings, pairing and memos for any colour that looks wrong or unreadable.
