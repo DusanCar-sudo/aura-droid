@@ -172,10 +172,11 @@ imagery.
 
 - **Aura Droid:** the rounded peak. One path drawn three times: a halo at
   24% opacity (stroke 19), a body (stroke 10.5) and a core (stroke 4.5).
-  - The app colourway is cyan `#6ED0EA` with a ruby `#D24B30` core on ink
-    `#0A1020`.
-  - The Nature web colourway is cream `#F2EBC9` with a gold `#C8AD5C` core.
-  - Source: `site-assets/favicon.svg` and `ui/theme/AuraLogo.kt`.
+  - One colourway everywhere, web and app: cream `#F2EBC9` body and a gold
+    `#C8AD5C` core on forest `#070907`. On light grounds the body is ink.
+    (The old cyan and ruby colourway is retired.)
+  - Source: `site-assets/favicon.svg`, `ui/theme/AuraLogo.kt` and the
+    launcher icon `res/drawable/ic_launcher_foreground.xml`.
 - **Aura adOS:** the striped A with the sun behind it (`aura-os-logo`, the
   boot splash). The sun follows the theme accent.
 - **Aura Code:** the `a` plus stripes icon (`aura-icon.svg`).
@@ -323,7 +324,7 @@ generic spinner.
 |---|---|---|---|---|
 | Aura Code TUI and web client | navy `#0F1724`, panel `#1C2739` | `#E8E6E3`, dim `#8A94A6` | terracotta `#CC785C` (chrome), ruby `#9B1B30` (accents) | `aura-code/DESIGN.md`, `diamond.ts` |
 | Aura adOS | theme-driven: accent default `#00E5D0`, magenta `#FF6AC7` | `#D9FFFC` | the theme accent | `aura-os` themes, waybar `theme.css` |
-| Aura Droid app | ink `#0A1020`, ink 2 `#101A2C` (light: `#EAF1F7`) | `#EAF1F7` | cyan `#6ED0EA`, glow `#FFC08A`, copper `#D98E63`, ruby `#D24B30` | `app/.../ui/theme/Color.kt` |
+| Aura Droid app | the Nature palette, as Material 3 roles: forest `#070907` / `#0C100C`, moss `#141A14` / `#1A211A` (light: cream `#F2EBC9`) | cream `#F2EBC9` (light: ink `#10150F`) | gold `#E7CF85` (light: olive `#535C37`) | `app/.../ui/theme/Color.kt` |
 | Droid web, Nature edition | forest `#070907`, `#0C100C`, moss cards `#141A14` / `#1A211A` | cream `#F2EBC9`, `#E2DBB7`, dim `#B9BAA2`, mute `#8B8E7A` | gold `#E7CF85`, straw `#D8CB95` | `modern/index.html` `:root` |
 | Droid web, Nature cream sections | cream `#F2EBC9` | ink `#10150F`, `#3B4232`, olive `#535C37` | ink knob on cream | same |
 | Droid web, Spectrum edition | black, border blue `#0000D7` | `#F2F2F2`, `#BDBDBD` | bright yellow `#FFFF00` | `retro/index.html` `:root` (the 15 ZX Spectrum colours) |
@@ -377,7 +378,11 @@ The rule: large type runs tight and small mono runs open.
 - Text uses the user's terminal font.
 
 **Android app:**
-- System Roboto today. Bundling Geist is an open decision (§12).
+- Geist and Geist Mono are bundled (`res/font/`, static 400/500/600 instances
+  of the site's fonts; licence in `third_party/Geist-OFL.txt`).
+- Body and titles use Geist, tracked like the web (tight on large sizes,
+  none on body). The small label styles and all code, terminal and
+  monospace text use Geist Mono.
 
 ---
 
@@ -527,13 +532,11 @@ Every edition links to the others in its footer.
 
 ## 12. Open decisions (owner)
 
-1. **Aura Droid app palette.** Keep Signal (ink and cyan) in the app, or
-   move it to Nature (forest and gold) to match the site? The stripes and
-   letters are fixed either way.
+1. ~~Aura Droid app palette.~~ Decided: the app follows Nature (§13).
 2. **The Droid lockup on the sites.** The Nature and Spectrum sites use the
    peak symbol and a text "Aura Droid". Should the nav or footer carry the
    family lockup `aura ▟▟▟▟▘ DROID`?
-3. **Geist in the app.** Should the app bundle Geist instead of Roboto?
+3. ~~Geist in the app.~~ Decided: bundled (§6, §13).
 4. **Terminal marks.** Which of the new marks (mini, ascii, tile, working)
    ship in aura-code and aura-os? §4.2 has the recommendation.
 5. **Where this guide lives.** Move it and `tools/` into
@@ -541,7 +544,37 @@ Every edition links to the others in its footer.
 
 ---
 
-## 13. Where things are
+## 13. The Android app
+
+The app follows the same brand as the sites; only the medium changes.
+
+- **Launch:** the system splash shows the peak on forest, then the brand
+  splash takes over (`ui/splash/BrandSplash.kt`): the light-point landscape,
+  the peak, "Your coding agent, *in your pocket.*", the four stripes lighting
+  in order, and the big connected **AURA DROID** wordmark from the site
+  footer (Geist 600, −0.07em, the cream-to-olive gradient), sized to 94% of
+  the screen width and sunk slightly below the bottom edge.
+  - It runs about 1.5 s, once per launch, and a tap skips it.
+  - With system animations off it appears drawn and leaves in 0.5 s.
+  - Never add a loading delay to show it; it covers real start-up only.
+- **Colour:** Nature as Material 3 roles (§5.2). Every role pair is at least
+  4.5:1 in dark and light. Gold is the one accent per screen. The stripes
+  never appear as UI colour, only in the splash and the mark.
+- **Type:** Geist and Geist Mono (§6). Use the theme's text styles; don't set
+  a font family by hand except `GeistMono` for code.
+- **Icon:** the peak, cream with a gold core on forest; a monochrome layer is
+  provided for Android 13+ themed icons.
+- **Accessibility:** touch targets at least 48 dp, a `contentDescription` on
+  every icon that acts alone (decorative icons beside text use `null`),
+  system font scale respected, no colour-only state.
+- **No third-party SDKs, analytics or ads.** The permissions in the manifest
+  are the whole list.
+- **Signing:** releases are signed with the owner's key, supplied through the
+  environment (`HANDOFF.md`). The key is never in the repo.
+
+---
+
+## 14. Where things are
 
 | Thing | Path |
 |---|---|
@@ -550,5 +583,6 @@ Every edition links to the others in its footer.
 | Nature imagery | `tools/imagery/` (this repo): `terrain.py`, `photos.py`, `build.sh` |
 | Nature site | `modern/index.html`, `modern/img/`, `modern/og.jpg` |
 | Spectrum site | `retro/` |
-| Droid symbol | `site-assets/favicon.svg`, `app/src/main/java/dev/aura/auradroid/ui/theme/AuraLogo.kt` |
+| Droid symbol | `site-assets/favicon.svg`, `app/src/main/java/dev/aura/auradroid/ui/theme/AuraLogo.kt`, `app/src/main/res/drawable/ic_launcher_foreground.xml` |
+| Android splash, palette, type | `app/src/main/java/dev/aura/auradroid/ui/splash/`, `ui/theme/`, `app/src/main/res/font/`, `res/drawable-nodpi/splash_bg.webp` |
 | Aura Code UI tokens | `aura-code/DESIGN.md` |

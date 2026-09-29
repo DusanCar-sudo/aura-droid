@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="aura_ink">#0A1020</color>
-    <color name="aura_cyan">#6ED0EA</color>
-    <color name="aura_ruby">#D24B30</color>
+    <!-- Nature palette (BRAND.md §5). Compose reads its own copy in ui/theme/Color.kt;
+         these exist for the window, the splash and the launcher icon before Compose runs. -->
+    <color name="aura_forest">#070907</color>
+    <color name="aura_cream">#F2EBC9</color>
+    <color name="aura_gold">#E7CF85</color>
+    <color name="aura_gold_deep">#C8AD5C</color>
 </resources>

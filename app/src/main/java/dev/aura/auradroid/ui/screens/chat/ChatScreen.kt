@@ -35,7 +35,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -51,6 +50,7 @@ import dev.aura.auradroid.ui.theme.AuraLogo
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.ui.viewinterop.AndroidView
+import dev.aura.auradroid.ui.theme.GeistMono
 
 @Composable
 fun ChatScreen(
@@ -252,8 +252,8 @@ private fun ChatTopBar(
             ) {
                 AuraLogo(
                     modifier = Modifier.size(26.dp),
-                    cyanColor = MaterialTheme.colorScheme.primary,
-                    rubyColor = MaterialTheme.colorScheme.tertiary,
+                    bodyColor = MaterialTheme.colorScheme.onBackground,
+                    coreColor = MaterialTheme.colorScheme.primary,
                 )
                 Column {
                     Text(
@@ -498,7 +498,7 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                 Text(
                     artifact.name.orEmpty(),
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = GeistMono,
                     fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.weight(1f))
@@ -552,7 +552,7 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                         Text(
                             artifact.content.orEmpty(),
                             style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = GeistMono,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(10.dp),
                         )
@@ -621,8 +621,8 @@ private fun BubbleRow(
         if (!isUser) {
             AuraLogo(
                 modifier = Modifier.size(22.dp).padding(top = 4.dp),
-                cyanColor = MaterialTheme.colorScheme.primary,
-                rubyColor = MaterialTheme.colorScheme.tertiary,
+                bodyColor = MaterialTheme.colorScheme.onBackground,
+                coreColor = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.width(8.dp))
         }
@@ -762,7 +762,7 @@ private fun SaveableBlock(block: dev.aura.auradroid.data.export.CodeBlock) {
                 Text(
                     block.fileName,
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = GeistMono,
                     fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.weight(1f))
@@ -847,7 +847,7 @@ private fun ToolRow(message: MessageItem) {
                 Text(
                     payload?.name ?: message.content,
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = GeistMono,
                     color = accent,
                 )
                 payload?.ms?.let {
@@ -862,7 +862,7 @@ private fun ToolRow(message: MessageItem) {
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = GeistMono,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                 )
@@ -871,7 +871,7 @@ private fun ToolRow(message: MessageItem) {
                 Text(
                     it.lineSequence().take(4).joinToString("\n"),
                     style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = GeistMono,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 )
             }
@@ -986,7 +986,7 @@ private fun ApprovalSheet(
                 Text(
                     message,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = GeistMono,
                     modifier = Modifier.padding(13.dp),
                 )
             }
@@ -1342,8 +1342,8 @@ private fun EmptyState(standalone: Boolean) {
             )
             AuraLogo(
                 modifier = Modifier.size(46.dp),
-                cyanColor = MaterialTheme.colorScheme.primary,
-                rubyColor = MaterialTheme.colorScheme.tertiary,
+                bodyColor = MaterialTheme.colorScheme.onBackground,
+                coreColor = MaterialTheme.colorScheme.primary,
             )
         }
         Text(

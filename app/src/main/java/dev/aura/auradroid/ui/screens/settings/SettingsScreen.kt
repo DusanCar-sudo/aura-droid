@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.aura.auradroid.data.settings.ThemeMode
 import dev.aura.auradroid.ui.theme.AuraLogo
+import dev.aura.auradroid.ui.theme.GeistMono
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,8 +60,8 @@ fun SettingsScreen(
                     ) {
                         AuraLogo(
                             modifier = Modifier.size(24.dp),
-                            cyanColor = MaterialTheme.colorScheme.primary,
-                            rubyColor = MaterialTheme.colorScheme.tertiary,
+                            bodyColor = MaterialTheme.colorScheme.onBackground,
+                            coreColor = MaterialTheme.colorScheme.primary,
                         )
                         Text("Settings", fontWeight = FontWeight.SemiBold)
                     }
@@ -123,7 +123,7 @@ fun SettingsScreen(
                         Text(
                             "${state.host}:${state.port}",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = GeistMono,
                         )
                     }
                     state.projectName?.let { Row2("Project", it) }
