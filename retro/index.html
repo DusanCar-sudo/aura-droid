@@ -14,30 +14,21 @@
   <meta property="og:url" content="https://aura-droid-site.vercel.app/">
   <meta property="og:title" content="AURA DROID — Your coding agent, in your pocket. (Retro edition)">
   <meta property="og:description" content="The Android client for Aura Code, loaded from tape. Pair it with your PC or run it on the phone alone.">
-  <meta property="og:image" content="https://aura-droid-site.vercel.app/retro/og.jpg?v=1">
+  <meta property="og:image" content="https://aura-droid-site.vercel.app/retro/og.jpg?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="AURA DROID in 8-bit: Your coding agent, in your pocket.">
+  <meta property="og:image:alt" content="AURA DROID: Your coding agent, in your pocket.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="AURA DROID — Your coding agent, in your pocket. (Retro edition)">
   <meta name="twitter:description" content="The Android client for Aura Code, loaded from tape.">
-  <meta name="twitter:image" content="https://aura-droid-site.vercel.app/retro/og.jpg?v=1">
+  <meta name="twitter:image" content="https://aura-droid-site.vercel.app/retro/og.jpg?v=2">
   <link rel="preload" href="/retro/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/retro/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
-  <script>
-    (function () {
-      var d = document.documentElement;
-      d.classList.add('js');
-      try {
-        var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (!calm && !sessionStorage.getItem('aura-retro-loaded')) d.classList.add('loading');
-      } catch (e) {}
-    })();
-  </script>
+  <link rel="preload" href="/retro/fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
+  <script>document.documentElement.classList.add('js')</script>
   <style>
     @font-face { font-family: 'Press Start 2P'; font-style: normal; font-weight: 400; font-display: swap; src: url(/retro/fonts/press-start-2p.woff2) format('woff2'); }
-    @font-face { font-family: 'VT323'; font-style: normal; font-weight: 400; font-display: swap; src: url(/retro/fonts/vt323.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'VT323'; font-style: normal; font-weight: 400; font-display: swap; src: url(/retro/fonts/vt323-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/retro/fonts/geist-mono.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/retro/fonts/geist-mono-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 
     /* ── The 8 colours, two brightnesses ───────────────────────────────── */
     :root {
@@ -45,7 +36,9 @@
       --b: #0000D7; --r: #D70000; --m: #D700D7; --g: #00D700; --c: #00D7D7; --y: #D7D700; --w: #D7D7D7;
       --bb: #0000FF; --br: #FF0000; --bm: #FF00FF; --bg: #00FF00; --bc: #00FFFF; --by: #FFFF00; --bw: #FFFFFF;
       --px: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
-      --vt: 'VT323', ui-monospace, 'Courier New', monospace;
+      --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --ink: #F2F2F2;
+      --soft: #BDBDBD;
       --border: #0000D7;
       --edge: clamp(8px, 4.5vw, 72px);
       --step: polygon(0 8px, 4px 8px, 4px 4px, 8px 4px, 8px 0, calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0 calc(100% - 8px));
@@ -53,20 +46,19 @@
 
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-    body { margin: 0; padding: var(--edge) 0; background: var(--border); color: var(--bw); font: 400 24px/1.22 var(--vt); -webkit-font-smoothing: none; overflow-x: hidden; }
-    img { display: block; max-width: 100%; }
+    body { margin: 0; padding: var(--edge) 0; background: var(--border); color: var(--ink); font: 400 17px/1.65 var(--mono); overflow-x: hidden; }
+    img, canvas { display: block; max-width: 100%; }
     a { color: inherit; }
     button { font: inherit; color: inherit; cursor: pointer; }
     h1, h2, h3, p, ul, ol, dl, dd, figure, pre { margin: 0; }
     ul, ol { padding: 0; list-style: none; }
-    code { font-family: var(--vt); font-size: 1em; color: var(--bc); }
+    code { font-family: var(--mono); font-size: .95em; color: var(--bc); }
     ::selection { background: var(--by); color: var(--k); }
     :focus-visible { outline: 4px solid var(--by); outline-offset: 2px; }
     [hidden] { display: none !important; }
     section[id] { scroll-margin-top: 76px; }
 
     .screen { position: relative; width: min(1100px, 100% - var(--edge) * 2); margin: 0 auto; background: var(--k); }
-    .screen::after { content: ''; position: absolute; inset: 0; z-index: 30; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px); }
     .pad { padding-inline: clamp(16px, 4vw, 48px); }
     .skip { position: absolute; left: 8px; top: -80px; z-index: 200; padding: 12px 16px; background: var(--by); color: var(--k); font: 12px/1.3 var(--px); }
     .skip:focus { top: 8px; }
@@ -84,132 +76,125 @@
     .bar-g { background: var(--bg); color: var(--k); } .bar-c { background: var(--bc); color: var(--k); }
     .bar-y { background: var(--by); color: var(--k); } .bar-b { background: var(--b); color: var(--bw); }
     .bar-w { background: var(--bw); color: var(--k); }
-    .cursor { display: inline-block; width: .62em; height: 1em; vertical-align: -.14em; background: var(--bw); animation: blink 1s steps(1) infinite; }
+    .cursor { display: inline-block; width: .6em; height: 1.05em; vertical-align: -.16em; background: var(--bw); animation: blink 1s steps(1) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
-    .px { font-family: var(--px); text-transform: uppercase; }
-    .dim { color: #9a9a9a; }
-    .lede { max-width: 34em; font-size: 26px; color: var(--w); }
+    .lede { max-width: 38em; font-size: clamp(17px, 1.7vw, 19px); color: var(--ink); }
+    .spin { display: inline-block; line-height: 0; flex: none; }
+    .spin canvas { image-rendering: pixelated; }
 
     /* ── Buttons: key caps ─────────────────────────────────────────────── */
-    .key { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 56px; padding: 12px 20px; border: 0; background: var(--bw); color: var(--k); font: 400 13px/1.3 var(--px); text-transform: uppercase; text-decoration: none; box-shadow: 6px 6px 0 var(--r); transition: transform .08s steps(2), box-shadow .08s steps(2); }
+    .key { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 56px; padding: 12px 22px; border: 0; background: var(--bw); color: var(--k); font: 400 13px/1.3 var(--px); text-transform: uppercase; text-decoration: none; box-shadow: 6px 6px 0 var(--r); transition: transform .08s steps(2), box-shadow .08s steps(2); }
     .key:hover { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--r); }
     .key:active { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--r); }
     .key-y { background: var(--by); box-shadow: 6px 6px 0 var(--b); } .key-y:hover { box-shadow: 3px 3px 0 var(--b); } .key-y:active { box-shadow: 0 0 0 var(--b); }
     .key-o { background: var(--k); color: var(--bw); border: 4px solid var(--bw); box-shadow: 6px 6px 0 var(--m); } .key-o:hover { box-shadow: 3px 3px 0 var(--m); } .key-o:active { box-shadow: 0 0 0 var(--m); }
-    .key small { font: inherit; font-size: 9px; opacity: .8; }
+    .key small { font: 500 12px/1 var(--mono); opacity: .85; text-transform: none; }
 
     /* ── Nav ───────────────────────────────────────────────────────────── */
-    .nav { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; padding: 12px clamp(16px, 4vw, 48px); background: var(--k); border-bottom: 4px solid var(--bw); }
+    .nav { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; padding: 8px clamp(16px, 4vw, 48px); background: var(--k); border-bottom: 4px solid var(--bw); }
     .nav::after { content: ''; position: absolute; left: 0; right: 0; bottom: -12px; height: 8px; background: linear-gradient(90deg, var(--br) 0 25%, var(--by) 25% 50%, var(--bg) 50% 75%, var(--bc) 75%); }
     .brand { display: inline-flex; align-items: center; gap: 12px; font: 400 14px/1 var(--px); text-decoration: none; text-transform: uppercase; }
-    .brand img { width: 32px; height: 32px; image-rendering: pixelated; }
-    .brand span { color: var(--bc); }
-    .nav-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; font: 400 10px/1 var(--px); text-transform: uppercase; }
-    .nav-links a { text-decoration: none; padding: 8px 6px; }
+    .brand em { font-style: normal; color: var(--bc); }
+    .nav-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; font: 600 13px/1 var(--mono); text-transform: uppercase; }
+    .nav-links a { text-decoration: none; padding: 9px 6px; }
     .nav-links a:hover { background: var(--bc); color: var(--k); }
-    .nav-links a b { color: var(--by); font-weight: 400; margin-right: 4px; }
+    .nav-links a b { color: var(--by); font-weight: 600; margin-right: 6px; }
     .nav-links a:hover b { color: var(--k); }
-    .toggle { padding: 8px 10px; border: 2px solid var(--bw); background: var(--k); font: 400 9px/1 var(--px); text-transform: uppercase; }
+    .toggle { padding: 9px 11px; border: 2px solid var(--bw); background: var(--k); font: 600 12px/1 var(--mono); text-transform: uppercase; }
     .toggle[aria-pressed="true"] { background: var(--bg); color: var(--k); border-color: var(--bg); }
     .toggle:hover { border-color: var(--by); }
 
     /* ── Hero ──────────────────────────────────────────────────────────── */
-    .hero { position: relative; padding-block: 32px 56px; }
-    .boot { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 24px; font-size: 22px; color: #9a9a9a; }
+    .hero { position: relative; padding-block: 28px 56px; }
+    .boot { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 20px; font: 400 14px/1.4 var(--mono); color: var(--soft); }
     .hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(24px, 4vw, 56px); align-items: center; }
-    .hero h1 { font: 400 clamp(20px, 3.7vw, 38px)/1.6 var(--px); text-transform: uppercase; margin: 24px 0 24px; }
+    .brand-row { display: flex; align-items: center; gap: 18px; font: 400 clamp(15px, 2.3vw, 22px)/1.2 var(--px); text-transform: uppercase; }
+    .brand-row em { font-style: normal; color: var(--bc); }
+    .hero h1 { font: 400 clamp(20px, 3.5vw, 34px)/1.7 var(--px); text-transform: uppercase; margin: 22px 0 22px; }
     .hero h1 .c { color: var(--bc); } .hero h1 .y { color: var(--by); }
-    .hero .brand-row { display: flex; align-items: center; gap: 16px; font: 400 clamp(14px, 2vw, 20px)/1 var(--px); text-transform: uppercase; }
-    .hero .brand-row img { width: 64px; height: 64px; image-rendering: pixelated; }
-    .listing { white-space: pre-wrap; margin-top: 28px; padding: 16px 18px; border: 4px solid var(--w); font: 400 clamp(10px, 1.4vw, 13px)/2 var(--px); text-transform: uppercase; background: var(--k); min-height: 11.5em; }
+    .listing { white-space: pre-wrap; margin-top: 26px; padding: 16px 18px; border: 4px solid var(--w); font: 500 clamp(13px, 1.5vw, 16px)/1.9 var(--mono); letter-spacing: .04em; text-transform: uppercase; background: var(--k); min-height: 10.5em; }
     .listing .n { color: var(--by); } .listing .kw { color: var(--bc); } .listing .s { color: var(--bg); }
-    .cta { display: flex; flex-wrap: wrap; gap: 20px 24px; margin-top: 32px; }
+    .cta { display: flex; flex-wrap: wrap; gap: 20px 24px; margin-top: 30px; }
     .pphone { position: relative; width: min(100%, 320px); margin: 0 auto; }
     .pphone::before { content: ''; position: absolute; inset: 14px -14px -14px 14px; background: var(--acc, var(--r)); clip-path: var(--step); }
     .pphone-in { position: relative; padding: 12px; background: var(--bw); clip-path: var(--step); }
-    .pphone img { width: 100%; height: auto; aspect-ratio: 9 / 20; background: var(--k); image-rendering: pixelated; object-fit: cover; }
-    .pphone img.true { image-rendering: auto; }
+    .pphone img { width: 100%; height: auto; aspect-ratio: 9 / 20; background: var(--k); object-fit: cover; }
+    .pphone img.px8 { image-rendering: pixelated; }
     .hero .pphone { --acc: var(--b); }
-    .cap { margin-top: 28px; font: 400 9px/1.8 var(--px); text-align: center; text-transform: uppercase; color: #9a9a9a; }
+    .cap { margin-top: 26px; font: 500 12px/1.6 var(--mono); text-align: center; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
 
-    /* ── Ticker ────────────────────────────────────────────────────────── */
-    .ticker { overflow: hidden; background: var(--by); color: var(--k); border-block: 4px solid var(--bw); }
-    .ticker-track { display: flex; width: max-content; padding: 12px 0; font: 400 12px/1.4 var(--px); text-transform: uppercase; white-space: nowrap; animation: tick 28s steps(70) infinite; }
-    .ticker-track span { padding-right: 32px; }
-    .ticker:hover .ticker-track { animation-play-state: paused; }
-    @keyframes tick { to { transform: translateX(-50%); } }
+    /* ── Model strip ───────────────────────────────────────────────────── */
+    .strip { padding: 14px clamp(16px, 4vw, 48px); background: var(--by); color: var(--k); border-block: 4px solid var(--bw); font: 600 14px/1.55 var(--mono); text-transform: uppercase; text-align: center; letter-spacing: .03em; }
 
     /* ── Sections ──────────────────────────────────────────────────────── */
     .sec { padding-block: 64px 24px; }
     .sec-in { padding-top: 32px; }
-    .sec h3 { font: 400 clamp(14px, 2.2vw, 20px)/1.6 var(--px); text-transform: uppercase; }
+    .sec h3 { font: 600 clamp(19px, 2.3vw, 24px)/1.3 var(--mono); }
 
     /* App menu (the 128K-style menu) */
     .app { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 32px; align-items: start; }
     .menu { border: 4px solid var(--bw); }
-    .menu-h { padding: 10px 12px; background: var(--b); color: var(--bw); font: 400 10px/1.4 var(--px); text-transform: uppercase; }
-    .menu [role="tab"] { display: block; width: 100%; padding: 14px 12px; border: 0; border-top: 4px solid var(--k); background: var(--k); text-align: left; font: 400 11px/1.4 var(--px); text-transform: uppercase; }
-    .menu [role="tab"] b { color: var(--by); font-weight: 400; margin-right: 8px; }
+    .menu-h { padding: 10px 12px; background: var(--b); color: var(--bw); font: 600 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+    .menu [role="tab"] { display: block; width: 100%; padding: 14px 12px; border: 0; border-top: 4px solid var(--k); background: var(--k); text-align: left; font: 600 15px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+    .menu [role="tab"] b { color: var(--by); font-weight: 600; margin-right: 10px; }
     .menu [role="tab"]:hover { background: var(--bc); color: var(--k); }
     .menu [role="tab"]:hover b { color: var(--k); }
     .menu [role="tab"][aria-selected="true"] { background: var(--bw); color: var(--k); }
     .menu [role="tab"][aria-selected="true"] b { color: var(--r); }
     .panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 32px; align-items: start; }
     .panel .pphone { --acc: var(--r); width: min(100%, 288px); }
-    .panel p { margin: 14px 0 20px; max-width: 30em; color: var(--w); }
+    .panel p { margin: 14px 0 20px; max-width: 32em; color: var(--ink); }
     .tags { display: flex; flex-wrap: wrap; gap: 8px; }
-    .tags li { padding: 6px 10px; background: var(--b); color: var(--bw); font: 400 9px/1.3 var(--px); text-transform: uppercase; }
-    .js .panel[hidden] { display: none; }
-    .no-js-gap { display: none; }
+    .tags li { padding: 6px 10px; background: var(--b); color: var(--bw); font: 500 13px/1.3 var(--mono); }
 
     /* Two ways to run it: cassettes */
     .decks { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
     .deck { display: flex; flex-direction: column; gap: 22px; padding: 20px; border: 4px solid var(--bw); }
     .cassette { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding: 12px; background: #1c1c1c; border: 4px solid var(--w); }
-    .label { padding: 12px 14px 22px; background: var(--bw); color: var(--k); font: 400 12px/1.5 var(--px); text-transform: uppercase; position: relative; }
-    .label b { display: block; font-weight: 400; font-size: 20px; }
+    .label { padding: 12px 14px 22px; background: var(--bw); color: var(--k); font: 600 13px/1.5 var(--mono); text-transform: uppercase; position: relative; }
+    .label b { display: block; font: 400 18px/1.4 var(--px); }
     .label::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: linear-gradient(90deg, var(--br) 0 25%, var(--by) 25% 50%, var(--bg) 50% 75%, var(--bc) 75%); }
     .reels { display: flex; gap: 10px; }
     .reels i { width: 26px; height: 26px; background: var(--bw); box-shadow: inset 0 0 0 8px var(--k), inset 0 0 0 12px var(--bw); animation: spin 1.2s steps(4) infinite; }
     @keyframes spin { to { transform: rotate(90deg); } }
-    .dia { display: flex; align-items: center; gap: 0; padding: 16px 0; }
-    .node { flex: none; padding: 12px; min-width: 96px; border: 4px solid var(--bc); text-align: center; font: 400 10px/1.6 var(--px); text-transform: uppercase; }
-    .node small { display: block; font: 400 20px/1 var(--vt); color: #b0b0b0; text-transform: none; margin-top: 4px; }
+    .dia { display: flex; align-items: center; gap: 0; padding: 22px 0 12px; }
+    .node { flex: none; padding: 12px; min-width: 100px; border: 4px solid var(--bc); text-align: center; font: 600 13px/1.4 var(--mono); text-transform: uppercase; }
+    .node small { display: block; font: 400 12.5px/1.3 var(--mono); color: var(--soft); text-transform: none; margin-top: 4px; }
     .node.h { border-color: var(--by); }
     .wire { position: relative; flex: 1; min-width: 40px; height: 4px; margin-inline: -4px; background: repeating-linear-gradient(90deg, var(--bw) 0 8px, transparent 8px 16px); animation: wire .6s steps(2) infinite; }
-    .wire span { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: var(--k); font: 400 8px/1.2 var(--px); text-transform: uppercase; color: var(--bg); white-space: nowrap; }
+    .wire span { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: var(--k); font: 600 11px/1.2 var(--mono); text-transform: uppercase; color: var(--bg); white-space: nowrap; }
     @keyframes wire { to { background-position: 16px 0; } }
     .deck ul { display: grid; gap: 12px; }
-    .deck li { position: relative; padding-left: 26px; color: var(--w); }
-    .deck li::before { content: '>'; position: absolute; left: 0; color: var(--by); font-family: var(--px); font-size: 14px; top: 3px; }
-    .deck li b { color: var(--bw); font-weight: 400; text-decoration: underline; text-decoration-color: var(--bm); text-underline-offset: 4px; }
-    pre { padding: 14px 16px; overflow-x: auto; border: 4px solid var(--w); background: var(--k); font: 400 22px/1.3 var(--vt); color: var(--bg); white-space: pre; }
-    pre .c { color: #9a9a9a; }
-    .foot { margin-top: auto; color: #b0b0b0; font-size: 22px; }
+    .deck li { position: relative; padding-left: 24px; color: var(--ink); font-size: 16px; }
+    .deck li::before { content: '>'; position: absolute; left: 0; color: var(--by); font-weight: 700; }
+    .deck li b { color: var(--bw); font-weight: 600; }
+    pre { padding: 14px 16px; overflow-x: auto; border: 4px solid var(--w); background: var(--k); font: 400 14.5px/1.6 var(--mono); color: var(--bg); white-space: pre; }
+    pre .c { color: var(--soft); }
+    .foot { margin-top: auto; color: var(--soft); font-size: 15px; }
     .foot a { color: var(--bc); }
 
     /* Control */
     .ctl { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 40px; align-items: start; }
-    .lines { border: 4px solid var(--w); padding: 16px 18px; font: 400 clamp(10px, 1.35vw, 12px)/2.1 var(--px); text-transform: uppercase; }
-    .lines .n { color: var(--by); } .lines .kw { color: var(--bc); } .lines .rem { display: block; color: #9a9a9a; text-transform: none; font: 400 22px/1.2 var(--vt); padding: 0 0 12px 3.4em; }
-    .lines .tag { background: var(--m); color: var(--k); padding: 2px 6px; font-size: 9px; margin-left: 6px; }
+    .lines { border: 4px solid var(--w); padding: 16px 18px; font: 500 15px/1.7 var(--mono); text-transform: uppercase; letter-spacing: .03em; }
+    .lines .n { color: var(--by); } .lines .kw { color: var(--bc); } .lines .rem { display: block; color: var(--soft); text-transform: none; letter-spacing: 0; font: 400 15px/1.5 var(--mono); padding: 2px 0 14px 3em; }
+    .lines .tag { background: var(--bm); color: var(--k); padding: 2px 6px; font-size: 12px; margin-left: 6px; letter-spacing: 0; }
     .set { border: 4px solid var(--bw); }
-    .set-h { padding: 10px 14px; background: var(--b); font: 400 10px/1.4 var(--px); text-transform: uppercase; display: flex; justify-content: space-between; }
+    .set-h { padding: 10px 14px; background: var(--b); font: 600 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; display: flex; justify-content: space-between; }
     .row { padding: 18px 16px; border-top: 4px solid var(--k); display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
     .row + .row { border-top-color: var(--w); }
-    .row h3 { font-size: 13px; }
-    .row p { grid-column: 1; color: var(--w); }
-    .row .state { grid-column: 1 / -1; padding: 8px 12px; background: #101010; border-left: 8px solid var(--br); color: var(--bw); }
+    .row h3 { font-size: 17px; }
+    .row p { grid-column: 1; color: var(--ink); font-size: 15px; line-height: 1.55; }
+    .row .state { grid-column: 1 / -1; padding: 9px 12px; background: #141414; border-left: 8px solid var(--br); color: var(--bw); font-size: 14px; line-height: 1.5; }
     .row.is-on .state { border-left-color: var(--bg); }
-    .sw { min-width: 96px; padding: 10px 12px; border: 4px solid var(--bw); background: var(--r); color: var(--bw); font: 400 12px/1 var(--px); text-transform: uppercase; }
+    .sw { min-width: 92px; padding: 11px 12px; border: 4px solid var(--bw); background: var(--r); color: var(--bw); font: 400 12px/1 var(--px); text-transform: uppercase; }
     .sw[aria-checked="true"] { background: var(--bg); color: var(--k); border-color: var(--bg); }
     .sw:hover { border-color: var(--by); }
 
     /* Features: attribute blocks */
     .cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
     .cell { display: flex; flex-direction: column; border: 4px solid var(--bw); }
-    .cell h3 { padding: 10px 10px; font-size: 11px; line-height: 1.5; }
-    .cell p { padding: 12px; color: var(--w); }
+    .cell h3 { padding: 10px; font-size: 14px; line-height: 1.4; text-transform: uppercase; letter-spacing: .03em; }
+    .cell p { padding: 12px; color: var(--ink); font-size: 15px; line-height: 1.6; }
     .cell:nth-child(8n+1) h3 { background: var(--by); color: var(--k); } .cell:nth-child(8n+2) h3 { background: var(--bc); color: var(--k); }
     .cell:nth-child(8n+3) h3 { background: var(--bg); color: var(--k); } .cell:nth-child(8n+4) h3 { background: var(--bm); color: var(--k); }
     .cell:nth-child(8n+5) h3 { background: var(--r); color: var(--bw); } .cell:nth-child(8n+6) h3 { background: var(--b); color: var(--bw); }
@@ -219,58 +204,53 @@
     .player { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 40px; align-items: center; }
     .press { display: block; margin-top: 24px; font: 400 14px/1.6 var(--px); color: var(--by); text-transform: uppercase; animation: blink 1.2s steps(1) infinite; }
     #tape { position: relative; }
-    #tape img, #tape video { width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; background: var(--k); image-rendering: pixelated; }
-    #tape video { image-rendering: auto; }
-    #tapePlay { position: absolute; inset: 0; display: grid; place-content: center; gap: 14px; width: 100%; border: 0; background: rgba(0,0,0,.45); text-align: center; }
+    #tape img, #tape video { width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; background: var(--k); }
+    #tape img.px8 { image-rendering: pixelated; }
+    #tapePlay { position: absolute; inset: 0; display: grid; place-content: center; gap: 14px; width: 100%; border: 0; background: rgba(0,0,0,.35); text-align: center; }
     #tapePlay b { display: block; padding: 14px 16px; background: var(--by); color: var(--k); font: 400 13px/1.4 var(--px); text-transform: uppercase; box-shadow: 6px 6px 0 var(--r); }
-    #tapePlay span { font: 400 22px/1 var(--vt); background: var(--k); padding: 2px 8px; }
+    #tapePlay span { font: 600 14px/1 var(--mono); background: var(--k); padding: 4px 10px; }
     #tapePlay:hover b { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--r); }
 
     /* Download */
     .load { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; align-items: start; }
-    .prog { padding: 18px; border: 4px solid var(--w); font: 400 clamp(10px, 1.3vw, 12px)/2.1 var(--px); text-transform: uppercase; }
+    .prog { padding: 18px; border: 4px solid var(--w); font: 500 15px/1.9 var(--mono); }
     .prog .k { color: var(--bc); } .prog div { display: block; overflow-wrap: anywhere; }
-    .prog .sha { font: 400 20px/1.15 var(--vt); text-transform: none; color: var(--bw); display: block; margin: 4px 0 10px; overflow-wrap: anywhere; }
-    .copy { padding: 10px 12px; border: 3px solid var(--bw); background: var(--k); font: 400 9px/1 var(--px); text-transform: uppercase; }
+    .prog .sha { font: 400 13.5px/1.5 var(--mono); color: var(--bw); display: block; margin: 4px 0 12px; overflow-wrap: anywhere; }
+    .copy { padding: 10px 12px; border: 3px solid var(--bw); background: var(--k); font: 600 12px/1 var(--mono); text-transform: uppercase; }
     .copy:hover { border-color: var(--by); }
     .copy.done { background: var(--bg); color: var(--k); border-color: var(--bg); }
-    .steps { display: grid; gap: 16px; margin-top: 32px; counter-reset: s; }
-    .steps li { display: grid; grid-template-columns: 56px 1fr; gap: 8px; counter-increment: s; }
+    .steps { display: grid; gap: 18px; margin-top: 32px; counter-reset: s; }
+    .steps li { display: grid; grid-template-columns: 52px 1fr; gap: 8px; counter-increment: s; }
     .steps li::before { content: counter(s) '0'; font: 400 14px/1.6 var(--px); color: var(--by); }
-    .steps b { display: block; font: 400 12px/1.6 var(--px); text-transform: uppercase; color: var(--bw); }
-    .steps p { color: var(--w); }
-    .note { margin-top: 28px; padding: 14px 16px; border-left: 12px solid var(--by); background: #101010; color: var(--w); }
-    .note b { color: var(--by); font-weight: 400; }
+    .steps b { display: block; font: 600 15px/1.5 var(--mono); text-transform: uppercase; color: var(--bw); letter-spacing: .03em; }
+    .steps p { color: var(--ink); font-size: 15.5px; }
+    .note { margin-top: 28px; padding: 14px 16px; border-left: 12px solid var(--by); background: #141414; color: var(--ink); font-size: 15px; line-height: 1.6; }
+    .note b { color: var(--by); font-weight: 600; }
     .note p + p { margin-top: 10px; }
     .src { margin-top: 20px; }
-    .src-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font: 400 10px/1.4 var(--px); text-transform: uppercase; color: #b0b0b0; }
+    .src-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font: 600 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--soft); }
 
     /* FAQ */
     .faq { max-width: 860px; }
     details { border-bottom: 4px solid var(--w); }
     details:first-child { border-top: 4px solid var(--w); }
-    summary { display: flex; align-items: baseline; gap: 16px; padding: 18px 4px; list-style: none; cursor: pointer; font: 400 clamp(11px, 1.6vw, 14px)/1.7 var(--px); text-transform: uppercase; }
+    summary { display: flex; align-items: center; gap: 16px; padding: 18px 4px; list-style: none; cursor: pointer; font: 600 clamp(16px, 2vw, 19px)/1.4 var(--mono); }
     summary::-webkit-details-marker { display: none; }
     summary::before { content: '?'; flex: none; width: 32px; height: 32px; display: grid; place-items: center; background: var(--by); color: var(--k); font: 400 16px/1 var(--px); }
     details[open] summary::before { content: '!'; background: var(--bg); }
     summary:hover { color: var(--bc); }
-    details p { padding: 0 8px 22px 48px; max-width: 42em; color: var(--w); }
+    details p { padding: 0 8px 22px 52px; max-width: 46em; color: var(--ink); font-size: 16px; }
     details p a { color: var(--bc); }
 
     /* Footer */
     footer { padding-block: 40px 56px; }
     .report { font: 400 14px/1.6 var(--px); }
-    .foot-links { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 28px 0 24px; font: 400 10px/1.4 var(--px); text-transform: uppercase; }
+    .foot-links { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 28px 0 24px; font: 600 13px/1.4 var(--mono); text-transform: uppercase; }
     .foot-links a { text-decoration: none; padding: 6px 0; border-bottom: 4px solid var(--bc); }
     .foot-links a:hover { background: var(--bc); color: var(--k); }
-    .fine { max-width: 46em; color: #9a9a9a; font-size: 22px; }
+    .fine { max-width: 48em; color: var(--soft); font-size: 14.5px; }
 
-    /* ── Loader (tape) ─────────────────────────────────────────────────── */
-    .loader { position: fixed; inset: 0; z-index: 1000; display: none; background: repeating-linear-gradient(0deg, var(--r) 0 20px, var(--c) 20px 40px); animation: crawl .15s steps(2) infinite; cursor: pointer; }
-    .loader.data { background: repeating-linear-gradient(0deg, var(--y) 0 12px, var(--b) 12px 36px, var(--y) 36px 44px, var(--b) 44px 52px); animation-duration: .1s; }
-    .loading .loader { display: block; }
-    .loader-paper { position: absolute; inset: clamp(20px, 9vh, 96px) clamp(20px, 9vw, 120px); background: var(--w); color: var(--k); padding: 24px; font: 400 clamp(12px, 2.2vw, 20px)/2 var(--px); }
-    .loader-paper .hint { position: absolute; left: 24px; bottom: 20px; font-size: 9px; }
+    /* Download click: the border does its tape thing */
     @keyframes crawl { to { background-position: 0 40px; } }
     html.tape body { background: repeating-linear-gradient(0deg, var(--r) 0 20px, var(--c) 20px 40px); animation: crawl .15s steps(2) infinite; }
 
@@ -285,92 +265,77 @@
       .player .pphone { order: -1; }
     }
     @media (max-width: 640px) {
-      body { font-size: 22px; }
-      .nav { position: relative; flex-wrap: wrap; row-gap: 12px; padding-block: 10px 14px; }
+      .nav { position: relative; row-gap: 12px; padding-block: 10px 14px; }
       .nav-links a:not(.keep) { display: none; }
-      .nav-links { gap: 8px; flex-wrap: wrap; }
+      .nav-links { gap: 8px; }
       .brand { font-size: 12px; }
       section[id] { scroll-margin-top: 16px; }
       .cells { grid-template-columns: 1fr; }
-      .boot { font-size: 18px; flex-direction: column; gap: 0; }
-      .lede { font-size: 24px; }
+      .boot { flex-direction: column; gap: 0; }
+      .brand-row { flex-wrap: wrap; gap: 10px 16px; }
+      .brand-row .stripes { display: none; }
       .key { width: 100%; }
       .dia { flex-direction: column; }
       .wire { width: 4px; min-width: 0; height: 56px; margin: -4px 0; flex: none; background: repeating-linear-gradient(180deg, var(--bw) 0 8px, transparent 8px 16px); }
       .wire span { top: 50%; left: 14px; transform: translateY(-50%); }
+      .strip { font-size: 12.5px; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       *, *::before, *::after { animation: none !important; transition: none !important; }
-      .loader { display: none !important; }
     }
-    .noscript-note { padding: 12px 16px; background: var(--by); color: var(--k); font: 400 11px/1.6 var(--px); }
   </style>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <div class="loader" id="loader" aria-hidden="true">
-    <div class="loader-paper">
-      <div id="ld1">Program: AURA-DROID</div>
-      <div id="ld2" style="visibility:hidden">Bytes: DROID.APK</div>
-      <div class="hint">PRESS ANY KEY TO SKIP</div>
-    </div>
-  </div>
-
   <div class="screen" id="top">
     <header class="nav">
-      <a class="brand" href="#top" aria-label="Aura Droid, top of page"><img src="/retro/img/mark.png" width="32" height="32" alt="">AURA<span>DROID</span></a>
+      <a class="brand" href="#top" aria-label="Aura Droid, top of page"><span class="spin" data-px="20" data-scale="2"><img src="/retro/img/mark.png" width="32" height="32" alt=""></span>AURA <em>DROID</em></a>
       <nav class="nav-links" aria-label="Primary">
-        <a href="#app"><b>1</b>APP</a>
-        <a href="#run"><b>2</b>RUN</a>
-        <a href="#control"><b>3</b>CTRL</a>
-        <a href="#faq"><b>?</b>HELP</a>
-        <a class="keep" href="#download" style="background:var(--by);color:var(--k)">LOAD</a>
-        <button class="toggle keep" id="palette" type="button" aria-pressed="false" title="Show the real, full-colour screenshots">FULL COLOUR</button>
-        <button class="toggle keep" id="sound" type="button" aria-pressed="false" title="Beeper sound effects">SOUND</button>
+        <a href="#app"><b>1</b>App</a>
+        <a href="#run"><b>2</b>Run</a>
+        <a href="#control"><b>3</b>Control</a>
+        <a href="#faq"><b>?</b>Help</a>
+        <a class="keep" href="#download" style="background:var(--by);color:var(--k)">Download</a>
+        <button class="toggle keep" id="look" type="button" aria-pressed="false" title="Crush the screenshots to 8 Spectrum colours">8-bit look</button>
+        <button class="toggle keep" id="sound" type="button" aria-pressed="false" title="Beeper sound effects">Sound</button>
       </nav>
     </header>
 
     <main id="main">
-      <noscript><div class="noscript-note">JavaScript is off. Everything is still readable; only the tab menu, sound and loader are switched off.</div></noscript>
-
       <!-- ═════════ HERO ═════════ -->
       <section class="hero pad" data-border="#0000D7" aria-label="Introduction">
         <div class="boot"><span>&copy; 2026 AURA</span><span>32K RAM OK</span></div>
         <div class="hero-grid">
           <div>
-            <div class="brand-row"><img src="/retro/img/mark.png" width="64" height="64" alt="">Aura Droid <span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+            <div class="brand-row"><span class="spin" data-px="40" data-scale="3"><img src="/retro/img/mark.png" width="64" height="64" alt=""></span><span>Aura <em>Droid</em></span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
             <h1>Your coding <span class="c">agent</span> in your <span class="y">pocket.</span></h1>
             <p class="lede">The Android client for Aura Code: an autonomous, model-agnostic coding agent. Pair it with Aura on your PC, or run it on the phone alone. She asks before she acts, and remembers what you tell her.</p>
-            <div class="listing" id="listing" aria-label="Program listing: platform Android 8 plus, license Apache-2.0, size 19386943 bytes">
-<span class="n">10</span> <span class="kw">LET</span> PLATFORM$=<span class="s">"ANDROID 8+"</span>
+            <div class="listing" id="listing" role="img" aria-label="Program listing. Platform: Android 8 plus. Licence: Apache 2.0. Size: 19,386,943 bytes. Load Aura Droid."><span class="n">10</span> <span class="kw">LET</span> PLATFORM$=<span class="s">"ANDROID 8+"</span>
 <span class="n">20</span> <span class="kw">LET</span> LICENCE$=<span class="s">"APACHE-2.0"</span>
 <span class="n">30</span> <span class="kw">LET</span> SIZE=19386943
 <span class="n">40</span> <span class="kw">LOAD</span> <span class="s">"AURA-DROID"</span>
 <span class="cursor" aria-hidden="true"></span></div>
             <div class="cta">
-              <a class="key key-y" href="#download" data-beep>LOAD "" <small>v0.3.0</small></a>
-              <a class="key key-o" href="#app" data-beep>LIST</a>
+              <a class="key key-y" href="#download" data-beep>Download APK <small>v0.3.0</small></a>
+              <a class="key key-o" href="#app" data-beep>See the app</a>
             </div>
           </div>
           <div>
-            <div class="pphone"><div class="pphone-in"><img class="zx" data-name="04-chat-thread" src="/retro/img/zx-04-chat-thread.png" width="144" height="320" alt="Aura Droid chat: Aura runs list_files and read_file, then explains a JSON parsing error." fetchpriority="high"></div></div>
-            <p class="cap">SCREEN$ &mdash; REAL APP, 8 COLOURS</p>
+            <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/04-chat-thread.jpg" data-zx="/retro/img/zx-04-chat-thread.png" src="/site-assets/04-chat-thread.jpg" width="576" height="1280" alt="Aura Droid chat: Aura runs list_files and read_file, then explains a JSON parsing error." fetchpriority="high"></div></div>
+            <p class="cap">Real app screenshot</p>
           </div>
         </div>
       </section>
 
-      <div class="ticker" aria-hidden="true"><div class="ticker-track">
-        <span>&#9608; BRING YOUR OWN MODEL: CLAUDE / GPT / GEMINI / DEEPSEEK / OLLAMA / ANY OPENAI-COMPATIBLE ENDPOINT &#9608;</span>
-        <span>&#9608; BRING YOUR OWN MODEL: CLAUDE / GPT / GEMINI / DEEPSEEK / OLLAMA / ANY OPENAI-COMPATIBLE ENDPOINT &#9608;</span>
-      </div></div>
+      <p class="strip">Bring your own model: Claude / GPT / Gemini / DeepSeek / Ollama / any OpenAI-compatible endpoint</p>
 
       <!-- ═════════ 1 THE APP ═════════ -->
       <section class="sec pad" id="app" data-border="#D70000" aria-labelledby="h-app">
         <h2 class="bar bar-r" id="h-app"><span>1 &mdash; The app</span><span class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></span></h2>
         <div class="sec-in">
-          <p class="lede" style="margin-bottom:32px">Real screens from the current build, crushed to 8 colours. Pick a program from the menu. Hit <b class="px" style="font-size:11px;color:var(--by)">FULL COLOUR</b> up top to see them as they really look.</p>
+          <p class="lede" style="margin-bottom:32px">Real screens from the current build. Pick one from the menu. Want them crushed down to 8 Spectrum colours? Flip the 8-bit look switch at the top.</p>
           <div class="app">
             <div class="menu" role="tablist" aria-label="App screens" aria-orientation="vertical">
               <div class="menu-h">Aura Droid menu</div>
@@ -387,7 +352,7 @@
                   <p>Aura reads files and runs commands, and every tool call shows up inline with how long it took. On the phone her answers are short by design: the answer first, detail when you ask for it. Hold the mic to talk, or use + to attach a photo or a file.</p>
                   <ul class="tags"><li>list_files</li><li>read_file</li><li>write_file</li><li>run_shell</li></ul>
                 </div>
-                <div class="pphone"><div class="pphone-in"><img class="zx" data-name="04-chat-thread" src="/retro/img/zx-04-chat-thread.png" width="144" height="320" alt="Aura Droid chat with inline tool calls." loading="lazy"></div></div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/04-chat-thread.jpg" data-zx="/retro/img/zx-04-chat-thread.png" src="/site-assets/04-chat-thread.jpg" width="576" height="1280" alt="Aura Droid chat with inline tool calls." loading="lazy"></div></div>
               </div>
               <div class="panel" role="tabpanel" id="p1" aria-labelledby="t1">
                 <div>
@@ -395,7 +360,7 @@
                   <p>Pin the important threads, search the rest, rename or export any of them as Markdown or JSON. Each session runs in a mode you choose: Coder, Gazelle for quick answers, or Architect for thinking a plan through.</p>
                   <ul class="tags"><li>coder</li><li>gazelle</li><li>architect</li></ul>
                 </div>
-                <div class="pphone"><div class="pphone-in"><img class="zx" data-name="02-sessions" src="/retro/img/zx-02-sessions.png" width="144" height="320" alt="Aura Droid sessions list with pinned, coder, gazelle and architect sessions." loading="lazy"></div></div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/02-sessions.jpg" data-zx="/retro/img/zx-02-sessions.png" src="/site-assets/02-sessions.jpg" width="576" height="1280" alt="Aura Droid sessions list with pinned, coder, gazelle and architect sessions." loading="lazy"></div></div>
               </div>
               <div class="panel" role="tabpanel" id="p2" aria-labelledby="t2">
                 <div>
@@ -403,7 +368,7 @@
                   <p>Pin any message into Aura's memory. She also saves facts herself as you talk (preferences, decisions, what you're building) and you can read, delete or clear all of it whenever you like.</p>
                   <ul class="tags"><li>remember</li><li>recall</li><li>forget all</li></ul>
                 </div>
-                <div class="pphone"><div class="pphone-in"><img class="zx" data-name="08-memory" src="/retro/img/zx-08-memory.png" width="144" height="320" alt="Aura's memory screen listing pinned chat items." loading="lazy"></div></div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/08-memory.jpg" data-zx="/retro/img/zx-08-memory.png" src="/site-assets/08-memory.jpg" width="576" height="1280" alt="Aura's memory screen listing pinned chat items." loading="lazy"></div></div>
               </div>
               <div class="panel" role="tabpanel" id="p3" aria-labelledby="t3">
                 <div>
@@ -411,7 +376,7 @@
                   <p>Record a memo by voice and start a project from it later. Open the built-in shell when you'd rather look under the hood yourself.</p>
                   <ul class="tags"><li>memos</li><li>shell</li><li>voice</li></ul>
                 </div>
-                <div class="pphone"><div class="pphone-in"><img class="zx" data-name="05-quick-menu" src="/retro/img/zx-05-quick-menu.png" width="144" height="320" alt="Aura Droid overflow menu showing Memos and Shell." loading="lazy"></div></div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/05-quick-menu.jpg" data-zx="/retro/img/zx-05-quick-menu.png" src="/site-assets/05-quick-menu.jpg" width="576" height="1280" alt="Aura Droid overflow menu showing Memos and Shell." loading="lazy"></div></div>
               </div>
               <div class="panel" role="tabpanel" id="p4" aria-labelledby="t4">
                 <div>
@@ -419,7 +384,7 @@
                   <p>Pair a desktop or run without one. Point the app at your own model endpoint; your API key is stored encrypted on the device. Follow the system theme, or force dark or light.</p>
                   <ul class="tags"><li>paired desktop</li><li>standalone</li><li>dynamic colour</li></ul>
                 </div>
-                <div class="pphone"><div class="pphone-in"><img class="zx" data-name="07-settings-dark" src="/retro/img/zx-07-settings-dark.png" width="144" height="320" alt="Aura Droid settings: paired desktop, appearance and standalone mode." loading="lazy"></div></div>
+                <div class="pphone"><div class="pphone-in"><img class="shot" data-clear="/site-assets/07-settings-dark.jpg" data-zx="/retro/img/zx-07-settings-dark.png" src="/site-assets/07-settings-dark.jpg" width="576" height="1280" alt="Aura Droid settings: paired desktop, appearance and standalone mode." loading="lazy"></div></div>
               </div>
             </div>
           </div>
@@ -482,10 +447,10 @@ API key    stored encrypted on device</pre>
             <div>
               <p class="lede" style="margin-bottom:28px">Aura asks first. You decide when she doesn't. By default, every action needs your approval. Loosen it as far as you like, one chat at a time or everywhere.</p>
               <div class="lines" role="list">
-                <span role="listitem"><span class="n">10</span> <span class="kw">ASK</span> EVERY TIME<span class="rem">REM the default. Each tool call waits for Allow or Deny.</span></span>
-                <span role="listitem"><span class="n">20</span> <span class="kw">ALLOW</span> FOR THIS CHAT<span class="rem">REM choose "Allow all" on a prompt and tools run for the rest of that conversation.</span></span>
-                <span role="listitem"><span class="n">30</span> <span class="kw">APPROVE</span> ALL ACTIONS <span class="tag">0.4.0</span><span class="rem">REM a setting that changes the default in every conversation.</span></span>
-                <span role="listitem"><span class="n">40</span> <span class="kw">SANDBOX</span> OUT <span class="tag">0.4.0</span><span class="rem" style="padding-bottom:0">REM lets Aura reach past the app sandbox when you ask. Sensitive app data stays off-limits.</span></span>
+                <span role="listitem"><span class="n">10</span> <span class="kw">ASK</span> EVERY TIME<span class="rem">The default. Each tool call waits for Allow or Deny.</span></span>
+                <span role="listitem"><span class="n">20</span> <span class="kw">ALLOW</span> FOR THIS CHAT<span class="rem">Choose "Allow all" on a prompt and tools run for the rest of that conversation.</span></span>
+                <span role="listitem"><span class="n">30</span> <span class="kw">APPROVE</span> ALL ACTIONS <span class="tag">0.4.0</span><span class="rem">A setting that changes the default in every conversation.</span></span>
+                <span role="listitem"><span class="n">40</span> <span class="kw">SANDBOX</span> OUT <span class="tag">0.4.0</span><span class="rem" style="padding-bottom:0">Lets Aura reach past the app sandbox when you ask. Sensitive app data stays off-limits.</span></span>
               </div>
             </div>
             <div class="set" role="group" aria-label="Interactive preview of the Approvals and Sandbox settings">
@@ -534,7 +499,7 @@ API key    stored encrypted on device</pre>
               <span class="press" aria-hidden="true">Press PLAY on tape</span>
             </div>
             <div class="pphone" style="--acc:var(--y)"><div class="pphone-in" id="tape">
-              <img src="/retro/img/zx-demo-poster.png" width="144" height="256" alt="Poster frame of the Aura Droid screen recording." loading="lazy">
+              <img class="shot" data-clear="/site-assets/aura-droid-app-demo-poster.jpg" data-zx="/retro/img/zx-demo-poster.png" src="/site-assets/aura-droid-app-demo-poster.jpg" width="720" height="1280" alt="Poster frame of the Aura Droid screen recording." loading="lazy">
               <button id="tapePlay" type="button" aria-label="Play the screen recording (26 MB)"><b>Play &gt;</b><span>26 MB</span></button>
             </div></div>
           </div>
@@ -549,7 +514,7 @@ API key    stored encrypted on device</pre>
             <div>
               <p class="lede">An APK for Android 8 and up, distributed directly rather than through Google Play. Free and open source.</p>
               <div class="cta">
-                <a class="key key-y" id="loadBtn" href="/droid-0.3.0.apk" download="aura-droid-0.3.0.apk">Load APK</a>
+                <a class="key key-y" id="loadBtn" href="/droid-0.3.0.apk" download="aura-droid-0.3.0.apk">Download APK</a>
                 <a class="key key-o" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener" data-beep>Source &gt;</a>
               </div>
               <ol class="steps">
@@ -639,66 +604,96 @@ cd aura-droid
         set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
       };
 
+      // ── Spinning wireframe triangle: the logo, in old vector style ──
+      // A tetrahedron drawn pixel by pixel on a tiny canvas, then scaled up
+      // without smoothing. Nearer edges are brighter, like depth-cued vector displays.
+      function spin(el) {
+        var N = +el.dataset.px || 40, S = +el.dataset.scale || 3;
+        var c = document.createElement('canvas');
+        c.width = N; c.height = N; c.style.width = c.style.height = (N * S) + 'px';
+        c.setAttribute('role', 'img'); c.setAttribute('aria-label', 'Spinning wireframe triangle: the Aura mark');
+        var g = c.getContext('2d');
+        var V = [[0, -1.05, 0], [0, .62, 1.05], [-.91, .62, -.525], [.91, .62, -.525]];
+        var E = [[0, 1, 0], [0, 2, 0], [0, 3, 0], [1, 2, 1], [2, 3, 1], [3, 1, 1]];
+        var COL = [['#008B8B', '#00FFFF'], ['#8B0000', '#FF0000']];
+        function line(x0, y0, x1, y1, w, col) {
+          x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+          var dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx + dy;
+          g.fillStyle = col;
+          for (;;) {
+            g.fillRect(x0, y0, w, w);
+            if (x0 === x1 && y0 === y1) break;
+            var e2 = 2 * err;
+            if (e2 >= dy) { err += dy; x0 += sx; }
+            if (e2 <= dx) { err += dx; y0 += sy; }
+          }
+        }
+        function frame(a) {
+          g.clearRect(0, 0, N, N);
+          var ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(.42), st = Math.sin(.42);
+          var P = V.map(function (v) {
+            var X = v[0] * ca + v[2] * sa, Z = -v[0] * sa + v[2] * ca, Y = v[1];
+            var Y2 = Y * ct - Z * st, Z2 = Y * st + Z * ct, f = 3.4 / (3.4 + Z2);
+            return [N / 2 + X * f * N * .36, N / 2 + N * .03 + Y2 * f * N * .36, Z2];
+          });
+          var w = N >= 32 ? 2 : 1;
+          E.map(function (e) { return { e: e, z: (P[e[0]][2] + P[e[1]][2]) / 2 }; })
+            .sort(function (p, q) { return q.z - p.z; })
+            .forEach(function (o) {
+              var near = o.z < 0.05 ? 1 : 0;
+              line(P[o.e[0]][0], P[o.e[0]][1], P[o.e[1]][0], P[o.e[1]][1], near ? w : 1, COL[o.e[2]][near]);
+            });
+        }
+        var a = 0.6; frame(a);
+        el.textContent = ''; el.appendChild(c);
+        if (!calm) setInterval(function () { if (!document.hidden) { a += 0.1; frame(a); } }, 80);
+      }
+      $$('.spin').forEach(spin);
+
       // ── Beeper (off by default) ──
       var ac = null, soundOn = false;
       function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ac; }
       function beep(freq, ms, vol) {
         if (!soundOn) return; var a = audio(); if (!a) return;
-        var o = a.createOscillator(), g = a.createGain();
-        o.type = 'square'; o.frequency.value = freq; g.gain.value = vol || 0.04;
-        o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + ms / 1000);
+        var o = a.createOscillator(), gn = a.createGain();
+        o.type = 'square'; o.frequency.value = freq; gn.gain.value = vol || 0.04;
+        o.connect(gn); gn.connect(a.destination); o.start(); o.stop(a.currentTime + ms / 1000);
       }
       function screech(seconds) {
         if (!soundOn) return; var a = audio(); if (!a) return;
-        var o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
-        o.type = 'square'; g.gain.value = 0.025; o.connect(g); g.connect(a.destination);
+        var o = a.createOscillator(), gn = a.createGain(), t = a.currentTime;
+        o.type = 'square'; gn.gain.value = 0.025; o.connect(gn); gn.connect(a.destination);
         for (var x = 0; x < seconds; x += 0.004) o.frequency.setValueAtTime(x < seconds * 0.45 ? 807 : (Math.random() < 0.5 ? 1300 : 2600), t + x);
         o.start(t); o.stop(t + seconds);
       }
-      document.addEventListener('click', function (e) { var t = e.target.closest('[data-beep]'); if (t) beep(880, 35); });
+      document.addEventListener('click', function (e) { if (e.target.closest('[data-beep]')) beep(880, 35); });
       var soundBtn = $('#sound');
       soundBtn.addEventListener('click', function () {
-        soundOn = !soundOn; soundBtn.setAttribute('aria-pressed', soundOn); soundBtn.textContent = soundOn ? 'SOUND ON' : 'SOUND';
+        soundOn = !soundOn; soundBtn.setAttribute('aria-pressed', soundOn);
         if (soundOn) beep(1320, 80);
       });
 
-      // ── Tape loader on first visit ──
-      var loader = $('#loader');
-      function finishLoader() {
-        if (!root.classList.contains('loading')) return;
-        root.classList.remove('loading');
-        try { sessionStorage.setItem('aura-retro-loaded', '1'); } catch (e) {}
-      }
-      if (root.classList.contains('loading')) {
-        setTimeout(function () { loader.classList.add('data'); $('#ld2').style.visibility = 'visible'; }, 900);
-        setTimeout(finishLoader, 2100);
-        ['click', 'keydown', 'touchstart'].forEach(function (ev) { loader.addEventListener(ev, finishLoader, { once: true }); window.addEventListener(ev, finishLoader, { once: true }); });
-      }
-
       // ── Border colour follows the section in view ──
-      var secs = $$('[data-border]');
       if ('IntersectionObserver' in window) {
         var bo = new IntersectionObserver(function (es) {
           es.forEach(function (e) { if (e.isIntersecting) root.style.setProperty('--border', e.target.dataset.border); });
         }, { rootMargin: '-45% 0px -50% 0px' });
-        secs.forEach(function (s) { bo.observe(s); });
+        $$('[data-border]').forEach(function (s) { bo.observe(s); });
       }
 
-      // ── Palette toggle: 8-colour bitmaps vs the real screenshots ──
-      var palBtn = $('#palette');
-      function setPalette(full) {
-        palBtn.setAttribute('aria-pressed', full); palBtn.textContent = full ? '8 COLOURS' : 'FULL COLOUR';
-        palBtn.title = full ? 'Back to the 8-colour bitmaps' : 'Show the real, full-colour screenshots';
-        $$('img.zx').forEach(function (img) {
-          img.src = full ? '/site-assets/' + img.dataset.name + '.jpg' : '/retro/img/zx-' + img.dataset.name + '.png';
-          img.classList.toggle('true', full);
-          if (full) { img.removeAttribute('width'); img.removeAttribute('height'); } else { img.width = 144; img.height = 320; }
+      // ── 8-bit look: optional. Screenshots are clear by default. ──
+      var lookBtn = $('#look');
+      function setLook(eight) {
+        lookBtn.setAttribute('aria-pressed', eight);
+        $$('img.shot').forEach(function (img) {
+          img.src = eight ? img.dataset.zx : img.dataset.clear;
+          img.classList.toggle('px8', eight);
         });
-        $$('.cap').forEach(function (c) { c.textContent = full ? 'SCREENSHOT — REAL APP, FULL COLOUR' : 'SCREEN$ — REAL APP, 8 COLOURS'; });
-        store.set('aura-retro-palette', full ? 'full' : 'zx');
+        $$('.cap').forEach(function (c) { c.textContent = eight ? 'Real app, crushed to 8 colours' : 'Real app screenshot'; });
+        store.set('aura-retro-look', eight ? '8bit' : 'clear');
       }
-      palBtn.addEventListener('click', function () { setPalette(palBtn.getAttribute('aria-pressed') !== 'true'); beep(660, 40); });
-      if (store.get('aura-retro-palette') === 'full') setPalette(true);
+      lookBtn.addEventListener('click', function () { setLook(lookBtn.getAttribute('aria-pressed') !== 'true'); beep(660, 40); });
+      if (store.get('aura-retro-look') === '8bit') setLook(true);
 
       // ── Tabs (menu) ──
       var tabs = $$('[role="tab"]'), panels = $$('[role="tabpanel"]');
@@ -719,21 +714,21 @@ cd aura-droid
       });
       select(0);
 
-      // ── Typed program listing ──
+      // ── Typed program listing (quick, and the full text is always in the label) ──
       var listing = $('#listing');
       if (listing && !calm) {
         var html = listing.innerHTML, i = 0, out = '', inTag = false;
         var cur = '<span class="cursor" aria-hidden="true"></span>';
         listing.innerHTML = cur;
         var tick = function () {
-          for (var n = 3; n > 0 && i < html.length;) {
+          for (var n = 4; n > 0 && i < html.length;) {
             var ch = html[i++]; out += ch;
             if (ch === '<') inTag = true; else if (ch === '>') { inTag = false; continue; }
             if (!inTag) n--;
           }
-          if (i < html.length) { listing.innerHTML = out + cur; setTimeout(tick, 30); } else { listing.innerHTML = html; }
+          if (i < html.length) { listing.innerHTML = out + cur; setTimeout(tick, 24); } else { listing.innerHTML = html; }
         };
-        setTimeout(tick, root.classList.contains('loading') ? 2300 : 350);
+        setTimeout(tick, 300);
       }
 
       // ── Approvals demo ──
@@ -757,7 +752,7 @@ cd aura-droid
         });
       });
 
-      // ── LOAD button: the border does its tape thing while the real download starts ──
+      // ── Download button: the border does its tape thing while the real download starts ──
       var loadBtn = $('#loadBtn');
       if (loadBtn && !calm) loadBtn.addEventListener('click', function () {
         root.classList.add('tape'); screech(1.4);
