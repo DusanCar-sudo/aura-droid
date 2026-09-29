@@ -501,7 +501,7 @@ Never remove it.
 
 | Edition | What | Where |
 |---|---|---|
-| **Nature** (modern, default) | forest, cream and gold; landscapes of light; Geist | aura-droid.vercel.app (staged at `/modern/` until approved) |
+| **Nature** (modern, default) | forest, cream and gold; landscapes of light; Geist | aura-droid.vercel.app (live; `/modern/` redirects to `/`) |
 | **Spectrum** (retro) | an 8-colour ZX Spectrum homage, clarity first, spinning tetrahedron | aura-droid-site.vercel.app (live) |
 | **∞K** (retro, Aura Code) | the machine Aura would have shipped on in 1982 | leanproiq.com, built from `aura-retro-design` |
 
