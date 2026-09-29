@@ -3,578 +3,903 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#070d1b">
-  <meta name="description" content="Aura Droid — a mobile control surface for your autonomous coding agent. The Android client for Aura Code.">
-  <title>Aura Droid — Your codebase, in your pocket.</title>
+  <meta name="theme-color" content="#070907">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Aura Droid puts an autonomous, model-agnostic coding agent on your Android phone. Pair it with Aura Code on your PC, or run it on the phone alone. Open source, Apache-2.0.">
+  <title>Aura Droid — Your coding agent, in your pocket.</title>
   <link rel="canonical" href="https://aura-droid.vercel.app/">
+  <link rel="icon" href="/site-assets/favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Aura Droid">
   <meta property="og:url" content="https://aura-droid.vercel.app/">
-  <meta property="og:title" content="Aura Droid — Your codebase, in your pocket.">
-  <meta property="og:description" content="A mobile control surface for your autonomous coding agent — the Android client for Aura Code.">
-  <meta property="og:image" content="https://aura-droid.vercel.app/og.jpg">
+  <meta property="og:title" content="Aura Droid — Your coding agent, in your pocket.">
+  <meta property="og:description" content="The Android client for Aura Code. Pair it with your PC or run it on the phone alone.">
+  <meta property="og:image" content="https://aura-droid.vercel.app/modern/og.jpg?v=3">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Aura Droid — the Android client for Aura Code">
+  <meta property="og:image:alt" content="Aura Droid — Your coding agent, in your pocket.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Aura Droid — Your codebase, in your pocket.">
-  <meta name="twitter:description" content="A mobile control surface for your autonomous coding agent — the Android client for Aura Code.">
-  <meta name="twitter:image" content="https://aura-droid.vercel.app/og.jpg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <meta name="twitter:title" content="Aura Droid — Your coding agent, in your pocket.">
+  <meta name="twitter:description" content="The Android client for Aura Code. Pair it with your PC or run it on the phone alone.">
+  <meta name="twitter:image" content="https://aura-droid.vercel.app/modern/og.jpg?v=3">
+  <link rel="preload" href="/site-assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" as="image" href="/modern/img/hero-tall.webp" media="(max-width: 700px)">
+  <link rel="preload" as="image" href="/modern/img/hero-1600.webp" imagesrcset="/modern/img/hero-1600.webp 1600w, /modern/img/hero-2400.webp 2400w" imagesizes="100vw" media="(min-width: 701px)">
+  <script>document.documentElement.classList.add('js')</script>
   <style>
+    @font-face { font-family: 'Geist'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/site-assets/fonts/geist.woff2) format('woff2'); }
+    @font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 400 500; font-display: swap; src: url(/site-assets/fonts/geist-mono.woff2) format('woff2'); }
+
+    /* ── Tokens: forest, moss, cream and the gold of late light ─────────── */
     :root {
-      --ink: #070d1b;
-      --ink-2: #0b1325;
-      --panel: #101a2e;
-      --panel-2: #131f35;
-      --paper: #f2f4ff;
-      --paper-muted: #a6b0c6;
-      --line: rgba(176, 205, 235, .15);
-      --line-strong: rgba(176, 205, 235, .3);
-      --lime: #ffd84d;
-      --aqua: #ff5ca8;
-      --coral: #ff713f;
-      --orange: #ffb84d;
-      --max: 1220px;
-      --sans: 'DM Sans', system-ui, sans-serif;
-      --display: 'Space Grotesk', 'DM Sans', sans-serif;
-      --mono: 'DM Mono', monospace;
+      --bg: #070907;
+      --bg-2: #0c100c;
+      --card: #141a14;
+      --card-2: #1a211a;
+      --line: rgba(236, 229, 196, .11);
+      --line-2: rgba(236, 229, 196, .22);
+      --cream: #f2ebc9;
+      --cream-2: #e2dbb7;
+      --soft: #d8cb95;
+      --dim: #b9baa2;
+      --mute: #8b8e7a;
+      --gold: #e7cf85;
+      --ink: #10150f;
+      --ink-2: #3b4232;
+      --olive: #535c37;
+      --sage: #dde2c8;
+      --glass: rgba(9, 12, 9, .52);
+      --sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --wrap: 1240px;
+      --gutter: clamp(18px, 4.5vw, 56px);
+      --r: 26px;
+      --inset: clamp(8px, 1vw, 14px);
     }
 
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      color: var(--paper);
-      background: var(--ink);
-      font-family: var(--sans);
-      overflow-x: hidden;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--cream); font: 400 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    img, svg, video { display: block; max-width: 100%; }
     a { color: inherit; text-decoration: none; }
-    button { font: inherit; }
-    img { display: block; max-width: 100%; }
-    ::selection { color: var(--ink); background: var(--lime); }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    h1, h2, h3, p, ul, ol, figure, dl, dd { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+    em { font-style: normal; }
+    code { font-family: var(--mono); font-size: .88em; color: var(--gold); }
+    ::selection { background: var(--gold); color: var(--ink); }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 8px; }
+    section[id] { scroll-margin-top: 80px; }
+    .wrap { width: min(var(--wrap), 100% - var(--gutter) * 2); margin-inline: auto; }
+    .skip { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 16px; background: var(--cream); color: var(--ink); border-radius: 999px; font-weight: 600; }
+    .skip:focus { top: 12px; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-    .site-shell { position: relative; overflow: hidden; }
-    .site-shell::before {
-      content: '';
-      position: fixed;
-      z-index: 10;
-      inset: 0;
-      opacity: .025;
-      pointer-events: none;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      mix-blend-mode: screen;
+    /* ── Type ──────────────────────────────────────────────────────────── */
+    .h2 { font: 500 clamp(36px, 4.6vw, 64px)/1.04 var(--sans); letter-spacing: -.045em; }
+    .h2 em, h1 em { color: var(--soft); }
+    .lede { font-size: clamp(16.5px, 1.3vw, 18.5px); color: var(--dim); max-width: 36em; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font: 500 13px/1.2 var(--sans); color: var(--cream); letter-spacing: -.005em; }
+    .chip-light { background: rgba(16, 21, 15, .08); border-color: rgba(16, 21, 15, .14); color: var(--ink); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+    /* ── Buttons: pills with a round arrow ────────────────────────────── */
+    .pill { display: inline-flex; align-items: center; gap: 14px; min-height: 54px; padding: 6px 6px 6px 22px; border-radius: 999px; font: 600 15px/1 var(--sans); letter-spacing: -.01em; transition: transform .25s ease, background .25s ease, border-color .25s ease; }
+    .pill:hover { transform: translateY(-2px); }
+    .pill .knob { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; transition: transform .3s ease; }
+    .pill:hover .knob { transform: translateX(3px); }
+    .pill .knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .pill-glass { border: 1px solid var(--line-2); background: rgba(40, 46, 30, .55); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--cream); }
+    .pill-glass .knob { background: var(--cream); color: var(--ink); }
+    .pill-glass:hover { background: rgba(60, 66, 40, .7); }
+    .pill-cream { background: var(--cream); color: var(--ink); box-shadow: 0 0 0 1px rgba(16, 21, 15, .12), 0 10px 30px -12px rgba(0, 0, 0, .5); }
+    .pill-cream .knob { background: var(--ink); color: var(--cream); }
+    .pill-cream:hover { background: #fff8dc; }
+    .ghost { display: inline-flex; align-items: center; min-height: 54px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--line-2); font: 600 15px/1 var(--sans); color: var(--cream); transition: border-color .2s, background .2s; }
+    .ghost:hover { border-color: var(--cream); background: rgba(242, 235, 201, .06); }
+
+    /* ── Nav ───────────────────────────────────────────────────────────── */
+    .nav { position: fixed; z-index: 50; top: calc(var(--inset) + 12px); left: 0; right: 0; pointer-events: none; }
+    .nav-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(1320px, 100% - var(--gutter) * 2 - var(--inset) * 2 + 12px); margin: 0 auto; }
+    .nav-in > * { pointer-events: auto; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 10px; border-radius: 999px; font: 600 16px/1 var(--sans); letter-spacing: -.02em; transition: background .3s, border-color .3s; border: 1px solid transparent; }
+    .brand svg { width: 28px; height: 28px; }
+    .links { display: flex; align-items: center; gap: 2px; padding: 5px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2); font: 500 14px/1 var(--sans); }
+    .links a { padding: 10px 16px; border-radius: 999px; color: var(--cream-2); transition: background .2s, color .2s; }
+    .links a:hover { background: rgba(242, 235, 201, .1); color: var(--cream); }
+    .nav .pill { min-height: 46px; padding: 4px 4px 4px 18px; font-size: 14px; }
+    .nav .pill .knob { width: 36px; height: 36px; }
+    .nav.scrolled .brand { background: var(--glass); border-color: var(--line-2); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+
+    /* ── Hero ──────────────────────────────────────────────────────────── */
+    .hero { padding: var(--inset); }
+    .hero-frame { position: relative; display: grid; min-height: calc(100svh - var(--inset) * 2); border-radius: var(--r); overflow: hidden; isolation: isolate; background: #0b0e0a; }
+    .hero-bg, .hero-bg img { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .hero-bg img { object-fit: cover; object-position: 50% 62%; transform-origin: 50% 70%; animation: breathe 38s ease-in-out infinite alternate; }
+    @keyframes breathe { from { transform: scale(1.02); } to { transform: scale(1.09) translateY(-1.2%); } }
+    .hero-frame::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background:
+      radial-gradient(48% 30% at 50% 48%, rgba(7, 9, 7, .42), transparent 72%),
+      linear-gradient(180deg, rgba(7, 9, 7, .28), rgba(7, 9, 7, 0) 22%, rgba(7, 9, 7, 0) 62%, rgba(7, 9, 7, .78)); }
+    .hero-in { position: relative; z-index: 2; align-self: center; display: grid; justify-items: center; gap: 24px; padding: clamp(120px, 16vh, 170px) var(--gutter) clamp(110px, 14vh, 150px); text-align: center; }
+    .hero h1 { font: 500 clamp(46px, 7.4vw, 112px)/.98 var(--sans); letter-spacing: -.055em; text-shadow: 0 2px 40px rgba(7, 9, 7, .55); }
+    .hero-in > p { max-width: 34em; font-size: clamp(16.5px, 1.35vw, 19px); color: rgba(242, 235, 201, .88); text-shadow: 0 1px 18px rgba(7, 9, 7, .8); }
+    .hero .cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 6px; }
+    .facts { position: absolute; z-index: 2; left: 0; right: 0; bottom: clamp(18px, 3vh, 30px); display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font: 400 12.5px/1.3 var(--mono); color: rgba(242, 235, 201, .78); letter-spacing: .02em; }
+    .facts li + li::before { content: ''; display: inline-block; width: 4px; height: 4px; margin: 0 22px 2px -12px; border-radius: 50%; background: var(--gold); vertical-align: middle; }
+
+    /* ── Intro: modes + numbers ───────────────────────────────────────── */
+    .intro { padding: clamp(90px, 11vw, 150px) 0; }
+    .intro-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(36px, 6vw, 96px); align-items: stretch; }
+    .intro-copy { display: flex; flex-direction: column; gap: 26px; }
+    .inline-img { display: inline-block; width: 1.55em; height: .98em; margin: 0 .08em; border-radius: .28em; object-fit: cover; vertical-align: -.12em; }
+    .stats { display: flex; flex-wrap: wrap; gap: 26px clamp(28px, 4vw, 56px); margin-top: auto; padding-top: 34px; }
+    .stats li { display: grid; gap: 6px; }
+    .stats b { font: 500 clamp(48px, 5.2vw, 72px)/1 var(--sans); letter-spacing: -.05em; color: var(--cream); }
+    .stats span { font-size: 14.5px; color: var(--dim); }
+    .modes { display: grid; gap: 14px; align-content: center; }
+    .mode { display: grid; gap: 12px; padding: 28px 30px 26px; border-radius: 22px; background: var(--card-2); border: 1px solid var(--line); }
+    .mode:nth-child(2) { background: var(--cream); color: var(--ink); border-color: transparent; transform: translateX(-26px); }
+    .mode:nth-child(3) { transform: translateX(12px); }
+    .mode h3 { font: 500 clamp(24px, 2.2vw, 30px)/1.1 var(--sans); letter-spacing: -.035em; }
+    .mode p { color: var(--dim); font-size: 15.5px; line-height: 1.55; max-width: 34em; }
+    .mode:nth-child(2) p { color: var(--ink-2); }
+    .mode small { margin-top: 10px; font: 500 12.5px/1 var(--mono); letter-spacing: .04em; color: var(--gold); }
+    .mode:nth-child(2) small { color: var(--olive); }
+
+    /* ── Tour: the phone rests on a landscape ─────────────────────────── */
+    .tour-sec { padding: clamp(60px, 8vw, 110px) 0 0; }
+    .sec-head { display: grid; gap: 20px; max-width: 760px; margin-bottom: clamp(40px, 6vw, 72px); }
+    .tour { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: clamp(32px, 6vw, 96px); }
+    .stage { position: sticky; top: 0; height: 100vh; display: grid; place-items: center; padding: 88px 0 28px; }
+    .stage-card { position: relative; display: grid; place-items: center; width: 100%; height: 100%; max-height: 860px; border-radius: var(--r); overflow: hidden; isolation: isolate; background: var(--card); }
+    .stage-card > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 62% 40%; z-index: -1; }
+    .stage-card::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(7, 9, 7, .15), rgba(7, 9, 7, .55)); }
+    .phone { position: relative; width: var(--pw, 300px); padding: 8px; border-radius: 44px; background: linear-gradient(160deg, #262b1f, #0b0d0a 45%, #1b2017); border: 1px solid rgba(242, 235, 201, .22); box-shadow: 0 50px 90px -30px rgba(0, 0, 0, .8), 0 0 0 1px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .12); }
+    .phone .screen { position: relative; overflow: hidden; border-radius: 36px; aspect-ratio: 576 / 1280; background: #0a1020; }
+    .phone .screen img, .phone .screen video { width: 100%; height: 100%; object-fit: cover; }
+    .stage .phone { --pw: min(290px, calc((100vh - 230px) * .45)); }
+    .stage .screen img { position: absolute; inset: 0; opacity: 0; transition: opacity .55s ease; }
+    .stage .screen img.on { opacity: 1; }
+    .tour-count { position: absolute; left: 22px; right: 22px; bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; font: 500 12px/1 var(--mono); letter-spacing: .1em; color: var(--cream-2); }
+    .tour-count b { color: var(--gold); font-weight: 500; }
+    .tour-bar { display: flex; gap: 6px; }
+    .tour-bar i { width: 20px; height: 3px; border-radius: 2px; background: rgba(242, 235, 201, .28); transition: background .3s, width .3s; }
+    .tour-bar i.on { background: var(--gold); width: 34px; }
+    .chapters { padding: 16vh 0 10vh; }
+    .chapter { min-height: 62vh; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 28px 0; transition: opacity .4s ease; }
+    .js .chapter { opacity: .72; }
+    .js .chapter.on { opacity: 1; }
+    .chapter h3 { font: 500 clamp(30px, 3.3vw, 44px)/1.06 var(--sans); letter-spacing: -.045em; max-width: 15ch; }
+    .chapter h3 em { color: var(--soft); }
+    .chapter p { color: var(--dim); max-width: 42ch; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tags li { padding: 6px 12px; border: 1px solid var(--line-2); border-radius: 999px; font: 400 12.5px/1.3 var(--mono); color: var(--cream-2); background: rgba(242, 235, 201, .04); }
+    .ch-phone { display: none; }
+
+    /* ── Runtimes ──────────────────────────────────────────────────────── */
+    .run-sec { padding: clamp(70px, 9vw, 130px) 0; }
+    .runtimes { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .rt { display: flex; flex-direction: column; gap: 24px; padding: 14px 14px clamp(22px, 2.6vw, 34px); border-radius: var(--r); background: var(--card); border: 1px solid var(--line); }
+    .rt-img { position: relative; aspect-ratio: 2 / 1; border-radius: 18px; overflow: hidden; }
+    .rt-img img { width: 100%; height: 100%; object-fit: cover; }
+    .rt-img .chip { position: absolute; left: 14px; top: 14px; }
+    .rt-body { display: flex; flex-direction: column; gap: 22px; padding: 0 clamp(8px, 1.4vw, 20px); flex: 1; }
+    .rt h3 { font: 500 clamp(24px, 2.3vw, 31px)/1.1 var(--sans); letter-spacing: -.04em; }
+    .rt h3 em { color: var(--soft); }
+    .diagram { display: flex; align-items: center; padding: 18px; border: 1px dashed var(--line-2); border-radius: 18px; background: rgba(7, 9, 7, .45); }
+    .node { flex: none; display: grid; gap: 4px; justify-items: center; min-width: 108px; padding: 13px 12px; border: 1px solid var(--line-2); border-radius: 14px; background: var(--card-2); text-align: center; }
+    .node svg { width: 28px; height: 28px; fill: none; stroke: var(--cream); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .node.warm svg { stroke: var(--gold); }
+    .node b { font: 600 13px/1.2 var(--sans); }
+    .node small { font: 400 11px/1.3 var(--mono); color: var(--mute); }
+    .wire { position: relative; flex: 1; min-width: 60px; height: 28px; }
+    .wire::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: repeating-linear-gradient(90deg, var(--gold) 0 7px, transparent 7px 14px); background-size: 14px 2px; animation: wire 1s linear infinite; }
+    .wire span { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); padding: 0 8px; background: #0b0e0b; font: 400 10.5px/1.2 var(--mono); color: var(--soft); white-space: nowrap; }
+    @keyframes wire { to { background-position: 14px 0; } }
+    .rt ul { display: grid; gap: 13px; color: var(--dim); font-size: 15.5px; }
+    .rt li { position: relative; padding-left: 24px; }
+    .rt li::before { content: ''; position: absolute; left: 3px; top: .62em; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--gold); }
+    .rt li b { color: var(--cream); font-weight: 500; }
+    pre { margin: 0; padding: 16px 18px; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #050705; font: 400 13px/1.7 var(--mono); color: var(--cream-2); }
+    pre .c { color: var(--mute); }
+    .rt-foot { margin-top: auto; font: 400 13px/1.5 var(--mono); color: var(--mute); }
+    .rt-foot a { color: var(--gold); border-bottom: 1px solid rgba(231, 207, 133, .4); }
+    .rt-foot a:hover { border-color: var(--gold); }
+
+    /* ── And the rest: cream carousel over pale mountains ─────────────── */
+    .more { position: relative; margin: 0 var(--inset); padding: clamp(80px, 9vw, 130px) 0; border-radius: var(--r); background: #eee7c8; color: var(--ink); overflow: hidden; isolation: isolate; }
+    .more-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; z-index: -1; }
+    .more-in { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); padding-left: max(var(--gutter), (100% - var(--wrap)) / 2); }
+    .more-head { display: flex; flex-direction: column; gap: 22px; }
+    .more .h2 { color: var(--ink); }
+    .more .h2 em { color: var(--olive); }
+    .more .lede { color: var(--ink-2); }
+    .count { font: 500 clamp(44px, 4.4vw, 60px)/1 var(--sans); letter-spacing: -.05em; margin-top: 12px; }
+    .count span { font-size: .45em; letter-spacing: -.02em; color: var(--olive); }
+    .arrows { display: flex; gap: 10px; margin-top: auto; padding-top: 16px; }
+    .arrows button { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--ink); color: var(--cream); transition: transform .2s, opacity .2s, background .2s; }
+    .arrows button:first-child { background: rgba(16, 21, 15, .12); color: var(--ink); }
+    .arrows button:hover:not(:disabled) { transform: scale(1.06); }
+    .arrows button:disabled { opacity: .35; cursor: default; }
+    .arrows svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .rail { --cw: clamp(250px, 24vw, 310px); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 0; scrollbar-width: none; padding: 6px 0 10px; border-radius: 22px 0 0 22px; }
+    .rail::-webkit-scrollbar { display: none; }
+    .rail:focus-visible { outline-offset: -3px; }
+    .fcards { display: grid; grid-auto-flow: column; grid-auto-columns: var(--cw); gap: 16px; width: max-content; padding-right: max(var(--gutter), calc(100% - var(--cw))); }
+    .fcard { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; aspect-ratio: 3 / 4; padding: 22px; border-radius: 22px; overflow: hidden; isolation: isolate; color: var(--cream); scroll-snap-align: start; background: #1a2016; }
+    .fcard img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform .8s ease; }
+    .fcard:hover img { transform: scale(1.05); }
+    .fcard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(7, 9, 7, .1) 20%, rgba(7, 9, 7, .45) 55%, rgba(7, 9, 7, .9)); }
+    .fcard .chip { position: absolute; left: 18px; top: 18px; }
+    .fcard h3 { font: 500 24px/1.12 var(--sans); letter-spacing: -.035em; }
+    .fcard p { font-size: 14.5px; line-height: 1.5; color: rgba(242, 235, 201, .86); }
+
+    /* ── Control: settings over the Alps ─────────────────────────────── */
+    .control { padding: clamp(90px, 11vw, 150px) 0; }
+    .control-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(36px, 6vw, 96px); align-items: center; }
+    .levels { display: grid; margin-top: 36px; border-top: 1px solid var(--line); counter-reset: lv; }
+    .levels li { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; padding: 18px 0; border-bottom: 1px solid var(--line); counter-increment: lv; }
+    .levels li::before { content: counter(lv, decimal-leading-zero); grid-row: span 2; padding-top: 3px; font: 500 12px/1 var(--mono); color: var(--gold); }
+    .levels b { font: 600 16px/1.3 var(--sans); }
+    .levels span { color: var(--dim); font-size: 15px; line-height: 1.5; }
+    .ver { display: inline-block; margin-left: 8px; padding: 3px 8px; border: 1px solid rgba(231, 207, 133, .45); border-radius: 999px; font: 500 11px/1.3 var(--mono); color: var(--gold); vertical-align: middle; }
+    .ctl-stage { position: relative; display: grid; place-items: center; min-height: 560px; padding: clamp(18px, 3vw, 40px); border-radius: var(--r); overflow: hidden; isolation: isolate; }
+    .ctl-stage > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 28% 50%; z-index: -1; }
+    .panel { width: 100%; max-width: 470px; padding: clamp(20px, 2.4vw, 30px); border-radius: 22px; border: 1px solid var(--line-2); background: rgba(8, 11, 8, .72); -webkit-backdrop-filter: blur(18px) saturate(1.1); backdrop-filter: blur(18px) saturate(1.1); box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7); }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+    .panel-title span { color: var(--dim); }
+    .setting { display: grid; grid-template-columns: 1fr auto; gap: 8px 22px; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--line); }
+    .setting:last-of-type { border-bottom: 0; padding-bottom: 4px; }
+    .setting h3 { font: 500 17px/1.3 var(--sans); }
+    .setting p { grid-column: 1; margin-top: 2px; color: var(--dim); font-size: 14px; line-height: 1.5; }
+    .setting .state { grid-column: 1 / -1; margin-top: 4px; padding: 10px 14px; border-left: 2px solid var(--line-2); background: rgba(242, 235, 201, .05); border-radius: 0 10px 10px 0; font: 400 12.5px/1.5 var(--mono); color: var(--cream-2); }
+    .setting.is-on .state { border-color: var(--gold); background: rgba(231, 207, 133, .1); color: #fff3cf; }
+    .switch { position: relative; width: 56px; height: 32px; padding: 0; border: 2px solid var(--mute); border-radius: 999px; background: transparent; transition: background .25s, border-color .25s; }
+    .switch::after { content: ''; position: absolute; left: 5px; top: 5px; width: 18px; height: 18px; border-radius: 50%; background: var(--mute); transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), background .25s, width .25s, height .25s, top .25s, left .25s; }
+    .switch[aria-checked="true"] { background: var(--gold); border-color: var(--gold); }
+    .switch[aria-checked="true"]::after { transform: translateX(24px); background: var(--ink); width: 22px; height: 22px; top: 3px; left: 3px; }
+
+    /* ── Demo video ────────────────────────────────────────────────────── */
+    .demo { padding: 0 0 clamp(90px, 11vw, 150px); }
+    .demo-grid { display: grid; grid-template-columns: 1fr auto; gap: clamp(36px, 8vw, 120px); align-items: center; }
+    .demo .phone { --pw: min(290px, 74vw); }
+    .play { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 14px; width: 100%; border: 0; background: linear-gradient(180deg, rgba(7, 9, 7, .1), rgba(7, 9, 7, .65)); }
+    .play i { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: var(--cream); color: var(--ink); box-shadow: 0 0 0 10px rgba(242, 235, 201, .16), 0 20px 40px -10px rgba(0, 0, 0, .6); transition: transform .25s; }
+    .play:hover i { transform: scale(1.08); }
+    .play i svg { width: 26px; height: 26px; margin-left: 3px; fill: currentColor; }
+    .play span { padding: 5px 12px; border-radius: 999px; background: rgba(7, 9, 7, .8); font: 400 12px/1.3 var(--mono); color: var(--cream); }
+
+    /* ── Download ──────────────────────────────────────────────────────── */
+    .dl-sec { padding: 0 0 clamp(80px, 10vw, 140px); }
+    .banner { position: relative; border-radius: calc(var(--r) + 6px); overflow: hidden; isolation: isolate; background: #0b0e0a; }
+    .banner > picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 70%; z-index: -2; }
+    .banner::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(7, 9, 7, .82), rgba(7, 9, 7, .35) 60%, rgba(7, 9, 7, .2)); }
+    .banner-in { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(28px, 5vw, 72px); align-items: end; min-height: 540px; padding: clamp(28px, 5vw, 72px); }
+    .banner .h2 { margin: 20px 0 18px; }
+    .banner .lede { color: rgba(242, 235, 201, .86); }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .file { display: grid; gap: 14px; padding: 22px; border-radius: 20px; border: 1px solid var(--line-2); background: rgba(8, 11, 8, .7); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+    .file dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 18px; font: 400 13px/1.5 var(--mono); }
+    .file dt { color: var(--dim); }
+    .file dd { color: var(--cream); word-break: break-all; }
+    .copy { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 15px; border: 1px solid var(--line-2); border-radius: 999px; background: transparent; font: 500 12px/1 var(--mono); color: var(--cream-2); transition: color .2s, border-color .2s, background .2s; }
+    .copy:hover { color: var(--cream); border-color: var(--cream); }
+    .copy svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .copy.done { color: var(--ink); background: var(--gold); border-color: var(--gold); }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; counter-reset: st; }
+    .steps li { padding: 24px 24px 26px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); counter-increment: st; }
+    .steps li::before { content: '0' counter(st); display: block; margin-bottom: 14px; font: 500 12px/1 var(--mono); color: var(--gold); letter-spacing: .1em; }
+    .steps b { display: block; margin-bottom: 6px; font: 600 19px/1.2 var(--sans); letter-spacing: -.025em; }
+    .steps p { color: var(--dim); font-size: 14.5px; line-height: 1.55; }
+    .note { display: grid; gap: 12px; margin-top: 14px; padding: 18px 22px; border: 1px solid var(--line); border-left: 2px solid var(--gold); border-radius: 0 16px 16px 0; background: rgba(231, 207, 133, .05); color: var(--dim); font-size: 14.5px; line-height: 1.55; }
+    .note b, .note em { color: var(--cream); font-weight: 600; }
+    .src { margin-top: 22px; display: grid; gap: 10px; }
+    .src-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+
+    /* ── FAQ ───────────────────────────────────────────────────────────── */
+    .faq-sec { padding: 0 0 clamp(90px, 11vw, 150px); }
+    .faq-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(32px, 6vw, 96px); }
+    .faq-grid .h2 { margin-top: 20px; }
+    details { border-bottom: 1px solid var(--line); }
+    details:first-child { border-top: 1px solid var(--line); }
+    summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 0; list-style: none; cursor: pointer; font: 500 clamp(18px, 1.8vw, 21px)/1.3 var(--sans); letter-spacing: -.025em; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: '+'; flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(242, 235, 201, .08); font: 400 20px/1 var(--sans); color: var(--gold); transition: transform .3s, background .3s; }
+    details[open] summary::after { transform: rotate(45deg); background: rgba(231, 207, 133, .16); }
+    details p { padding: 0 52px 26px 0; color: var(--dim); max-width: 60ch; }
+    details p a { color: var(--gold); border-bottom: 1px solid rgba(231, 207, 133, .4); }
+    details p em { color: var(--cream); }
+
+    /* ── Footer: the valley again, and the name across it ─────────────── */
+    .foot { padding: 0 var(--inset) var(--inset); }
+    .foot-frame { position: relative; display: flex; flex-direction: column; gap: 40px; min-height: 640px; padding: clamp(28px, 4vw, 56px); padding-bottom: 0; border-radius: var(--r); overflow: hidden; isolation: isolate; background: #0b0e0a; }
+    .foot-frame > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 85%; z-index: -2; }
+    .foot-frame::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(7, 9, 7, .9), rgba(7, 9, 7, .55) 45%, rgba(7, 9, 7, .25) 70%, rgba(7, 9, 7, .55)); }
+    .foot-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
+    .foot-top h2 { font: 500 clamp(30px, 3.4vw, 46px)/1.06 var(--sans); letter-spacing: -.045em; }
+    .foot-top h2 em { color: var(--soft); }
+    .foot-top .actions { margin-top: 24px; }
+    .foot-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .foot-cols h3 { margin-bottom: 14px; font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+    .foot-cols li + li { margin-top: 9px; }
+    .foot-cols a { color: var(--cream-2); font-size: 15px; transition: color .2s; }
+    .foot-cols a:hover { color: var(--gold); }
+    .foot-base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: auto; font: 400 12.5px/1.5 var(--mono); color: rgba(242, 235, 201, .8); }
+    .wordmark { margin: 0 -.03em -.19em; font: 600 clamp(64px, 16.2vw, 250px)/1 var(--sans); letter-spacing: -.07em; white-space: nowrap; text-align: center; background: linear-gradient(180deg, #fff7d6 0%, #d9cf9f 38%, #8d8a62 72%, rgba(90, 92, 60, .5)); -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none; }
+
+    /* ── Reveal ────────────────────────────────────────────────────────── */
+    .js .rv { opacity: 0; transform: translateY(18px); transition: opacity .9s ease, transform .9s cubic-bezier(.2, .7, .2, 1); transition-delay: var(--d, 0s); }
+    .js .rv.in { opacity: 1; transform: none; }
+
+    /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 1000px) {
+      .links { display: none; }
+      .intro-grid, .control-grid, .banner-in, .faq-grid, .foot-top { grid-template-columns: minmax(0, 1fr); }
+      .mode:nth-child(2), .mode:nth-child(3) { transform: none; }
+      .runtimes { grid-template-columns: minmax(0, 1fr); }
+      .tour { grid-template-columns: minmax(0, 1fr); }
+      .stage { display: none; }
+      .chapters { padding: 0; }
+      .chapter { min-height: 0; padding: 0 0 72px; opacity: 1 !important; }
+      .chapter h3 { max-width: none; }
+      .ch-phone { display: grid; place-items: center; margin-top: 10px; padding: 36px 16px; border-radius: var(--r); overflow: hidden; position: relative; isolation: isolate; }
+      .ch-phone > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+      .ch-phone .phone { --pw: min(270px, 78%); }
+      .more-in { grid-template-columns: minmax(0, 1fr); padding-left: var(--gutter); }
+      .arrows { margin-top: 0; }
+      .demo-grid { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+      .banner-in { min-height: 0; }
+      .banner::after { background: linear-gradient(180deg, rgba(7, 9, 7, .8), rgba(7, 9, 7, .55)); }
     }
-    .container { width: min(var(--max), calc(100% - 64px)); margin: 0 auto; }
-
-    /* Navigation */
-    .nav {
-      position: absolute;
-      z-index: 20;
-      top: 0; left: 0; right: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: min(var(--max), calc(100% - 64px));
-      margin: 0 auto;
-      padding: 28px 0;
+    @media (max-width: 700px) {
+      body { font-size: 16px; }
+      .brand span { display: none; }
+      .brand { padding: 6px; }
+      .hero-in { padding-top: 110px; }
+      .hero .cta { flex-direction: column; align-items: stretch; width: min(100%, 320px); }
+      .hero .cta a { justify-content: space-between; }
+      .hero .cta .ghost { justify-content: center; }
+      .facts { display: none; }
+      .diagram { flex-direction: column; gap: 6px; }
+      .wire { width: 28px; min-width: 0; height: 64px; flex: none; }
+      .wire::before { left: 50%; right: auto; top: 0; bottom: 0; width: 2px; height: auto; margin: 0 0 0 -1px; background: repeating-linear-gradient(180deg, var(--gold) 0 7px, transparent 7px 14px); background-size: 2px 14px; animation-name: wire-v; }
+      .wire span { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+      @keyframes wire-v { to { background-position: 0 14px; } }
+      .rail { --cw: min(78vw, 300px); }
+      .steps { grid-template-columns: 1fr; }
+      .ctl-stage { min-height: 0; }
+      .foot-cols { grid-template-columns: 1fr 1fr; }
+      .foot-frame { min-height: 0; }
+      details p { padding-right: 0; }
+      .stats b { font-size: 46px; }
     }
-    .brand { display: inline-flex; align-items: center; gap: 11px; font-family: var(--display); font-size: 16px; font-weight: 700; letter-spacing: -.04em; }
-    .brand-mark { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink); background: var(--lime); border-radius: 50%; font-family: var(--mono); font-size: 12px; font-weight: 500; box-shadow: 0 0 28px rgba(255,216,77,.22); }
-    .brand em { color: var(--lime); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 28px; color: var(--paper-muted); font-size: 13px; }
-    .nav-links a { transition: color .2s ease; }
-    .nav-links a:hover { color: var(--lime); }
-    .nav-download { color: var(--lime); }
-    .nav-github { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--paper); }
-    .nav-github:hover { border-color: var(--lime); color: var(--lime) !important; }
-    .nav-github svg { width: 14px; height: 14px; }
-
-    /* Hero */
-    .hero {
-      position: relative;
-      min-height: 820px;
-      padding: 170px 0 112px;
-      background:
-        radial-gradient(ellipse 42% 58% at 76% 42%, rgba(255,92,168,.13), transparent 70%),
-        radial-gradient(ellipse 36% 52% at 24% 2%, rgba(255,216,77,.10), transparent 72%),
-        var(--ink);
-    }
-    .hero::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,92,168,.04) 50%, transparent calc(50% + 1px)); }
-    .hero-grid { display: grid; grid-template-columns: minmax(0, .94fr) minmax(470px, 1.06fr); gap: 70px; align-items: center; position: relative; z-index: 1; }
-    .eyebrow { display: flex; align-items: center; gap: 11px; color: var(--lime); font-family: var(--mono); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; }
-    .eyebrow::before { content: ''; width: 25px; height: 1px; background: currentColor; }
-    .hero h1 { max-width: 650px; margin: 24px 0 24px; font-family: var(--display); font-size: clamp(54px, 7.4vw, 105px); line-height: .91; letter-spacing: -.075em; font-weight: 600; }
-    .hero h1 .soft { color: var(--paper-muted); }
-    .hero h1 .signal { color: var(--lime); position: relative; white-space: nowrap; }
-    .hero h1 .signal::after { content: ''; position: absolute; right: -10px; bottom: -8px; width: 48%; height: 7px; background: var(--coral); transform: skewX(-28deg); opacity: .9; }
-    .hero-copy { max-width: 450px; margin: 0; color: var(--paper-muted); font-size: 18px; line-height: 1.6; }
-    .hero-actions { display: flex; align-items: center; gap: 13px; margin-top: 34px; }
-    .button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 20px; border-radius: 6px; font-size: 14px; font-weight: 600; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease; }
-    .button:hover { transform: translateY(-2px); }
-    .button-primary { color: var(--ink); background: var(--lime); box-shadow: 0 10px 30px rgba(255,216,77,.13); }
-    .button-primary:hover { box-shadow: 0 14px 38px rgba(255,216,77,.28); }
-    .button-ghost { color: var(--paper); border: 1px solid var(--line-strong); }
-    .button-ghost:hover { border-color: var(--aqua); color: var(--aqua); }
-    .hero-footnote { display: flex; align-items: center; gap: 11px; margin-top: 27px; color: #89899a; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; }
-    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--aqua); box-shadow: 0 0 14px var(--aqua); }
-
-    /* Hero device scene */
-    .hero-visual { position: relative; min-height: 630px; }
-    .hero-visual::before { content: ''; position: absolute; width: 460px; height: 460px; top: 58px; left: 8%; border: 1px solid rgba(255,92,168,.19); border-radius: 50%; box-shadow: 0 0 90px rgba(255,92,168,.08), inset 0 0 90px rgba(255,92,168,.04); }
-    .hero-visual::after { content: ''; position: absolute; width: 610px; height: 1px; top: 285px; left: -2%; background: linear-gradient(90deg, transparent, rgba(255,92,168,.35), transparent); transform: rotate(-25deg); }
-    .orbit-label { position: absolute; z-index: 2; top: 46px; right: 22px; color: var(--aqua); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
-    .orbit-label::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 7px 2px 0; border-radius: 50%; background: var(--aqua); }
-    .phone { position: absolute; z-index: 3; width: 276px; padding: 8px; border: 1px solid rgba(255,239,247,.34); border-radius: 36px; background: linear-gradient(145deg, #3b4961 0%, #111a2c 17%, #0b1220 55%, #263650 100%); box-shadow: -28px 45px 80px rgba(0,0,0,.48), 0 0 0 8px rgba(255,255,255,.025), 0 0 70px rgba(255,92,168,.18); transform-style: preserve-3d; transition: transform .18s ease-out; will-change: transform; }
-    .phone-main { top: 46px; left: 10%; z-index: 4; }
-    .phone-side { z-index: 3; width: 192px; top: 178px; right: 2%; opacity: .84; transform: rotate(11deg) scale(.96); filter: saturate(.78) brightness(.9); }
-    .phone::before { content: ''; position: absolute; z-index: 5; top: 8px; left: 50%; width: 76px; height: 22px; transform: translateX(-50%); border-radius: 0 0 15px 15px; background: linear-gradient(180deg, #111a2a, #25344b); box-shadow: 0 1px 0 rgba(255,255,255,.18); }
-    .phone::after { content: ''; position: absolute; z-index: 3; top: 82px; right: -3px; width: 3px; height: 58px; border-radius: 2px; background: linear-gradient(180deg, rgba(255,239,247,.42), rgba(255,92,168,.25)); box-shadow: 0 70px 0 rgba(255,239,247,.24); transform: translateZ(0); pointer-events: none; }
-    .phone-screen { aspect-ratio: 9 / 19.4; overflow: hidden; border-radius: 28px; background: #0d161e; position: relative; z-index: 2; transform: translateZ(4px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), inset 0 0 26px rgba(0,0,0,.22); }
-    /* 3D depth layers */
-    .phone-edge { position: absolute; inset: 0; border-radius: 36px; background: linear-gradient(135deg, #7b8ba0 0%, #19273c 16%, #080f1c 48%, #677990 52%, #111c31 59%, #2b3d5a 100%); box-shadow: inset 0 0 20px rgba(255,92,168,.15), 0 0 15px rgba(255,92,168,.1); transform: translateZ(-8px); pointer-events: none; z-index: 1; }
-    .phone-rim { position: absolute; left: -3px; top: 14px; width: 3px; height: 34px; border-radius: 2px; background: linear-gradient(180deg, rgba(255,239,247,.4), rgba(255,92,168,.3)); box-shadow: 0 0 8px rgba(255,92,168,.4); transform: translateZ(0); pointer-events: none; z-index: 3; }
-    .phone-shine { position: absolute; inset: 0; border-radius: 36px; background: linear-gradient(135deg, transparent 38%, rgba(255,255,255,.05) 44%, rgba(255,255,255,.16) 49%, rgba(255,255,255,.05) 54%, transparent 61%); pointer-events: none; z-index: 4; transform: translateZ(10px); }
-    /* Hero phone 3D */
-    .hero-visual { perspective: 1200px; transform-style: preserve-3d; overflow: hidden; }
-    /* Gallery phone 3D */
-    .gallery-stage { perspective: 1200px; transform-style: preserve-3d; }
-    /* Scroll-into-view reveal - no base transform, only on hover */
-    .hero-visual.phone-revealed .phone-main { }
-    .hero-visual.phone-revealed .phone-side { }
-    .gallery-stage.phone-revealed .gallery-phone { }
-    /* Reduced-motion guard */
     @media (prefers-reduced-motion: reduce) {
-      .phone, .gallery-phone { transition: none !important; transform-style: flat !important; }
-      .phone-edge, .phone-rim { display: none; }
-      .hero-visual, .gallery-stage { perspective: none !important; }
-    }
-    .phone-screen img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.04) contrast(1.02); }
-    .phone-screen video { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; filter: saturate(1.04) contrast(1.02); }
-    .visual-readout { position: absolute; z-index: 4; bottom: 26px; left: 0; width: 214px; padding: 15px; border: 1px solid var(--line-strong); background: rgba(16,31,41,.82); backdrop-filter: blur(14px); }
-    .readout-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; color: var(--paper-muted); font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
-    .readout-top strong { color: var(--lime); font-weight: 400; }
-    .readout-line { display: flex; align-items: center; gap: 8px; color: var(--paper); font-family: var(--mono); font-size: 11px; line-height: 1.8; }
-    .readout-line span:first-child { color: var(--coral); }
-    .readout-bar { height: 2px; margin-top: 7px; background: linear-gradient(90deg, var(--lime) 0 74%, rgba(255,255,255,.12) 74%); }
-    .visual-stamp { position: absolute; z-index: 4; right: 35px; bottom: 63px; display: grid; place-items: center; width: 85px; height: 85px; border: 1px solid rgba(255,184,92,.55); border-radius: 50%; color: var(--orange); font-family: var(--mono); font-size: 10px; line-height: 1.25; letter-spacing: .08em; text-align: center; text-transform: uppercase; transform: rotate(-15deg); }
-    .visual-stamp::after { content: ''; position: absolute; inset: 7px; border: 1px dashed rgba(255,184,92,.4); border-radius: 50%; }
-
-    /* Marquee */
-    .marquee { display: flex; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--lime); color: var(--ink); }
-    .marquee-track { display: flex; flex: none; align-items: center; gap: 34px; min-width: max-content; padding: 15px 0; animation: drift 26s linear infinite; font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -.03em; }
-    .marquee-track span:nth-child(even) { color: var(--coral); font-size: 23px; }
-    @keyframes drift { to { transform: translateX(-50%); } }
-
-    /* Intro */
-    .section { padding: 128px 0; }
-    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 55px; }
-    .section-title { max-width: 580px; margin: 15px 0 0; font-family: var(--display); font-size: clamp(39px, 5.1vw, 68px); font-weight: 600; line-height: .98; letter-spacing: -.065em; }
-    .section-title .lime { color: var(--lime); }
-    .section-lede { max-width: 330px; margin: 0; color: var(--paper-muted); font-size: 15px; line-height: 1.65; }
-
-    /* Bento features */
-    .bento { display: grid; grid-template-columns: 1.35fr .8fr .8fr; grid-template-rows: 260px 260px; gap: 14px; }
-    .bento-card { position: relative; overflow: hidden; min-height: 0; padding: 27px; border: 1px solid var(--line); background: var(--panel); }
-    .bento-card::after { content: ''; position: absolute; width: 180px; height: 180px; right: -80px; bottom: -80px; border: 1px solid rgba(255,92,168,.15); border-radius: 50%; }
-    .bento-card:hover { border-color: rgba(255,216,77,.48); }
-    .bento-large { grid-row: span 2; background: linear-gradient(145deg, #172c2c, var(--panel) 63%); }
-    .bento-number { color: var(--lime); font-family: var(--mono); font-size: 11px; }
-    .bento h3 { position: relative; z-index: 1; max-width: 280px; margin: 52px 0 10px; font-family: var(--display); font-size: 30px; line-height: .98; letter-spacing: -.05em; }
-    .bento-small h3 { margin-top: 36px; font-size: 23px; }
-    .bento p { position: relative; z-index: 1; max-width: 300px; margin: 0; color: var(--paper-muted); font-size: 13px; line-height: 1.55; }
-    .bento-large p { max-width: 320px; }
-    .bento-icon { position: absolute; z-index: 1; right: 30px; bottom: 30px; display: grid; place-items: center; width: 54px; height: 54px; border: 1px solid rgba(255,216,77,.35); border-radius: 50%; color: var(--lime); font-family: var(--mono); font-size: 17px; }
-    .bento-icon svg { width: 22px; }
-
-    /* Connection story */
-    .story-section { position: relative; background: var(--paper); color: var(--ink); }
-    .story-section .eyebrow { color: #d64d91; }
-    .story-section .section-lede, .story-section .section-copy { color: #5f6375; }
-    .story-section .section-title { max-width: 660px; }
-    .connection-map { position: relative; min-height: 420px; margin-top: 70px; border: 1px solid rgba(7,16,24,.18); background: linear-gradient(135deg, #e8f2ec, #dcebe5); overflow: hidden; }
-    .connection-map::before { content: ''; position: absolute; top: 50%; left: 10%; right: 10%; height: 1px; background: rgba(7,16,24,.10); }
-    .map-line { position: absolute; top: 37%; left: 25%; width: 50%; height: 2px; background: linear-gradient(90deg, var(--aqua), var(--coral)); transform: rotate(-12deg); transform-origin: left center; }
-    .map-line.local { top: 63%; background: linear-gradient(90deg, var(--aqua), var(--lime)); transform: rotate(12deg); }
-    .map-line::before, .map-line::after { content: ''; position: absolute; width: 9px; height: 9px; top: -4px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 5px rgba(255,113,63,.16); }
-    .map-line::before { left: 0; background: var(--aqua); box-shadow: 0 0 0 5px rgba(255,92,168,.16); }
-    .map-line::after { right: 0; }
-    .map-node { position: absolute; z-index: 1; display: flex; flex-direction: column; gap: 7px; min-width: 210px; }
-    .map-node.phone-node { top: 50%; left: 9%; transform: translateY(-50%); }
-    .map-node.server-node { top: 12%; right: 9%; }
-    .node-orb { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid rgba(7,16,24,.35); border-radius: 50%; background: var(--paper); box-shadow: 0 9px 23px rgba(7,16,24,.1); font-family: var(--mono); font-size: 16px; }
-    .server-node .node-orb { color: var(--coral); border-color: rgba(255,113,63,.55); }
-    .phone-node .node-orb { color: var(--aqua); border-color: rgba(255,92,168,.55); }
-    .node-title { font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -.04em; }
-    .node-meta { color: #6c6f80; font-family: var(--mono); font-size: 10px; }
-    .map-packet { position: absolute; top: 46%; left: 42%; display: flex; align-items: center; gap: 9px; color: var(--aqua); font-family: var(--mono); font-size: 10px; letter-spacing: .05em; transform: rotate(-16deg); }
-    .map-packet.local-packet { top: 57%; left: 42%; color: #a58cff; transform: rotate(16deg); }
-    .map-packet::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 6px rgba(255,113,63,.14); }
-    .map-packet.local-packet::before { background: var(--lime); box-shadow: 0 0 0 6px rgba(255,216,77,.14); }
-    .story-note { position: absolute; left: 9%; bottom: 22px; max-width: 300px; color: #5f6375; font-size: 12px; line-height: 1.55; }
-    .local-node { top: auto; right: 9%; bottom: 12%; }
-    .local-node .node-orb { color: #a58cff; border-color: rgba(165,140,255,.55); }
-
-    /* Gallery */
-    .gallery { display: grid; grid-template-columns: .78fr 1.22fr; gap: 65px; align-items: center; }
-    .gallery-copy .section-title { max-width: 450px; }
-    .gallery-copy p { max-width: 400px; color: var(--paper-muted); font-size: 15px; line-height: 1.65; }
-    .gallery-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0; }
-    .gallery-tab { padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--paper-muted); background: transparent; cursor: pointer; font-family: var(--mono); font-size: 10px; letter-spacing: .04em; transition: .2s ease; }
-    .gallery-tab:hover, .gallery-tab.active { border-color: var(--lime); color: var(--ink); background: var(--lime); }
-    .gallery-meta { color: #77798b; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; }
-    .gallery-stage { position: relative; min-height: 610px; padding: 30px; background: radial-gradient(circle at 50% 50%, rgba(255,92,168,.12), transparent 59%), #0b1325; border: 1px solid var(--line); overflow: hidden; }
-    .gallery-stage::before { content: 'LIVE SURFACE / 01'; position: absolute; top: 20px; left: 24px; color: var(--aqua); font-family: var(--mono); font-size: 9px; letter-spacing: .1em; }
-    .gallery-stage::after { content: ''; position: absolute; right: 24px; bottom: 20px; width: 68px; height: 68px; border: 1px dashed rgba(255,216,77,.45); border-radius: 50%; }
-    .gallery-phone { position: relative; z-index: 1; width: min(285px, 70%); margin: 32px auto 0; padding: 8px; border: 1px solid rgba(255,239,247,.3); border-radius: 36px; background: #18202f; box-shadow: 0 35px 70px rgba(0,0,0,.5), 0 0 60px rgba(255,92,168,.16); transform-style: preserve-3d; transition: opacity .2s ease, transform .18s ease-out; }
-    .gallery-phone.is-changing { opacity: .35; transform: scale(.97) translateY(7px); }
-    .gallery-phone::before { content: ''; position: absolute; z-index: 2; top: 8px; left: 50%; width: 76px; height: 22px; transform: translateX(-50%); border-radius: 0 0 15px 15px; background: #18202f; }
-    .gallery-phone .phone-screen { border-radius: 28px; }
-    .gallery-caption { position: absolute; z-index: 2; left: 28px; bottom: 27px; color: var(--paper); }
-    .gallery-caption strong { display: block; margin-bottom: 5px; font-family: var(--display); font-size: 18px; letter-spacing: -.04em; }
-    .gallery-caption span { color: var(--paper-muted); font-family: var(--mono); font-size: 10px; }
-
-    /* Download */
-    .download-section { padding-top: 36px; }
-    .download-card { position: relative; display: grid; grid-template-columns: .88fr 1.12fr; gap: 70px; align-items: center; padding: 64px; overflow: hidden; background: linear-gradient(120deg, #2a1c2d, #172033 62%, #241a25); border: 1px solid rgba(255,92,168,.24); }
-    .download-card::before { content: 'APK / 0.3.0'; position: absolute; top: 24px; right: 28px; color: rgba(255,216,77,.7); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; }
-    .download-card .section-title { margin-bottom: 20px; }
-    .download-card p { max-width: 430px; margin: 0; color: var(--paper-muted); font-size: 15px; line-height: 1.65; }
-    .download-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
-    .download-meta { display: flex; align-items: center; gap: 15px; margin-top: 18px; color: #85869a; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; }
-    .download-meta span + span { padding-left: 15px; border-left: 1px solid var(--line-strong); }
-    .download-steps { position: relative; display: grid; gap: 12px; }
-    .download-steps::before { content: ''; position: absolute; top: 36px; bottom: 36px; left: 21px; width: 1px; background: linear-gradient(var(--lime), rgba(255,92,168,.12)); }
-    .download-step { position: relative; z-index: 1; display: grid; grid-template-columns: 44px 1fr; gap: 17px; align-items: center; padding: 17px 18px 17px 9px; border: 1px solid var(--line); background: rgba(7,16,24,.35); }
-    .download-step:hover { border-color: rgba(255,216,77,.45); }
-    .step-number { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--lime); border-radius: 50%; color: var(--lime); background: var(--ink-2); font-family: var(--mono); font-size: 10px; }
-    .step-icon { position: absolute; right: 20px; color: var(--aqua); font-family: var(--mono); font-size: 19px; }
-    .download-step strong { display: block; margin-bottom: 4px; font-family: var(--display); font-size: 18px; letter-spacing: -.04em; }
-    .download-step p { max-width: 430px; margin: 0; color: var(--paper-muted); font-size: 12px; line-height: 1.5; }
-    .download-warning { display: flex; gap: 10px; margin-top: 16px; padding: 12px 14px; border-left: 2px solid var(--orange); color: #c7c1cc; background: rgba(255,113,63,.08); font-size: 11px; line-height: 1.5; }
-    .download-warning b { color: var(--orange); font-weight: 600; }
-
-    /* Footer */
-    footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 30px 0 36px; border-top: 1px solid var(--line); color: #77798b; font-size: 12px; }
-    .footer-links { display: flex; gap: 22px; }
-    .footer-links a:hover { color: var(--lime); }
-    .footer-credit { font-family: var(--mono); font-size: 10px; }
-
-    /* Motion: the mockups stay anchored; only the pointer tilt adds depth. */
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-      .hero-grid { grid-template-columns: 1fr; gap: 35px; }
-      .hero { min-height: auto; padding-bottom: 80px; }
-      .hero-visual { min-height: 630px; max-width: 600px; width: 100%; margin: 0 auto; }
-      .bento { grid-template-columns: 1fr 1fr; grid-template-rows: 270px 220px 220px; }
-      .bento-large { grid-row: span 1; grid-column: span 2; }
-      .gallery { grid-template-columns: 1fr; gap: 45px; }
-      .gallery-stage { min-height: 580px; }
-      .download-card { grid-template-columns: 1fr; gap: 40px; padding: 45px; }
-    }
-    @media (max-width: 640px) {
-      .container, .nav { width: min(100% - 36px, var(--max)); }
-      .nav { padding: 20px 0; }
-      .nav-links a:not(.nav-github):not(.nav-download) { display: none; }
-      .nav-github { padding: 9px 12px; font-size: 12px; }
-      .hero { padding-top: 122px; }
-      .hero h1 { font-size: clamp(49px, 14vw, 76px); }
-      .hero-copy { font-size: 16px; }
-      .hero-actions { align-items: stretch; flex-direction: column; width: min(100%, 280px); }
-      .button { width: 100%; }
-      .hero-visual { min-height: 500px; }
-      .hero-visual::before { width: 310px; height: 310px; top: 36px; left: 12%; }
-      .phone { width: 210px; border-radius: 29px; }
-      .phone-main { left: 17%; top: 49px; }
-      .phone-side { width: 145px; right: -4px; top: 155px; }
-      .phone-screen { border-radius: 22px; }
-      .visual-readout { bottom: 0; width: 185px; padding: 12px; }
-      .visual-stamp { right: 0; bottom: 22px; width: 67px; height: 67px; font-size: 8px; }
-      .section { padding: 84px 0; }
-      .section-head { display: block; margin-bottom: 36px; }
-      .section-lede { margin-top: 20px; }
-      .bento { display: flex; flex-direction: column; }
-      .bento-card, .bento-large { min-height: 235px; }
-      .connection-map { min-height: 520px; margin-top: 35px; }
-      .map-line { left: 26%; width: 48%; transform: rotate(-30deg); }
-      .map-line.local { top: 63%; transform: rotate(30deg); }
-      .map-packet { top: 41%; left: 43%; transform: rotate(-30deg); }
-      .map-packet.local-packet { top: 58%; left: 43%; transform: rotate(30deg); }
-      .map-node { min-width: 0; }
-      .map-node.phone-node { top: 10%; left: 50%; transform: translateX(-50%); align-items: center; text-align: center; }
-      .map-node.server-node { top: auto; right: auto; left: 8%; bottom: 14%; }
-      .map-node.local-node { top: auto; right: 8%; bottom: 14%; }
-      .story-note { left: 8%; bottom: 4%; max-width: 84%; font-size: 11px; }
-      .node-orb { width: 60px; height: 60px; }
-      .node-title { font-size: 15px; }
-      .gallery-stage { min-height: 520px; padding: 18px; }
-      .gallery-phone { width: min(240px, 78%); margin-top: 40px; }
-      .download-card { padding: 30px 22px; }
-      pre { padding: 18px; font-size: 10px; }
-      footer { flex-direction: column; align-items: flex-start; padding-top: 25px; }
-      .footer-links { flex-wrap: wrap; gap: 12px 18px; }
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+      .js .rv { opacity: 1; transform: none; }
     }
   </style>
 </head>
 <body>
-  <div class="site-shell">
-    <nav class="nav" aria-label="Primary navigation">
-      <a class="brand" href="#top"><span class="brand-mark">a/</span><span>AURA<em>·</em>DROID</span></a>
-      <div class="nav-links">
-        <a href="#surface">The surface</a>
-        <a href="#connection">How it connects</a>
-        <a href="#screens">Screens</a>
-        <a class="nav-download" href="#download">Download</a>
-        <a class="nav-github" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.76-.24.76-.54v-2.1c-3.1.68-3.76-1.32-3.76-1.32-.51-1.3-1.24-1.65-1.24-1.65-1.01-.69.08-.67.08-.67 1.12.08 1.71 1.15 1.71 1.15 1 1.7 2.63 1.21 3.27.93.1-.72.39-1.21.72-1.49-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.43-2.21 1.15-2.99-.12-.28-.5-1.42.11-2.95 0 0 .94-.3 3.08 1.14a10.7 10.7 0 0 1 5.6 0c2.14-1.45 3.08-1.14 3.08-1.14.61 1.53.23 2.67.11 2.95.72.78 1.15 1.77 1.15 2.99 0 4.3-2.62 5.24-5.11 5.52.4.35.76 1.04.76 2.1v3.11c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></svg>
-          GitHub ↗
-        </a>
-      </div>
-    </nav>
+  <a class="skip" href="#main">Skip to content</a>
 
-    <main id="top">
-      <section class="hero">
-        <div class="container hero-grid">
-          <div class="hero-copy-block">
-            <div class="eyebrow">Aura Droid / mobile client</div>
-            <h1>Your codebase.<br><span class="soft">Your signal.</span><br><span class="signal">Everywhere.</span></h1>
-            <p class="hero-copy">A full agentic coding client in your pocket. Connect to Aura on your PC, or run Aura locally beside Termux — with tools, memory, shell access, and the permissions you choose.</p>
-            <div class="hero-actions">
-              <a class="button button-primary" href="#download">Download APK <span>↓</span></a>
-              <a class="button button-ghost" href="#screens">See the surface <span>↓</span></a>
-            </div>
-            <div class="hero-footnote"><span class="status-dot"></span>LOCAL-FIRST / ANDROID 8+ / OPEN SOURCE</div>
-          </div>
+  <!-- The Aura mark (ui/theme/AuraLogo.kt), in the site's cream and gold -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="mark" viewBox="0 0 100 100">
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 78C27 54 38 29 48 14C52 8 58 8 62 14C73 31 84 55 93 78C77 68 59 63 41 66C30 68 23 72 18 78Z" stroke="#f2ebc9" stroke-opacity=".22" stroke-width="19"/>
+          <path d="M18 78C27 54 38 29 48 14C52 8 58 8 62 14C73 31 84 55 93 78C77 68 59 63 41 66C30 68 23 72 18 78Z" stroke="#f2ebc9" stroke-width="10.5"/>
+          <path d="M18 78C27 54 38 29 48 14C52 8 58 8 62 14C73 31 84 55 93 78C77 68 59 63 41 66C30 68 23 72 18 78Z" stroke="#c8ad5c" stroke-opacity=".9" stroke-width="4.5"/>
+        </g>
+      </symbol>
+      <symbol id="arrow-down" viewBox="0 0 24 24"><path d="M12 5v14m0 0l-6-6m6 6l6-6"/></symbol>
+      <symbol id="arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m0 0l-6-6m6 6l-6 6"/></symbol>
+      <symbol id="arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m0 0l6-6m-6 6l6 6"/></symbol>
+    </defs>
+  </svg>
 
-          <div class="hero-visual" aria-label="Aura Droid app preview">
-            <div class="orbit-label">signal locked / 01</div>
-            <div class="phone phone-side" data-depth="0.7"><div class="phone-edge"></div><div class="phone-rim"></div><div class="phone-shine"></div><div class="phone-screen"><img src="site-assets/02-sessions.jpg" alt="Aura Droid sessions screen"></div></div>
-            <div class="phone phone-main" data-depth="1"><div class="phone-edge"></div><div class="phone-rim"></div><div class="phone-shine"></div><div class="phone-screen"><video id="aura-demo-video" class="app-demo-video" src="site-assets/aura-droid-app-demo.mp4" poster="site-assets/aura-droid-app-demo-poster.jpg" muted playsinline autoplay loop preload="metadata" aria-label="Aura Droid application recording"></video></div></div>
-            <div class="visual-readout">
-              <div class="readout-top"><span>active session</span><strong>ONLINE</strong></div>
-              <div class="readout-line"><span>→</span><span>on this phone</span></div>
-              <div class="readout-line"><span>↳</span><span>standalone mode</span></div>
-              <div class="readout-bar"></div>
-            </div>
-            <div class="visual-stamp">READ<br>PLAN<br>SHIP</div>
+  <header class="nav" id="nav">
+    <div class="nav-in">
+      <a class="brand" href="#top" aria-label="Aura Droid, back to top"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#mark"/></svg><span>Aura Droid</span></a>
+      <nav class="links" aria-label="Primary">
+        <a href="#app">The app</a>
+        <a href="#run">Runtimes</a>
+        <a href="#control">Control</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <a class="pill pill-cream" href="#download">Download <span class="knob"><svg aria-hidden="true"><use href="#arrow-down"/></svg></span></a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ═════════════ Hero ═════════════ -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-frame">
+        <picture class="hero-bg">
+          <source media="(max-width: 700px)" srcset="/modern/img/hero-tall.webp">
+          <img src="/modern/img/hero-1600.webp" srcset="/modern/img/hero-1600.webp 1600w, /modern/img/hero-2400.webp 2400w" sizes="100vw" width="2400" height="1400" alt="" fetchpriority="high">
+        </picture>
+        <div class="hero-in">
+          <span class="chip">Android client for Aura Code</span>
+          <h1 id="hero-title">Your coding agent,<br><em>in your pocket.</em></h1>
+          <p>Aura Droid puts an autonomous, model-agnostic coding agent on your phone. Pair it with Aura on your PC, or run it on the phone alone. She asks before she acts, and remembers what you tell her.</p>
+          <div class="cta">
+            <a class="pill pill-glass" href="#download">Download the APK <span class="knob"><svg aria-hidden="true"><use href="#arrow-down"/></svg></span></a>
+            <a class="ghost" href="#app">See the app</a>
           </div>
         </div>
-      </section>
-
-      <div class="marquee" aria-hidden="true">
-        <div class="marquee-track"><span>FULL AGENT LOOP</span><span>✳</span><span>TERMUX LOCAL</span><span>✳</span><span>TOOLS + MEMORY</span><span>✳</span><span>PC OR PHONE</span><span>✳</span><span>FULL AGENT LOOP</span><span>✳</span><span>TERMUX LOCAL</span><span>✳</span><span>TOOLS + MEMORY</span><span>✳</span><span>PC OR PHONE</span><span>✳</span></div>
+        <ul class="facts" aria-label="At a glance"><li>v0.3.0</li><li>Android 8+</li><li>19 MB</li><li>Apache-2.0</li></ul>
       </div>
+    </section>
 
-      <section class="section" id="surface">
-        <div class="container">
-          <div class="section-head">
-            <div><div class="eyebrow">01 / The surface</div><h2 class="section-title">Small screen.<br><span class="lime">Big agency.</span></h2></div>
-            <p class="section-lede">Aura Droid keeps the interface close and the complexity out of the way. Everything you need to steer the session, nothing that gets between you and the work.</p>
+    <!-- ═════════════ Intro: modes + numbers ═════════════ -->
+    <section class="intro" id="intro" aria-labelledby="intro-title">
+      <div class="wrap intro-grid">
+        <div class="intro-copy rv">
+          <span class="chip" style="align-self:flex-start">Aura Droid</span>
+          <h2 class="h2" id="intro-title">Built <img class="inline-img" src="/modern/img/thumb-road.webp" width="240" height="150" alt=""> for the thumb, <em>not the desk.</em></h2>
+          <p class="lede">Every tool call shows up in the thread with how long it took. Answers are written for a six-inch screen: the answer first, detail when you ask for it. Hold the mic to talk, or attach a photo or a file.</p>
+          <ul class="stats" aria-label="In numbers">
+            <li><b>3</b><span>modes to work in</span></li>
+            <li><b>2</b><span>ways to run it</span></li>
+            <li><b>19&nbsp;MB</b><span>APK, Android 8+</span></li>
+          </ul>
+        </div>
+        <div class="modes rv" style="--d:.1s">
+          <article class="mode">
+            <h3>Coder</h3>
+            <p>For code. Paired with your PC it works on the real project; on the phone alone it answers from what you tell it, and says plainly when a job needs the desktop.</p>
+            <small>Mode · coder</small>
+          </article>
+          <article class="mode">
+            <h3>Gazelle</h3>
+            <p>A fast answer, not a discussion. A sentence or two, unless the question genuinely needs more.</p>
+            <small>Mode · gazelle</small>
+          </article>
+          <article class="mode">
+            <h3>Architect</h3>
+            <p>Think the work through. It asks what is unclear, proposes a plan and is concrete about trade-offs, one question at a time.</p>
+            <small>Mode · architect</small>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════ The app (sticky-phone tour) ═════════════ -->
+    <section class="tour-sec" id="app" aria-labelledby="app-title">
+      <div class="wrap">
+        <div class="sec-head rv">
+          <span class="chip" style="justify-self:start">01 · The app</span>
+          <h2 class="h2" id="app-title">Five screens, <em>one agent.</em></h2>
+          <p class="lede">Real screens from the current build. Everything the agent does, arranged for a six-inch screen and a few free minutes.</p>
+        </div>
+
+        <div class="tour" id="tour">
+          <div class="stage" aria-hidden="true">
+            <div class="stage-card">
+              <img src="/modern/img/valley-2000.webp" width="2000" height="1192" alt="" loading="lazy">
+              <div class="phone">
+                <div class="screen">
+                  <img class="on" src="/site-assets/04-chat-thread.jpg" width="576" height="1280" alt="" loading="lazy">
+                  <img src="/site-assets/02-sessions.jpg" width="576" height="1280" alt="" loading="lazy">
+                  <img src="/site-assets/08-memory.jpg" width="576" height="1280" alt="" loading="lazy">
+                  <img src="/site-assets/05-quick-menu.jpg" width="576" height="1280" alt="" loading="lazy">
+                  <img src="/site-assets/07-settings-dark.jpg" width="576" height="1280" alt="" loading="lazy">
+                </div>
+              </div>
+              <div class="tour-count"><span><b id="tourNow">01</b> / 05</span><span class="tour-bar"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+            </div>
           </div>
-          <div class="bento">
-            <article class="bento-card bento-large">
-              <div class="bento-number">A / 01</div><h3>One conversation for the whole project.</h3><p>Stream responses, read markdown, inspect code, and keep a clean thread from first question to finished patch.</p>
-              <div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 6.5h14M5 12h9M5 17.5h6"/><circle cx="18" cy="17.5" r="2.5"/></svg></div>
+
+          <div class="chapters">
+            <article class="chapter" data-i="0">
+              <span class="chip" style="align-self:flex-start">01 · Ask</span>
+              <h3>One thread, <em>first question to finished patch.</em></h3>
+              <p>Aura reads files and runs commands, and every tool call shows up inline with how long it took. On the phone her answers are short by design: the answer first, detail when you ask for it.</p>
+              <ul class="tags"><li>list_files</li><li>read_file</li><li>write_file</li><li>run_shell</li></ul>
+              <div class="ch-phone"><img src="/modern/img/valley-2000.webp" width="2000" height="1192" alt="" loading="lazy"><div class="phone"><div class="screen"><img src="/site-assets/04-chat-thread.jpg" width="576" height="1280" alt="Aura Droid chat with inline tool calls." loading="lazy"></div></div></div>
             </article>
-            <article class="bento-card bento-small"><div class="bento-number">A / 02</div><h3>Three ways to think.</h3><p>Coder, Gazelle, or Architect. Change the posture, not the project.</p><div class="bento-icon">03</div></article>
-            <article class="bento-card bento-small"><div class="bento-number">A / 03</div><h3>Your models, your rules.</h3><p>Claude, GPT, Gemini, DeepSeek, Ollama — point Aura at the stack you trust.</p><div class="bento-icon">∞</div></article>
-            <article class="bento-card bento-small"><div class="bento-number">A / 04</div><h3>Sessions with memory.</h3><p>Pin the important work. Archive the rest. Resume without re-explaining.</p><div class="bento-icon">↺</div></article>
-            <article class="bento-card bento-small"><div class="bento-number">A / 05</div><h3>Two runtimes. One agent.</h3><p>Connect over Wi-Fi or USB, or run Aura beside Termux on the phone. Same agentic loop, different workspace.</p><div class="bento-icon">⌁</div></article>
+            <article class="chapter" data-i="1">
+              <span class="chip" style="align-self:flex-start">02 · Resume</span>
+              <h3>Sessions that <em>stay put.</em></h3>
+              <p>Pin the important threads, search the rest, rename or export any of them as Markdown or JSON. Each session runs in the mode you choose.</p>
+              <ul class="tags"><li>coder</li><li>gazelle</li><li>architect</li></ul>
+              <div class="ch-phone"><img src="/modern/img/card-ridge.webp" width="600" height="800" alt="" loading="lazy"><div class="phone"><div class="screen"><img src="/site-assets/02-sessions.jpg" width="576" height="1280" alt="Aura Droid sessions list with pinned, coder, gazelle and architect sessions." loading="lazy"></div></div></div>
+            </article>
+            <article class="chapter" data-i="2">
+              <span class="chip" style="align-self:flex-start">03 · Remember</span>
+              <h3>Pin what matters. <em>She keeps it.</em></h3>
+              <p>Pin any message into Aura's memory. She also saves facts herself as you talk (preferences, decisions, what you're building) and you can read, delete or clear all of it whenever you like.</p>
+              <ul class="tags"><li>remember</li><li>recall</li><li>forget all</li></ul>
+              <div class="ch-phone"><img src="/modern/img/card-cliff.webp" width="600" height="800" alt="" loading="lazy"><div class="phone"><div class="screen"><img src="/site-assets/08-memory.jpg" width="576" height="1280" alt="Aura's memory screen listing pinned chat items." loading="lazy"></div></div></div>
+            </article>
+            <article class="chapter" data-i="3">
+              <span class="chip" style="align-self:flex-start">04 · Reach</span>
+              <h3>Memos and a shell, <em>one tap away.</em></h3>
+              <p>Record a memo by voice and start a project from it later. Open the built-in shell when you'd rather look under the hood yourself.</p>
+              <ul class="tags"><li>memos</li><li>shell</li><li>voice</li></ul>
+              <div class="ch-phone"><img src="/modern/img/card-road.webp" width="600" height="800" alt="" loading="lazy"><div class="phone"><div class="screen"><img src="/site-assets/05-quick-menu.jpg" width="576" height="1280" alt="Aura Droid overflow menu showing Memos and Shell." loading="lazy"></div></div></div>
+            </article>
+            <article class="chapter" data-i="4">
+              <span class="chip" style="align-self:flex-start">05 · Configure</span>
+              <h3>Your stack, <em>your keys.</em></h3>
+              <p>Pair a desktop or run without one. Point the app at your own model endpoint; your API key is stored encrypted on the device. Follow the system theme, or force dark or light.</p>
+              <ul class="tags"><li>paired desktop</li><li>standalone</li><li>dynamic colour</li></ul>
+              <div class="ch-phone"><img src="/modern/img/card-sunbreak.webp" width="600" height="800" alt="" loading="lazy"><div class="phone"><div class="screen"><img src="/site-assets/07-settings-dark.jpg" width="576" height="1280" alt="Aura Droid settings: paired desktop, appearance and standalone mode." loading="lazy"></div></div></div>
+            </article>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="section story-section" id="connection">
-        <div class="container">
-          <div class="section-head">
-            <div><div class="eyebrow">02 / Choose your runtime</div><h2 class="section-title">Full agency.<br><span style="color:var(--coral)">Two ways to run it.</span></h2></div>
-            <p class="section-lede">Put Aura next to the project on your PC, or bring the agent onto the phone with Termux. Either way, the agent can plan, call tools, use memory, inspect files, and carry work through to an outcome.</p>
-          </div>
-          <div class="connection-map">
-            <div class="map-line"></div><div class="map-line local"></div><div class="map-packet">encrypted pairing</div><div class="map-packet local-packet">127.0.0.1 / local</div>
-            <div class="map-node phone-node"><div class="node-orb">a/</div><div class="node-title">Aura Droid</div><div class="node-meta">THE PHONE CLIENT</div></div>
-            <div class="map-node server-node"><div class="node-orb">✳</div><div class="node-title">PC / remote Aura</div><div class="node-meta">FULL PROJECT + DESKTOP TOOLS</div></div>
-            <div class="map-node local-node"><div class="node-orb">$</div><div class="node-title">Termux / local Aura</div><div class="node-meta">LINUX TOOLS + YOUR PERMISSIONS</div></div>
-            <p class="story-note">On the phone, Termux supplies the Linux workspace. If you grant `sudo` or root access there, Aura can use that authority too — within the boundary you set.</p>
-          </div>
+    <!-- ═════════════ Runtimes ═════════════ -->
+    <section class="run-sec" id="run" aria-labelledby="run-title">
+      <div class="wrap">
+        <div class="sec-head rv">
+          <span class="chip" style="justify-self:start">02 · Two ways to run it</span>
+          <h2 class="h2" id="run-title">Pair it with a project, <em>or go it alone.</em></h2>
+          <p class="lede">Aura Droid is the client. The agent itself is Aura Code. Put it beside your project on a PC, or skip the computer and talk to a model straight from the phone.</p>
         </div>
-      </section>
 
-      <section class="section" id="screens">
-        <div class="container gallery">
-          <div class="gallery-copy">
-            <div class="eyebrow">03 / Inside the app</div>
-            <h2 class="section-title">Designed for<br><span class="lime">the in-between.</span></h2>
-            <p>On the train. In the queue. Away from the desk but still in the flow. The Android client turns small moments into useful ones.</p>
-            <div class="gallery-tabs" role="tablist" aria-label="App screens">
-              <button class="gallery-tab active" data-image="site-assets/01-chat-empty.jpg" data-title="Chat / ready state" data-meta="LIVE SURFACE / 01">chat</button>
-              <button class="gallery-tab" data-image="site-assets/02-sessions.jpg" data-title="Sessions / seven threads" data-meta="PERSISTENT CONTEXT / 02">sessions</button>
-              <button class="gallery-tab" data-image="site-assets/04-chat-thread.jpg" data-title="Chat / pinned context" data-meta="MEMORY IN THE THREAD / 03">thread</button>
-              <button class="gallery-tab" data-image="site-assets/07-settings-dark.jpg" data-title="Settings / your stack" data-meta="PAIR + CONFIGURE / 04">settings</button>
-              <button class="gallery-tab" data-image="site-assets/08-memory.jpg" data-title="Memory / what Aura remembers" data-meta="LONG-TERM CONTEXT / 05">memory</button>
-              <button class="gallery-tab" data-image="site-assets/09-standalone-setup.jpg" data-title="Standalone / no desktop needed" data-meta="ON-DEVICE MODE / 06">standalone</button>
-              <button class="gallery-tab" data-image="site-assets/03-pinned-memory.jpg" data-title="Memory / pinned item" data-meta="KEEP IT CLOSE / 07">pinned</button>
-              <button class="gallery-tab" data-image="site-assets/05-quick-menu.jpg" data-title="Quick menu / more surfaces" data-meta="TOOLS ON DEMAND / 08">menu</button>
-              <button class="gallery-tab" data-image="site-assets/06-settings-light.jpg" data-title="Settings / light theme" data-meta="DYNAMIC APPEARANCE / 09">light</button>
+        <div class="runtimes">
+          <article class="rt rv">
+            <div class="rt-img"><img src="/modern/img/wide-peaks.webp" width="1120" height="560" alt="" loading="lazy"><span class="chip">Paired</span></div>
+            <div class="rt-body">
+              <h3>Aura Code on your PC, <em>steered from your phone.</em></h3>
+              <div class="diagram" role="img" aria-label="Diagram: Aura Droid connects to Aura Code over a pinned TLS link">
+                <div class="node"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><b>Aura Droid</b><small>the phone</small></div>
+                <div class="wire"><span>pinned TLS</span></div>
+                <div class="node warm"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><b>Aura Code</b><small>PC or Termux</small></div>
+              </div>
+              <ul>
+                <li><b>Your real project.</b> The agent works on your files with the desktop's tools; the phone is the control surface.</li>
+                <li><b>Wi-Fi or USB.</b> Pair with a 6-character code. Over Wi-Fi the phone pins the desktop's identity; if it changes without you re-pairing, something else is answering.</li>
+                <li><b>Termux works too.</b> Run <code>aura serve</code> on the phone and pair to <code>127.0.0.1</code>. Whatever permissions you give that environment, sudo or root included if you choose, are the ceiling for what she can do there.</li>
+              </ul>
+<pre tabindex="0"><span class="c"># USB, from the computer</span>
+adb reverse tcp:7337 tcp:7337
+aura serve
+aura devices add "my phone"</pre>
+              <p class="rt-foot">Wi-Fi uses <code>aura serve --lan</code>. Step by step: <a href="/docs/connect-to-desktop.pdf">pairing guide (PDF)</a></p>
             </div>
-            <div class="gallery-meta" id="galleryMeta">LIVE SURFACE / 01</div>
-          </div>
-          <div class="gallery-stage">
-            <div class="gallery-phone" id="galleryPhone" data-depth="1"><div class="phone-edge"></div><div class="phone-rim"></div><div class="phone-shine"></div><div class="phone-screen"><img id="galleryImage" src="site-assets/01-chat-empty.jpg" alt="Aura Droid chat screen preview"></div></div>
-            <div class="gallery-caption"><strong id="galleryTitle">Chat / ready state</strong><span>REAL APP / CURRENT BUILD</span></div>
+          </article>
+
+          <article class="rt rv" style="--d:.1s">
+            <div class="rt-img"><img src="/modern/img/wide-cloudsea.webp" width="1120" height="560" alt="" loading="lazy"><span class="chip">On the phone alone</span></div>
+            <div class="rt-body">
+              <h3>No computer. <em>Just you, a key, a model.</em></h3>
+              <div class="diagram" role="img" aria-label="Diagram: Aura Droid talks directly to a model API with your key">
+                <div class="node"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><b>Aura Droid</b><small>+ tools + memory</small></div>
+                <div class="wire"><span>your API key</span></div>
+                <div class="node warm"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><b>Model API</b><small>any OpenAI-compatible</small></div>
+              </div>
+              <ul>
+                <li><b>Turn on “Run without a desktop.”</b> Give it a base URL, a model ID and a key. The key is stored encrypted on the device, and kept even if you later pair and unpair a desktop.</li>
+                <li><b>Tools of her own.</b> Aura works in a workspace folder on the phone: read, write and list files, run shell commands, fetch a URL, save a file to Downloads, and remember things between chats.</li>
+                <li><b>Need your actual repo?</b> Pair a desktop, or run Aura Code in Termux. She'll tell you plainly when a task needs one.</li>
+              </ul>
+<pre tabindex="0"><span class="c"># Settings → Standalone → Run without a desktop</span>
+Base URL   https://api.deepseek.com
+Model ID   any chat model
+API key    stored encrypted on device</pre>
+              <p class="rt-foot">Nothing to install on a computer.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════ And the rest: cream carousel ═════════════ -->
+    <section class="more" id="more" aria-labelledby="more-title">
+      <img class="more-bg" src="/modern/img/cream-2000.webp" width="2000" height="1083" alt="" loading="lazy">
+      <div class="more-in">
+        <div class="more-head rv">
+          <span class="chip chip-light" style="align-self:flex-start">03 · And the rest</span>
+          <h2 class="h2" id="more-title">Small things, <em>done properly.</em></h2>
+          <p class="count" aria-hidden="true"><b id="cnt">01</b><span>/08</span></p>
+          <p class="lede">Eight details that make an agent on a phone pleasant to live with.</p>
+          <div class="arrows">
+            <button type="button" id="prev" aria-label="Previous details" aria-controls="rail"><svg aria-hidden="true"><use href="#arrow-left"/></svg></button>
+            <button type="button" id="next" aria-label="Next details" aria-controls="rail"><svg aria-hidden="true"><use href="#arrow-right"/></svg></button>
           </div>
         </div>
-      </section>
+        <div class="rail" id="rail" tabindex="0" role="region" aria-label="Eight details, scroll sideways">
+          <ul class="fcards">
+            <li class="fcard"><img src="/modern/img/card-sunbreak.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Voice</span><h3>Hold to talk</h3><p>Hold the mic to speak, and have Aura read her answers back aloud.</p></li>
+            <li class="fcard"><img src="/modern/img/card-cliff.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Attachments</span><h3>Photos &amp; files</h3><p>Attach a photo or a file. PDFs and Office documents are read, and if something fails, she says why.</p></li>
+            <li class="fcard"><img src="/modern/img/card-peak.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Artifacts</span><h3>Live previews</h3><p>HTML artifacts render inline in a WebView, with a code view a tap away.</p></li>
+            <li class="fcard"><img src="/modern/img/card-cloudsea.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Export</span><h3>Code you can keep</h3><p>Code blocks arrive with filenames, ready to save or share. Export whole chats as Markdown or JSON.</p></li>
+            <li class="fcard"><img src="/modern/img/card-road.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Sessions</span><h3>Self-naming sessions</h3><p>Threads name themselves from the conversation. Rename them whenever you like.</p></li>
+            <li class="fcard"><img src="/modern/img/card-ridge.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Memos</span><h3>Voice memos</h3><p>Capture a thought by voice, then start a project from it when you're at a keyboard.</p></li>
+            <li class="fcard"><img src="/modern/img/card-weisshorn.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Shell</span><h3>A shell in your pocket</h3><p>A built-in terminal for the moments you'd rather type the command yourself.</p></li>
+            <li class="fcard"><img src="/modern/img/card-afterglow.webp" width="600" height="800" alt="" loading="lazy"><span class="chip">Theme</span><h3>Dark, light, yours</h3><p>Follow the system theme or pick one, with dynamic colour that matches your wallpaper.</p></li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-      <section class="section download-section" id="download">
-        <div class="container">
-          <div class="download-card">
+    <!-- ═════════════ Control ═════════════ -->
+    <section class="control" id="control" aria-labelledby="control-title">
+      <div class="wrap control-grid">
+        <div class="rv">
+          <span class="chip">04 · Control</span>
+          <h2 class="h2" id="control-title" style="margin:22px 0 22px">Aura asks first. <em>You decide when she doesn't.</em></h2>
+          <p class="lede">An agent on your phone should have exactly as much rope as you hand it. By default, every action needs your approval. Loosen it as far as you like, one chat at a time or everywhere.</p>
+          <ol class="levels">
+            <li><b>Ask every time</b><span>The default. Each tool call waits for Allow or Deny.</span></li>
+            <li><b>Allow for this chat</b><span>Choose “Allow all” on a prompt and tools run for the rest of that conversation.</span></li>
+            <li><b>Approve all actions <span class="ver">0.4.0</span></b><span>A setting that changes the default in every conversation.</span></li>
+            <li><b>Sandbox out <span class="ver">0.4.0</span></b><span>Lets Aura reach past the app sandbox when you ask. Sensitive app data stays off-limits.</span></li>
+          </ol>
+        </div>
+
+        <div class="ctl-stage rv" style="--d:.1s">
+          <img src="/modern/img/summit-2000.webp" width="2000" height="1333" alt="" loading="lazy">
+          <div class="panel" role="group" aria-label="Interactive preview of the Approvals and Sandbox settings">
+            <div class="panel-title">Settings <span>try it</span></div>
+            <div class="setting" id="s-approve">
+              <h3>Approve all actions</h3>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Approve all actions"></button>
+              <p>Let Aura run every tool without asking. Off means it asks before each action, as usual.</p>
+              <div class="state" aria-live="polite" data-off="Off. Aura asks before each action." data-on="On. Aura runs every tool without asking, in every conversation."></div>
+            </div>
+            <div class="setting" id="s-sandbox">
+              <h3>Sandbox out</h3>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Sandbox out"></button>
+              <p>Let Aura reach beyond the app sandbox on request: read and write files elsewhere on the phone, and move anywhere the device user can.</p>
+              <div class="state" aria-live="polite" data-off="Off. Aura stays inside its own workspace." data-on="On, on request. Sensitive app data stays off-limits."></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════ Demo video ═════════════ -->
+    <section class="demo" id="demo" aria-labelledby="demo-title">
+      <div class="wrap demo-grid">
+        <div class="rv">
+          <span class="chip">05 · In motion</span>
+          <h2 class="h2" id="demo-title" style="margin:22px 0 22px">Recorded on a phone, <em>not rendered.</em></h2>
+          <p class="lede">A short screen recording of the app running. It's a 26&nbsp;MB file, so it only loads if you press play.</p>
+        </div>
+        <div class="phone rv" style="--d:.1s">
+          <div class="screen" id="demoScreen">
+            <img src="/site-assets/aura-droid-app-demo-poster.jpg" width="720" height="1280" alt="Poster frame of the Aura Droid screen recording." loading="lazy">
+            <button class="play" id="demoPlay" type="button" aria-label="Play the screen recording (26 MB)"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg></i><span>Play · 26 MB</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════ Download ═════════════ -->
+    <section class="dl-sec" id="download" aria-labelledby="dl-title">
+      <div class="wrap">
+        <div class="banner rv">
+          <picture><img src="/modern/img/dusk-1600.webp" srcset="/modern/img/dusk-1600.webp 1600w, /modern/img/dusk-2400.webp 2400w" sizes="(max-width: 1240px) 100vw, 1240px" width="2400" height="1300" alt="" loading="lazy"></picture>
+          <div class="banner-in">
             <div>
-              <div class="eyebrow">04 / Download the client</div>
-              <h2 class="section-title">Take Aura<br><span class="lime">with you.</span></h2>
-              <p>This is the Android APK for Aura Droid 0.3.0. Run the full agent through Aura on your PC, or use Termux to run Aura locally on the phone. In local mode, the agent can use Linux tools, memory, files, shell commands, and any `sudo` / root permissions you explicitly grant to that Termux environment.</p>
-              <div class="download-actions"><a class="button button-primary" href="droid-0.3.0.apk" download="aura-droid-0.3.0.apk">Download APK <span>↓</span></a><a class="button button-ghost" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">View source ↗</a></div>
-              <div class="download-meta"><span>VERSION 0.3.0</span><span>ANDROID 8+</span><span>~19 MB</span></div>
-              <div class="download-warning"><b>Why Android may warn you:</b><span>This APK is distributed directly instead of through Google Play. If Android blocks the install, allow your browser or file manager to install from this source, then retry.</span></div>
+              <span class="chip">06 · Download</span>
+              <h2 class="h2" id="dl-title">Install it <em>in a minute.</em></h2>
+              <p class="lede">An APK for Android 8 and up, distributed directly rather than through Google Play. Free and open source.</p>
+              <div class="actions">
+                <a class="pill pill-cream" href="/droid-0.3.0.apk" download="aura-droid-0.3.0.apk">Download APK <span class="knob"><svg aria-hidden="true"><use href="#arrow-down"/></svg></span></a>
+                <a class="ghost" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">View source ↗</a>
+              </div>
             </div>
-            <div class="download-steps" aria-label="APK installation steps">
-              <div class="download-step"><span class="step-number">01</span><div><strong>Download the file</strong><p>Tap the button and keep <code>aura-droid-0.3.0.apk</code> in your Downloads folder.</p></div><span class="step-icon">↓</span></div>
-              <div class="download-step"><span class="step-number">02</span><div><strong>Allow this source</strong><p>When Android shows the install warning, open Settings and allow your browser or file manager for this one install.</p></div><span class="step-icon">⌁</span></div>
-              <div class="download-step"><span class="step-number">03</span><div><strong>Choose where Aura runs</strong><p>Pair to your PC over Wi-Fi or USB, or start <code>aura serve</code> in Termux for a local agent with the permissions you choose.</p></div><span class="step-icon">✳</span></div>
+            <div class="file">
+              <dl>
+                <dt>file</dt><dd>aura-droid-0.3.0.apk</dd>
+                <dt>size</dt><dd>18.5 MiB (19.4 MB)</dd>
+                <dt>needs</dt><dd>Android 8.0+</dd>
+                <dt>sha-256</dt><dd id="sha">048af99e735e0332768891aa182fe7dde574ea0fb8b1ce587862a7f3abbe3677</dd>
+              </dl>
+              <div><button class="copy" type="button" data-copy="#sha"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span>Copy checksum</span></button></div>
             </div>
           </div>
         </div>
-      </section>
-    </main>
 
-    <footer class="container">
-      <div class="brand"><span class="brand-mark">a/</span><span>AURA<em>·</em>DROID</span></div>
-      <div class="footer-links"><a href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/DusanCar-sudo/aura-code" target="_blank" rel="noopener">Aura Code</a><a href="https://aurawebsite-eta.vercel.app" target="_blank" rel="noopener">Aura website</a></div>
-      <div class="footer-credit">Apache-2.0 / built by Dušan</div>
-    </footer>
-  </div>
+        <ol class="steps rv">
+          <li><b>Download the file</b><p>Tap the button. The APK lands in your Downloads folder.</p></li>
+          <li><b>Allow this source</b><p>When Android warns you, open Settings and allow your browser or file manager for this one install.</p></li>
+          <li><b>Choose where Aura runs</b><p>Pair a desktop over Wi-Fi or USB, or turn on “Run without a desktop” and add a key.</p></li>
+        </ol>
+
+        <div class="note rv"><span><b>Why does Android warn me?</b> The app isn't on Google Play, so Android treats it as an unknown source. Compare the SHA-256 above with the file you downloaded if you'd like to be sure.</span>
+          <span><b>Newer than the APK.</b> The source is at 0.4.0, which adds <em>Approve all actions</em> and <em>Sandbox out</em>. Build it yourself to get them today:</span></div>
+
+        <div class="src rv">
+          <div class="src-head">Build from source <button class="copy" type="button" data-copy="#build"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span>Copy</span></button></div>
+          <pre id="build" tabindex="0">git clone https://github.com/DusanCar-sudo/aura-droid.git
+cd aura-droid
+./gradlew assembleDebug</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════ FAQ ═════════════ -->
+    <section class="faq-sec" id="faq" aria-labelledby="faq-title">
+      <div class="wrap faq-grid">
+        <div class="rv">
+          <span class="chip">07 · Questions</span>
+          <h2 class="h2" id="faq-title">Before you <em>install.</em></h2>
+        </div>
+        <div class="rv" style="--d:.1s">
+          <details name="faq" open>
+            <summary>Do I need a computer?</summary>
+            <p>No. Turn on “Run without a desktop,” give the app a base URL, a model ID and an API key, and Aura runs on the phone with her own tools and memory. To work on your real repository, pair a desktop running Aura Code, or run Aura Code in Termux.</p>
+          </details>
+          <details name="faq">
+            <summary>Which models does it use?</summary>
+            <p>When paired, whichever model your Aura Code instance is set up with: Claude, GPT, Gemini, DeepSeek, Ollama and others. On the phone alone, any OpenAI-compatible endpoint you point it at.</p>
+          </details>
+          <details name="faq">
+            <summary>What can Aura do on my phone?</summary>
+            <p>By default she stays in her own workspace folder and asks before every action. “Allow all” relaxes that for one chat. In 0.4.0, <em>Sandbox out</em> lets her reach elsewhere on request, and sensitive app data stays off-limits regardless.</p>
+          </details>
+          <details name="faq">
+            <summary>Where do my API key and chats live?</summary>
+            <p>API keys are held in the Android Keystore, and chat history is stored locally in the app. Requests go to the model endpoint or the desktop you configure, plus any page you ask Aura to fetch. Over Wi-Fi the phone pins the desktop's identity, so it can tell if something else starts answering.</p>
+          </details>
+          <details name="faq">
+            <summary>How does it relate to Aura Code?</summary>
+            <p>Aura Code is the agent, a model-agnostic autonomous coding tool for the command line. Aura Droid is its Android client. Agent behaviour lives in <a href="https://github.com/DusanCar-sudo/aura-code" target="_blank" rel="noopener">aura-code</a>; this app is the phone-sized surface for it.</p>
+          </details>
+          <details name="faq">
+            <summary>Is it open source?</summary>
+            <p>Yes, Apache-2.0. Read it, build it, fork it on <a href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub</a>.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-frame">
+      <img src="/modern/img/hero-1600.webp" width="1600" height="933" alt="" loading="lazy">
+      <div class="foot-top">
+        <div>
+          <h2>Your coding agent, <em>in your pocket.</em></h2>
+          <div class="actions">
+            <a class="pill pill-cream" href="#download">Download <span class="knob"><svg aria-hidden="true"><use href="#arrow-down"/></svg></span></a>
+            <a class="ghost" href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub ↗</a>
+          </div>
+        </div>
+        <nav class="foot-cols" aria-label="Footer">
+          <div><h3>App</h3><ul><li><a href="#app">The app</a></li><li><a href="#run">Runtimes</a></li><li><a href="#control">Control</a></li><li><a href="#download">Download</a></li></ul></div>
+          <div><h3>Aura family</h3><ul><li><a href="https://github.com/DusanCar-sudo/aura-code" target="_blank" rel="noopener">Aura Code</a></li><li><a href="https://aurawebsite-eta.vercel.app" target="_blank" rel="noopener">Aura website</a></li><li><a href="https://aura-droid-site.vercel.app">Retro edition</a></li></ul></div>
+          <div><h3>Project</h3><ul><li><a href="https://github.com/DusanCar-sudo/aura-droid" target="_blank" rel="noopener">GitHub</a></li><li><a href="/docs/connect-to-desktop.pdf">Pairing guide (PDF)</a></li><li><a href="https://github.com/DusanCar-sudo/aura-droid/blob/main/LICENSE" target="_blank" rel="noopener">Apache-2.0 license</a></li></ul></div>
+        </nav>
+      </div>
+      <div class="foot-base"><span>© Aura Droid · Apache-2.0</span><span>Built by Dušan Milosavljević</span></div>
+      <p class="wordmark" aria-hidden="true">AURA DROID</p>
+    </div>
+  </footer>
 
   <script>
-    const tabs = document.querySelectorAll('.gallery-tab');
-    const image = document.querySelector('#galleryImage');
-    const title = document.querySelector('#galleryTitle');
-    const meta = document.querySelector('#galleryMeta');
-    const phone = document.querySelector('#galleryPhone');
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var $ = function (s, r) { return (r || document).querySelector(s); };
+      var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabs.forEach((item) => item.classList.remove('active'));
-        tab.classList.add('active');
-        phone.classList.add('is-changing');
-        window.setTimeout(() => {
-          image.src = tab.dataset.image;
-          image.alt = `Aura Droid ${tab.dataset.title} screen`;
-          title.textContent = tab.dataset.title;
-          meta.textContent = tab.dataset.meta;
-          phone.classList.remove('is-changing');
-        }, 160);
+      // Nav picks up a backdrop once the page moves.
+      var nav = $('#nav');
+      var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 40); };
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Reveal on scroll.
+      var rv = $$('.rv');
+      if ('IntersectionObserver' in window && !reduce) {
+        var ro = new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); } });
+        }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+        rv.forEach(function (el) { ro.observe(el); });
+      } else {
+        rv.forEach(function (el) { el.classList.add('in'); });
+      }
+
+      // Tour: the sticky phone follows whichever chapter is nearest the middle.
+      var chapters = $$('.chapter');
+      var shots = $$('.stage .screen img');
+      var bars = $$('.tour-bar i');
+      var now = $('#tourNow');
+      function show(i) {
+        chapters.forEach(function (c, k) { c.classList.toggle('on', k === i); });
+        shots.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+        bars.forEach(function (b, k) { b.classList.toggle('on', k === i); });
+        if (now) now.textContent = '0' + (i + 1);
+      }
+      if (chapters.length) {
+        var current = -1, pending = false;
+        var pick = function () {
+          pending = false;
+          var mid = window.innerHeight / 2, best = 0, bestD = Infinity;
+          chapters.forEach(function (c, k) {
+            var r = c.getBoundingClientRect();
+            var d = Math.abs(r.top + r.height / 2 - mid);
+            if (d < bestD) { bestD = d; best = k; }
+          });
+          if (best !== current) { current = best; show(best); }
+        };
+        var queue = function () { if (!pending) { pending = true; requestAnimationFrame(pick); } };
+        window.addEventListener('scroll', queue, { passive: true });
+        window.addEventListener('resize', queue);
+        pick();
+      }
+
+      // Carousel: arrows, counter, ends.
+      var rail = $('#rail'), cards = $$('.fcard'), prev = $('#prev'), next = $('#next'), cnt = $('#cnt');
+      if (rail && cards.length) {
+        var stepW = function () {
+          var a = cards[0].getBoundingClientRect(), b = cards[1] ? cards[1].getBoundingClientRect() : a;
+          return (b.left - a.left) || a.width;
+        };
+        var go = function (dir) { rail.scrollBy({ left: dir * stepW(), behavior: reduce ? 'auto' : 'smooth' }); };
+        prev.addEventListener('click', function () { go(-1); });
+        next.addEventListener('click', function () { go(1); });
+        var syncing = false;
+        var sync = function () {
+          syncing = false;
+          var max = rail.scrollWidth - rail.clientWidth;
+          var i = Math.max(0, Math.min(cards.length - 1, Math.round(rail.scrollLeft / stepW())));
+          cnt.textContent = (i < 9 ? '0' : '') + (i + 1);
+          prev.disabled = rail.scrollLeft <= 4;
+          next.disabled = rail.scrollLeft >= max - 4;
+        };
+        rail.addEventListener('scroll', function () { if (!syncing) { syncing = true; requestAnimationFrame(sync); } }, { passive: true });
+        window.addEventListener('resize', sync);
+        sync();
+      }
+
+      // Approvals demo.
+      $$('.setting').forEach(function (row) {
+        var sw = $('.switch', row), st = $('.state', row);
+        var sync = function () {
+          var on = sw.getAttribute('aria-checked') === 'true';
+          row.classList.toggle('is-on', on);
+          st.textContent = on ? st.dataset.on : st.dataset.off;
+        };
+        sw.addEventListener('click', function () {
+          sw.setAttribute('aria-checked', sw.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+          sync();
+        });
+        sync();
       });
-    });
 
-    // ── 3D Phone Parallax & Reveal ──
-    (function() {
-      // Reduced-motion check
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReducedMotion) return;
-
-      // Hero phone parallax
-      const heroVisual = document.querySelector('.hero-visual');
-      const heroPhones = heroVisual ? heroVisual.querySelectorAll('.phone') : [];
-      let heroRevealed = false;
-
-      function tiltHero(x, y) {
-        heroPhones.forEach(p => {
-          const d = parseFloat(p.dataset.depth) || 1;
-          const isSide = p.classList.contains('phone-side');
-          const baseRotate = isSide ? 11 : 5;
-          const baseScale = isSide ? ' scale(.96)' : '';
-          p.style.transform = `rotate(${baseRotate}deg)${baseScale} rotateY(${x * 6 * d}deg) rotateX(${-y * 3 * d}deg)`;
-        });
-      }
-
-      if (heroVisual) {
-        heroVisual.addEventListener('mousemove', e => {
-          if (!heroRevealed) return;
-          const r = heroVisual.getBoundingClientRect();
-          const x = (e.clientX - r.left) / r.width - 0.5;
-          const y = (e.clientY - r.top) / r.height - 0.5;
-          tiltHero(x, y);
-        });
-
-        heroVisual.addEventListener('mouseleave', () => {
-          if (heroRevealed) {
-            heroPhones.forEach(p => {
-              const isSide = p.classList.contains('phone-side');
-              const baseRotate = isSide ? 11 : 5;
-              const baseScale = isSide ? ' scale(.96)' : '';
-              p.style.transform = `rotate(${baseRotate}deg)${baseScale}`;
-            });
+      // Copy buttons.
+      $$('.copy').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var text = $(btn.dataset.copy).textContent.trim();
+          var label = $('span', btn), was = label.textContent;
+          var done = function () {
+            btn.classList.add('done'); label.textContent = 'Copied';
+            setTimeout(function () { btn.classList.remove('done'); label.textContent = was; }, 1600);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () {});
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); done(); } catch (e) {}
+            document.body.removeChild(ta);
           }
         });
+      });
 
-        // Scroll reveal for hero
-        const heroObserver = new IntersectionObserver(entries => {
-          entries.forEach(e => {
-            if (e.isIntersecting) {
-              heroVisual.classList.add('phone-revealed');
-              heroRevealed = true;
-              setTimeout(() => tiltHero(-0.2, 0), 50);
-            }
-          });
-        }, { threshold: 0.2 });
-        heroObserver.observe(heroVisual);
-      }
-
-      // Gallery phone parallax
-      const galleryStage = document.querySelector('.gallery-stage');
-      const galleryPhone = document.querySelector('.gallery-phone');
-      let galleryRevealed = false;
-
-      if (galleryStage && galleryPhone) {
-        function tiltGallery(x, y) {
-          const d = parseFloat(galleryPhone.dataset.depth) || 1;
-          galleryPhone.style.transform = `rotateY(${x * 5 * d}deg) rotateX(${-y * 2.5 * d}deg)`;
-        }
-
-        galleryStage.addEventListener('mousemove', e => {
-          if (!galleryRevealed) return;
-          const r = galleryStage.getBoundingClientRect();
-          const x = (e.clientX - r.left) / r.width - 0.5;
-          const y = (e.clientY - r.top) / r.height - 0.5;
-          tiltGallery(x, y);
-        });
-
-        galleryStage.addEventListener('mouseleave', () => {
-          if (galleryRevealed) {
-            galleryPhone.style.transform = '';
-          }
-        });
-
-        // Scroll reveal for gallery
-        const galleryObserver = new IntersectionObserver(entries => {
-          entries.forEach(e => {
-            if (e.isIntersecting) {
-              galleryStage.classList.add('phone-revealed');
-              galleryRevealed = true;
-              setTimeout(() => tiltGallery(-0.15, 0), 50);
-            }
-          });
-        }, { threshold: 0.2 });
-        galleryObserver.observe(galleryStage);
-      }
+      // Demo video only downloads on request.
+      var play = $('#demoPlay');
+      if (play) play.addEventListener('click', function () {
+        var v = document.createElement('video');
+        v.src = '/site-assets/aura-droid-app-demo.mp4';
+        v.poster = '/site-assets/aura-droid-app-demo-poster.jpg';
+        v.controls = true; v.autoplay = true; v.playsInline = true;
+        v.setAttribute('aria-label', 'Aura Droid screen recording');
+        var screen = $('#demoScreen');
+        screen.textContent = '';
+        screen.appendChild(v);
+        v.play && v.play().catch(function () {});
+      });
     })();
   </script>
-<script src="aura-kb.js" defer></script>
-<script src="aura-chat.js" data-product="Aura Droid" defer></script>
 </body>
 </html>
