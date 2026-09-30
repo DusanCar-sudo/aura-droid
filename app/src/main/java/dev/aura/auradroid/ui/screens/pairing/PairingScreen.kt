@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.aura.auradroid.ui.theme.AuraLogo
+import dev.aura.auradroid.ui.theme.GeistMono
 
 /** Which way of running Aura the user is setting up. */
 private enum class Path { NONE, DESKTOP, PHONE }
@@ -101,8 +101,8 @@ fun PairingScreen(
                 )
                 AuraLogo(
                     modifier = Modifier.size(56.dp),
-                    cyanColor = MaterialTheme.colorScheme.primary,
-                    rubyColor = MaterialTheme.colorScheme.tertiary,
+                    bodyColor = MaterialTheme.colorScheme.onBackground,
+                    coreColor = MaterialTheme.colorScheme.primary,
                 )
             }
 
@@ -396,7 +396,7 @@ private fun SetupHint() {
             Text(
                 "aura serve\naura devices add \"Aura APK\"",
                 style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = GeistMono,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
@@ -408,7 +408,7 @@ private fun SetupHint() {
             Text(
                 "adb reverse tcp:7337 tcp:7337\naura serve\naura devices add \"my phone\"",
                 style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = GeistMono,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(

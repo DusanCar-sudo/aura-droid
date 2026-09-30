@@ -38,18 +38,20 @@ private val LightColorScheme = lightColorScheme(
     onSurface = OnSurfaceLight,
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = OnSurfaceVariantLight,
+    outline = OutlineLight,
+    outlineVariant = OutlineVariantLight,
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryDark, // Aura cyan
+    primary = PrimaryDark, // Aura gold
     onPrimary = OnPrimaryDark,
     primaryContainer = PrimaryContainerDark,
     onPrimaryContainer = OnPrimaryContainerDark,
-    secondary = SecondaryDark, // Aura copper
+    secondary = SecondaryDark, // Aura straw
     onSecondary = OnSecondaryDark,
     secondaryContainer = SecondaryContainerDark,
     onSecondaryContainer = OnSecondaryContainerDark,
-    tertiary = TertiaryDark, // Aura ruby
+    tertiary = TertiaryDark, // Aura moss
     onTertiary = OnTertiaryDark,
     tertiaryContainer = TertiaryContainerDark,
     onTertiaryContainer = OnTertiaryContainerDark,
@@ -57,12 +59,14 @@ private val DarkColorScheme = darkColorScheme(
     onError = OnErrorDark,
     errorContainer = ErrorContainerDark,
     onErrorContainer = OnErrorContainerDark,
-    background = BackgroundDark, // Aura ink
+    background = BackgroundDark, // Aura forest
     onBackground = OnBackgroundDark, // Aura cream
-    surface = SurfaceDark, // Aura ink2
+    surface = SurfaceDark, // Aura forest 2
     onSurface = OnSurfaceDark,
     surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OutlineDark,
+    outlineVariant = OutlineVariantDark,
 )
 
 @Composable

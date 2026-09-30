@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -29,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import dev.aura.auradroid.ui.theme.GeistMono
 
 data class Line(val id: Long, val text: String, val isPrompt: Boolean)
 
@@ -132,7 +132,7 @@ fun TerminalScreen(
                         placeholder = { Text("$prompt \$") },
                         singleLine = true,
                         textStyle = MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = GeistMono,
                         ),
                         keyboardOptions = KeyboardOptions(
                             imeAction = ImeAction.Send,
@@ -161,7 +161,7 @@ fun TerminalScreen(
                     line.text,
                     // Monospace and small: shell output is columnar, and
                     // proportional type turns `ls -l` into a mess.
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = GeistMono,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                     color = if (line.isPrompt) {
@@ -175,7 +175,7 @@ fun TerminalScreen(
                 item {
                     Text(
                         "…",
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = GeistMono,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

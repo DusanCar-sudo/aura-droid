@@ -23,8 +23,25 @@ android {
         }
     }
 
+    // Release signing comes from the environment, so no key is ever in the repo:
+    //   AURA_KEYSTORE (path), AURA_KEYSTORE_PASSWORD, AURA_KEY_ALIAS, AURA_KEY_PASSWORD
+    // Without them `assembleRelease` yields an unsigned APK; use assembleDebug for
+    // a debug-signed one that installs on a fresh device.
+    val releaseKeystore = System.getenv("AURA_KEYSTORE")
+    if (releaseKeystore != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("AURA_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("AURA_KEY_ALIAS")
+                keyPassword = System.getenv("AURA_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -78,6 +95,10 @@ dependencies {
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.5")
+
+    // Launch splash: the peak on forest while the process starts, handed to the
+    // in-app brand splash (ui/splash/BrandSplash.kt).
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.56.1")

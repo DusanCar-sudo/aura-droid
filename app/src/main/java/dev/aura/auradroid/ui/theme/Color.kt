@@ -2,98 +2,104 @@ package dev.aura.auradroid.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Aura Brand Colors
-// Source: aura-code website CSS variables
+// Aura brand colours: the Nature palette (BRAND.md §5).
+// Near-black forest, moss cards, cream text, and the gold of late light.
+// The four stripes are fixed: they are never themed or recoloured.
 
-// Primary colors - Aura Cyan
-val PrimaryLight = Color(0xFF0097A7) // Lighter cyan for light theme
-val OnPrimaryLight = Color(0xFFFFFFFF)
-val PrimaryContainerLight = Color(0xFFB2EBF2)
-val OnPrimaryContainerLight = Color(0xFF004747)
+// ── Brand constants ─────────────────────────────────────────────────────────
+val AuraForest = Color(0xFF070907)      // ground
+val AuraForest2 = Color(0xFF0C100C)     // raised ground
+val AuraMoss = Color(0xFF141A14)        // cards
+val AuraMoss2 = Color(0xFF1A211A)       // raised cards
+val AuraCream = Color(0xFFF2EBC9)       // text on dark, ground on light
+val AuraCream2 = Color(0xFFE2DBB7)
+val AuraDim = Color(0xFFB9BAA2)         // secondary text on dark
+val AuraGold = Color(0xFFE7CF85)        // the light: one accent per surface
+val AuraStraw = Color(0xFFD8CB95)
+val AuraInk = Color(0xFF10150F)         // text on light
+val AuraOlive = Color(0xFF535C37)       // accent on light (5.9:1 on cream)
 
-val PrimaryDark = Color(0xFF6ED0EA) // Aura cyan
-val OnPrimaryDark = Color(0xFF00373A)
-val PrimaryContainerDark = Color(0xFF004F52)
-val OnPrimaryContainerDark = Color(0xFFB2EBF2)
+// The stripes, in Sinclair order. Fixed brand colours.
+val StripeRed = Color(0xFFE4312B)
+val StripeYellow = Color(0xFFF8B91E)
+val StripeGreen = Color(0xFF2FAE4E)
+val StripeCyan = Color(0xFF1AA6E0)
 
-// Secondary colors - Terracotta/Copper
-val SecondaryLight = Color(0xFF8D5B4C)
-val OnSecondaryLight = Color(0xFFFFFFFF)
-val SecondaryContainerLight = Color(0xFFFFDBD1)
-val OnSecondaryContainerLight = Color(0xFF351B12)
+// ── Material 3 roles: dark (the default) ────────────────────────────────────
+val PrimaryDark = AuraGold
+val OnPrimaryDark = AuraInk
+val PrimaryContainerDark = Color(0xFF4A4222)
+val OnPrimaryContainerDark = Color(0xFFF5E7B0)
 
-val SecondaryDark = Color(0xFFD98E63) // Aura copper
-val OnSecondaryDark = Color(0xFF4A2809)
-val SecondaryContainerDark = Color(0xFF6B3D2D)
-val OnSecondaryContainerDark = Color(0xFFFFDBD1)
+val SecondaryDark = Color(0xFFC9C7A0)
+val OnSecondaryDark = Color(0xFF1B1D10)
+val SecondaryContainerDark = Color(0xFF2B3020)
+val OnSecondaryContainerDark = AuraCream2
 
-// Tertiary colors - Ruby
-val TertiaryLight = Color(0xFFB53325)
-val OnTertiaryLight = Color(0xFFFFFFFF)
-val TertiaryContainerLight = Color(0xFFFFDAD4)
-val OnTertiaryContainerLight = Color(0xFF490C05)
-
-val TertiaryDark = Color(0xFFD24B30) // Aura ruby
-val OnTertiaryDark = Color(0xFF62140A)
-val TertiaryContainerDark = Color(0xFF8B2E1F)
-val OnTertiaryContainerDark = Color(0xFFFFDAD4)
-
-// Error colors
-val ErrorLight = Color(0xFFBA1A1A)
-val OnErrorLight = Color(0xFFFFFFFF)
-val ErrorContainerLight = Color(0xFFFFDAD6)
-val OnErrorContainerLight = Color(0xFF410002)
+val TertiaryDark = Color(0xFFA9BF7E)    // moss green
+val OnTertiaryDark = Color(0xFF18210A)
+val TertiaryContainerDark = Color(0xFF2E3A1C)
+val OnTertiaryContainerDark = Color(0xFFD3E6AB)
 
 val ErrorDark = Color(0xFFFFB4AB)
 val OnErrorDark = Color(0xFF690005)
 val ErrorContainerDark = Color(0xFF93000A)
 val OnErrorContainerDark = Color(0xFFFFDAD6)
 
-// Background - Aura Navy (deep ink)
-val BackgroundLight = Color(0xFFEAF1F7) // Aura cream
-val OnBackgroundLight = Color(0xFF0A1020) // Aura ink
-val SurfaceLight = Color(0xFFEAF1F7)
-val OnSurfaceLight = Color(0xFF0A1020)
-val SurfaceVariantLight = Color(0xFFDFE4EB)
-val OnSurfaceVariantLight = Color(0xFF42474E)
+val BackgroundDark = AuraForest
+val OnBackgroundDark = AuraCream
+val SurfaceDark = AuraForest2
+val OnSurfaceDark = AuraCream
+val SurfaceVariantDark = AuraMoss2
+val OnSurfaceVariantDark = AuraDim
+val OutlineDark = Color(0xFF5A5F4B)
+val OutlineVariantDark = Color(0xFF2C3226)
 
-val BackgroundDark = Color(0xFF0A1020) // Aura ink (deep navy)
-val OnBackgroundDark = Color(0xFFEAF1F7) // Aura cream
-val SurfaceDark = Color(0xFF101A2C) // Aura ink2
-val OnSurfaceDark = Color(0xFFEAF1F7)
-val SurfaceVariantDark = Color(0xFF1A2436)
-val OnSurfaceVariantDark = Color(0xFFAEBCCD)
+// ── Material 3 roles: light ─────────────────────────────────────────────────
+val PrimaryLight = AuraOlive
+val OnPrimaryLight = Color(0xFFFFFFFF)
+val PrimaryContainerLight = AuraGold
+val OnPrimaryContainerLight = Color(0xFF2A2410)
 
-// Aura glow colors
-val GlowLight = Color(0xFFFFC08A)
-val GlowDark = Color(0xFFFFC08A)
+val SecondaryLight = Color(0xFF6B5F2A)
+val OnSecondaryLight = Color(0xFFFFFFFF)
+val SecondaryContainerLight = AuraCream2
+val OnSecondaryContainerLight = Color(0xFF2B2610)
 
-val GlowHotLight = Color(0xFFFFE3BD)
-val GlowHotDark = Color(0xFFFFE3BD)
+val TertiaryLight = Color(0xFF4E6A2B)
+val OnTertiaryLight = Color(0xFFFFFFFF)
+val TertiaryContainerLight = Color(0xFFD3E6AB)
+val OnTertiaryContainerLight = Color(0xFF18210A)
 
-// Message colors
-val UserMessageLight = Color(0xFFE0E8EE)
-val UserMessageDark = Color(0xFF1A2838)
+val ErrorLight = Color(0xFFBA1A1A)
+val OnErrorLight = Color(0xFFFFFFFF)
+val ErrorContainerLight = Color(0xFFFFDAD6)
+val OnErrorContainerLight = Color(0xFF410002)
 
-val AssistantMessageLight = Color(0xFFFFFFFF)
-val AssistantMessageDark = Color(0xFF141E30)
+val BackgroundLight = AuraCream
+val OnBackgroundLight = AuraInk
+val SurfaceLight = Color(0xFFF7F2DB)
+val OnSurfaceLight = AuraInk
+val SurfaceVariantLight = Color(0xFFE4DDB8)
+val OnSurfaceVariantLight = Color(0xFF3B4232)
+val OutlineLight = Color(0xFF7A7F63)
+val OutlineVariantLight = Color(0xFFCDC59B)
 
-// Code block colors
-val CodeBackgroundLight = Color(0xFFF0F4F8)
-val CodeBackgroundDark = Color(0xFF0C141F)
-val CodeBorderLight = Color(0xFFD0DCE8)
-val CodeBorderDark = Color(0xFF2A3A50)
+// ── Message bubbles ─────────────────────────────────────────────────────────
+val UserMessageLight = Color(0xFFE4DDB8)
+val UserMessageDark = AuraMoss2
 
-// Aura brand accent colors
-val AuraCyan = Color(0xFF6ED0EA)
-val AuraCyanSoft = Color(0xFF9FDCEC)
-val AuraCyanHot = Color(0xFFCDF0F8)
+val AssistantMessageLight = Color(0xFFFBF8E8)
+val AssistantMessageDark = AuraMoss
 
-val AuraRuby = Color(0xFFD24B30)
-val AuraCopper = Color(0xFFD98E63)
+// ── Code blocks ─────────────────────────────────────────────────────────────
+val CodeBackgroundLight = Color(0xFFEAE3BF)
+val CodeBackgroundDark = Color(0xFF050705)
+val CodeBorderLight = Color(0xFFCDC59B)
+val CodeBorderDark = Color(0xFF2C3226)
 
-val AuraCream = Color(0xFFEAF1F7)
-val AuraCreamDim = Color(0xFFAEBCCD)
-
-val AuraInk = Color(0xFF0A1020)
-val AuraInk2 = Color(0xFF101A2C)
+// Glow (used by the splash and the empty state): a warm light, never a fill.
+val GlowLight = Color(0xFFC8AD5C)
+val GlowDark = AuraGold
+val GlowHotLight = Color(0xFFE7CF85)
+val GlowHotDark = Color(0xFFFFF7D6)
