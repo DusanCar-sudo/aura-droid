@@ -105,10 +105,17 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:2.56.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
+    // On-device language models (Gemma-class .task / .litertlm files)
+    implementation("com.google.mediapipe:tasks-genai:0.10.24")
+
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+
+    // Shizuku for elevated shell (pm, settings, dumpsys, sdcard access)
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
 
     // Networking (OkHttp also carries the streaming/SSE path)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

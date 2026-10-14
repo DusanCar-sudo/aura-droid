@@ -128,7 +128,7 @@ carries the accent colour, never italics:
 
 | Fact | Value |
 |---|---|
-| Public download | `droid-0.3.0.apk`, 19 MB, SHA-256 `048af99e735e0332768891aa182fe7dde574ea0fb8b1ce587862a7f3abbe3677` |
+| Public download | `droid-0.4.0.apk`, 2.9 MB, SHA-256 `2ffc44e168489d531c6f877400beca2f33a09a539d57bdc19b935ec22695548f` |
 | Code version | `versionName 0.4.0`. Approvals control, sandbox-out and desktop hand-off are 0.4.0 features and are **not in the download yet**. |
 | Requirements | Android 8.0+ (API 26) |
 | License | Apache-2.0 (Aura Code itself is MIT) |

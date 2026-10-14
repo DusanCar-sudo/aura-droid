@@ -2,6 +2,9 @@ package dev.aura.auradroid.ui.screens.chat
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -59,6 +62,7 @@ fun ChatScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToMemos: () -> Unit = {},
     onNavigateToTerminal: () -> Unit = {},
+    onNavigateToLocal: () -> Unit = {},
     onNeedsPairing: () -> Unit,
 ) {
     val needsPairing by viewModel.needsPairing.collectAsState()
@@ -77,6 +81,10 @@ fun ChatScreen(
     val pinned by viewModel.pinned.collectAsState()
     val notice by viewModel.notice.collectAsState()
     val projectName by viewModel.projectName.collectAsState()
+    val selectedModel by viewModel.selectedModel.collectAsState()
+    val health by viewModel.contextHealth.collectAsState()
+    val speed by viewModel.speed.collectAsState()
+    var split by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -99,6 +107,12 @@ fun ChatScreen(
     // text as text; the ViewModel decides which from what comes back.
     val filePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments(),
+    ) { uris -> uris.forEach(viewModel::attach) }
+
+    // Photos have their own picker (the system gallery), separate from
+    // documents, so each gets its own menu entry.
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(),
     ) { uris -> uris.forEach(viewModel::attach) }
 
     // The system camera writes into a file this app owns, then it is read back
@@ -130,6 +144,29 @@ fun ChatScreen(
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
     }
 
+    // The artifact panel: when Aura produces one, it slides up from the bottom
+    // and the conversation shrinks to the top so her message stays in view.
+    var openArtifact by remember { mutableStateOf<ArtifactPayload?>(null) }
+    var previousCount by remember { mutableIntStateOf(0) }
+    var wasThinking by remember { mutableStateOf(false) }
+    LaunchedEffect(messages.size) {
+        val last = messages.lastOrNull()
+        val fresh = messages.size - previousCount in 1..3 && (previousCount > 0 || wasThinking)
+        if (fresh && last != null) {
+            val payload = runCatching {
+                Gson().fromJson(last.metadata, ArtifactPayload::class.java)
+            }.getOrNull()
+            if (payload != null && payload.type == "artifact") openArtifact = payload
+        }
+        previousCount = messages.size
+    }
+    LaunchedEffect(thinking) { if (thinking) wasThinking = true }
+    LaunchedEffect(openArtifact) {
+        if (openArtifact != null && messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.lastIndex)
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -144,6 +181,7 @@ fun ChatScreen(
                 onSettingsClick = onNavigateToSettings,
                 onMemosClick = onNavigateToMemos,
                 onTerminalClick = onNavigateToTerminal,
+                onLocalClick = onNavigateToLocal,
                 onNewChat = viewModel::createNewSession,
                 onModeChange = viewModel::setMode,
             )
@@ -163,6 +201,13 @@ fun ChatScreen(
                 onStop = viewModel::stopReply,
                 onRemoveAttachment = viewModel::removeAttachment,
                 onPickFiles = { filePicker.launch(arrayOf("*/*")) },
+                onPickPhotos = {
+                    photoPicker.launch(
+                        androidx.activity.result.PickVisualMediaRequest(
+                            ActivityResultContracts.PickVisualMedia.ImageOnly,
+                        ),
+                    )
+                },
                 onTakePhoto = {
                     val (_, uri) = dev.aura.auradroid.data.attach.Attachments
                         .newCameraTarget(context)
@@ -181,34 +226,72 @@ fun ChatScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            PinnedRail(pinned, onUnpin = viewModel::unpinMessage)
-            LazyColumn(
-                state = listState,
+            FlightDeck(
+                model = standalone?.model ?: selectedModel,
+                backend = if (standalone != null) "DIRECT API" else "DESKTOP",
+                link = if (standalone != null) "KEY SAVED"
+                    else if (connection is ConnState.Connected) "LINKED" else "OFFLINE",
+                linkOk = standalone != null || connection is ConnState.Connected,
+                project = projectName,
+                mode = currentMode.name.lowercase(),
+                thinking = thinking,
+                health = health,
+                speed = speed,
+                messageCount = messages.size,
+                split = split,
+                onToggleSplit = { split = !split },
+            )
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                contentPadding = PaddingValues(start = 6.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .fillMaxWidth()
+                    .weight(if (openArtifact != null) 0.38f else 1f),
             ) {
-                if (messages.isEmpty()) {
-                    item { EmptyState(standalone = standalone != null) }
+                PinnedRail(pinned, onUnpin = viewModel::unpinMessage)
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentPadding = PaddingValues(start = 6.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    if (messages.isEmpty()) {
+                        item { EmptyState(standalone = standalone != null) }
+                    }
+                    items(messages, key = { it.id }) { message ->
+                        MessageRow(
+                            message = message,
+                            speaking = speakingId == message.id.toString(),
+                            onSpeak = { viewModel.speak(message.id.toString(), message.content) },
+                            onPin = { viewModel.pinMessage(message) },
+                            onOpenArtifact = { openArtifact = it },
+                        )
+                    }
+                    if (thinking) {
+                        item { ThinkingRow() }
+                    }
                 }
-                items(messages, key = { it.id }) { message ->
-                    MessageRow(
-                        message = message,
-                        speaking = speakingId == message.id.toString(),
-                        onSpeak = { viewModel.speak(message.id.toString(), message.content) },
-                        onPin = { viewModel.pinMessage(message) },
+            }
+            if (split) {
+                HorizontalDivider()
+                Box(Modifier.fillMaxWidth().weight(0.9f)) {
+                    dev.aura.auradroid.ui.screens.terminal.TerminalScreen(
+                        onNavigateBack = { split = false },
                     )
                 }
-                if (thinking) {
-                    item { ThinkingRow() }
-                }
+            }
+            AnimatedVisibility(
+                visible = openArtifact != null,
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it },
+                modifier = Modifier.weight(0.62f, fill = false),
+            ) {
+                openArtifact?.let { ArtifactPanel(it, onClose = { openArtifact = null }) }
             }
         }
     }
@@ -239,6 +322,7 @@ private fun ChatTopBar(
     onSettingsClick: () -> Unit,
     onMemosClick: () -> Unit,
     onTerminalClick: () -> Unit,
+    onLocalClick: () -> Unit = {},
     onNewChat: () -> Unit,
     onModeChange: (SessionMode) -> Unit,
 ) {
@@ -255,9 +339,11 @@ private fun ChatTopBar(
                     bodyColor = MaterialTheme.colorScheme.onBackground,
                     coreColor = MaterialTheme.colorScheme.primary,
                 )
-                Column {
+                Column(Modifier.weight(1f, fill = false)) {
                     Text(
                         projectName ?: "Aura",
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
@@ -327,6 +413,11 @@ private fun ChatTopBar(
                         },
                     )
                     DropdownMenuItem(
+                        text = { Text("Local model chat") },
+                        onClick = { more = false; onLocalClick() },
+                        leadingIcon = { Icon(Icons.Default.Memory, null) },
+                    )
+                    DropdownMenuItem(
                         text = { Text("Shell") },
                         onClick = { more = false; onTerminalClick() },
                         leadingIcon = { Icon(Icons.Default.Terminal, null) },
@@ -354,6 +445,8 @@ private fun StandaloneLabel(mode: SessionMode) {
         )
         Text(
             "on device · ${mode.name.lowercase()}",
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -396,6 +489,7 @@ private fun MessageRow(
     speaking: Boolean = false,
     onSpeak: () -> Unit = {},
     onPin: () -> Unit = {},
+    onOpenArtifact: (ArtifactPayload) -> Unit = {},
 ) {
     val artifact = remember(message.metadata) {
         runCatching {
@@ -405,7 +499,7 @@ private fun MessageRow(
 
     when {
         message.role == MessageRole.TOOL -> ToolRow(message)
-        artifact != null && artifact.type == "artifact" -> ArtifactRow(artifact)
+        artifact != null && artifact.type == "artifact" -> ArtifactRow(artifact, onOpenArtifact)
         message.role == MessageRole.SYSTEM -> SystemRow(message)
         else -> BubbleRow(message, speaking, onSpeak, onPin)
     }
@@ -475,18 +569,48 @@ private fun PinnedRail(pinned: List<PinnedBubble>, onUnpin: (String) -> Unit) {
 }
 
 @Composable
-private fun ArtifactRow(artifact: ArtifactPayload) {
+private fun ArtifactRow(artifact: ArtifactPayload, onOpen: (ArtifactPayload) -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.25f),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onOpen(artifact) },
+    ) {
+        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.InsertDriveFile,
+                null,
+                modifier = Modifier.size(15.dp),
+                tint = MaterialTheme.colorScheme.tertiary,
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                artifact.name.orEmpty(),
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = GeistMono,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { onOpen(artifact) }) { Text("Preview") }
+        }
+    }
+}
+
+@Composable
+private fun ArtifactPanel(artifact: ArtifactPayload, onClose: () -> Unit) {
     val context = LocalContext.current
-    var showPreview by remember { mutableStateOf(false) }
+    var showPreview by remember(artifact.id) { mutableStateOf(true) }
     var showCode by remember { mutableStateOf(false) }
     var saved by remember(artifact.id) { mutableStateOf<String?>(null) }
 
     Surface(
-        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.25f),
-        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 6.dp,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Default.InsertDriveFile,
@@ -502,6 +626,9 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                     fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.weight(1f))
+                IconButton(onClick = onClose, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Close, "Close preview", modifier = Modifier.size(16.dp))
+                }
                 IconButton(onClick = { showPreview = !showPreview }, modifier = Modifier.size(28.dp)) {
                     Icon(
                         imageVector = if (showPreview) Icons.Default.VisibilityOff else Icons.Default.Visibility,
@@ -526,7 +653,8 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 300.dp),
+                        .weight(1f, fill = false)
+                        .heightIn(min = 240.dp),
                 ) {
                     AndroidView(
                         factory = { context ->
@@ -537,7 +665,7 @@ private fun ArtifactRow(artifact: ArtifactPayload) {
                                 loadDataWithBaseURL(null, artifact.content.orEmpty(), "text/html", "utf-8", null)
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
             }
@@ -1049,11 +1177,41 @@ private fun ChatInput(
     onStop: () -> Unit,
     onRemoveAttachment: (String) -> Unit,
     onPickFiles: () -> Unit,
+    onPickPhotos: () -> Unit,
     onTakePhoto: () -> Unit,
     onHoldStart: () -> Unit,
     onHoldEnd: () -> Unit,
 ) {
     var attachMenu by remember { mutableStateOf(false) }
+    if (attachMenu) {
+        ModalBottomSheet(onDismissRequest = { attachMenu = false }) {
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp).padding(bottom = 24.dp)) {
+                Text("Photo", style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary)
+                ListItem(
+                    headlineContent = { Text("Take a photo") },
+                    supportingContent = { Text("Instant capture with camera") },
+                    leadingContent = { Icon(Icons.Default.PhotoCamera, null) },
+                    modifier = Modifier.clickable { attachMenu = false; onTakePhoto() },
+                )
+                ListItem(
+                    headlineContent = { Text("Choose from gallery") },
+                    supportingContent = { Text("Device media, screenshots") },
+                    leadingContent = { Icon(Icons.Default.PhotoLibrary, null) },
+                    modifier = Modifier.clickable { attachMenu = false; onPickPhotos() },
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("Documents", style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary)
+                ListItem(
+                    headlineContent = { Text("Choose a file") },
+                    supportingContent = { Text("PDF, text, code, notes") },
+                    leadingContent = { Icon(Icons.Default.Description, null) },
+                    modifier = Modifier.clickable { attachMenu = false; onPickFiles() },
+                )
+            }
+        }
+    }
     val canSend = enabled && (text.isNotBlank() || attachments.isNotEmpty())
 
     Surface(tonalElevation = 2.dp, color = MaterialTheme.colorScheme.surface) {
@@ -1087,18 +1245,6 @@ private fun ChatInput(
                             Icons.Default.Add,
                             contentDescription = "Attach",
                             tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    DropdownMenu(attachMenu, onDismissRequest = { attachMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Take a photo") },
-                            onClick = { attachMenu = false; onTakePhoto() },
-                            leadingIcon = { Icon(Icons.Default.PhotoCamera, null) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Photo or file") },
-                            onClick = { attachMenu = false; onPickFiles() },
-                            leadingIcon = { Icon(Icons.Default.AttachFile, null) },
                         )
                     }
                 }
@@ -1163,6 +1309,11 @@ private fun HoldToTalkButton(
     active: Boolean,
 ) {
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    // A quick tap latches the microphone on until the next tap; holding is
+    // push-to-talk. Both keep listening across pauses (the Listener restarts
+    // itself), so it is not one sentence and then silence.
+    var latched by remember { mutableStateOf(false) }
+    LaunchedEffect(active) { if (!active) latched = false }
 
     Box(
         modifier = Modifier
@@ -1181,11 +1332,22 @@ private fun HoldToTalkButton(
                         haptics.performHapticFeedback(
                             androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
                         )
+                        if (latched) {
+                            latched = false
+                            onHoldEnd()
+                            tryAwaitRelease()
+                            return@detectTapGestures
+                        }
+                        val down = System.currentTimeMillis()
                         onHoldStart()
                         // Suspends until the finger lifts or the gesture is
-                        // cancelled; both mean stop listening.
+                        // cancelled. Short press: stay on. Long press: stop.
                         tryAwaitRelease()
-                        onHoldEnd()
+                        if (System.currentTimeMillis() - down < 350L) {
+                            latched = true
+                        } else {
+                            onHoldEnd()
+                        }
                     },
                 )
             },
@@ -1193,7 +1355,7 @@ private fun HoldToTalkButton(
     ) {
         Icon(
             if (active) Icons.Default.GraphicEq else Icons.Default.Mic,
-            contentDescription = if (active) "Listening — release to stop" else "Hold to talk",
+            contentDescription = if (active) "Listening — tap to stop" else "Tap to talk, or hold to talk",
             tint = if (active) {
                 MaterialTheme.colorScheme.error
             } else {

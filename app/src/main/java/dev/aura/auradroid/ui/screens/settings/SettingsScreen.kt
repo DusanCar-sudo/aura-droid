@@ -3,6 +3,8 @@ package dev.aura.auradroid.ui.screens.settings
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -201,6 +203,82 @@ fun SettingsScreen(
                 }
             }
 
+            Section("Elevated shell (Shizuku)") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when (state.shizukuStatus) {
+                                            ShizukuStatus.READY -> MaterialTheme.colorScheme.primary
+                                            ShizukuStatus.PERMISSION_NEEDED -> Color(0xFFF59E0B)
+                                            ShizukuStatus.NOT_RUNNING -> MaterialTheme.colorScheme.onSurfaceVariant
+                                            ShizukuStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+                                        },
+                                    ),
+                            )
+                            Text(
+                                when (state.shizukuStatus) {
+                                    ShizukuStatus.READY -> "Active (uid 2000 / adb shell)"
+                                    ShizukuStatus.PERMISSION_NEEDED -> "Permission required"
+                                    ShizukuStatus.NOT_RUNNING -> "Service not running"
+                                    ShizukuStatus.NOT_INSTALLED -> "Not installed"
+                                },
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                        Text(
+                            when (state.shizukuStatus) {
+                                ShizukuStatus.READY ->
+                                    "Commands run with elevated privileges. Allows app management, system settings, dumpsys, and full storage access."
+                                ShizukuStatus.PERMISSION_NEEDED ->
+                                    "Shizuku service is running, but this app needs permission to communicate with it."
+                                ShizukuStatus.NOT_RUNNING ->
+                                    "Shizuku is installed. Start it via Wireless Debugging or computer ADB."
+                                ShizukuStatus.NOT_INSTALLED ->
+                                    "Shizuku is required for elevated shell commands on non-rooted devices."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                when (state.shizukuStatus) {
+                    ShizukuStatus.PERMISSION_NEEDED -> {
+                        Button(
+                            onClick = viewModel::requestShizukuPermission,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Request Shizuku permission")
+                        }
+                    }
+                    ShizukuStatus.NOT_INSTALLED -> {
+                        LinkRow(
+                            label = "Get Shizuku",
+                            shown = "shizuku.rikka.app",
+                            url = "https://shizuku.rikka.app",
+                        )
+                    }
+                    ShizukuStatus.NOT_RUNNING -> {
+                        Text(
+                            "Start command:\nadb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = GeistMono,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    ShizukuStatus.READY -> {
+                        // Already active
+                    }
+                }
+            }
+
             Section("Standalone") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
@@ -315,35 +393,78 @@ fun SettingsScreen(
     if (editingStandalone) {
         var key by rememberSaveable { mutableStateOf("") }
         var base by rememberSaveable {
-            mutableStateOf(state.baseUrl.ifBlank { "https://api.deepseek.com" })
+            mutableStateOf(state.baseUrl.ifBlank { "https://integrate.api.nvidia.com/v1" })
         }
         var model by rememberSaveable {
-            mutableStateOf(state.standaloneModel.ifBlank { "deepseek-chat" })
+            mutableStateOf(state.standaloneModel.ifBlank { "deepseek-ai/deepseek-v4.1-flash" })
         }
         var showKey by rememberSaveable { mutableStateOf(false) }
+        var testing by remember { mutableStateOf(false) }
+        var testResult by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+
+        val presets = listOf(
+            Triple("NVIDIA NIM", "https://integrate.api.nvidia.com/v1", "deepseek-ai/deepseek-v4.1-flash"),
+            Triple("DeepSeek", "https://api.deepseek.com", "deepseek-chat"),
+            Triple("OpenRouter", "https://openrouter.ai/api/v1", "deepseek/deepseek-chat"),
+            Triple("Groq", "https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"),
+            Triple("Gemini", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.0-flash"),
+            Triple("Zhipu GLM", "https://open.bigmodel.cn/api/paas/v4", "glm-4-flash"),
+            Triple("Local", "local", "local"),
+        )
 
         AlertDialog(
             onDismissRequest = { editingStandalone = false },
             title = { Text("Standalone setup") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Presets",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        items(presets) { (pName, pBase, pModel) ->
+                            FilterChip(
+                                selected = base == pBase && model == pModel,
+                                onClick = {
+                                    base = pBase
+                                    model = pModel
+                                    testResult = null
+                                },
+                                label = { Text(pName, style = MaterialTheme.typography.labelSmall) },
+                            )
+                        }
+                    }
+
                     OutlinedTextField(
                         value = base,
-                        onValueChange = { base = it },
+                        onValueChange = {
+                            base = it
+                            testResult = null
+                        },
                         label = { Text("Base URL") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = model,
-                        onValueChange = { model = it },
+                        onValueChange = {
+                            model = it
+                            testResult = null
+                        },
                         label = { Text("Model ID") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = key,
-                        onValueChange = { key = it },
+                        onValueChange = {
+                            key = it
+                            testResult = null
+                        },
                         label = {
                             Text(if (state.hasApiKey) "API key (already saved)" else "API key")
                         },
@@ -374,6 +495,13 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    testResult?.let { (ok, msg) ->
+                        Text(
+                            msg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        )
+                    }
                     state.saveError?.let {
                         Text(it, style = MaterialTheme.typography.bodySmall,
                              color = MaterialTheme.colorScheme.error)
@@ -381,14 +509,40 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.enableStandalone(key, base, model)
-                        editingStandalone = false
-                    },
-                    enabled = base.isNotBlank() && model.isNotBlank() &&
-                        (key.isNotBlank() || state.hasApiKey),
-                ) { Text("Save") }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(
+                        onClick = {
+                            testing = true
+                            testResult = null
+                            viewModel.testStandalone(key, base, model) { res ->
+                                testing = false
+                                res.onSuccess {
+                                    testResult = true to it
+                                }.onFailure {
+                                    testResult = false to (it.message ?: "Connection failed")
+                                }
+                            }
+                        },
+                        enabled = !testing && base.isNotBlank() && model.isNotBlank() &&
+                            (key.isNotBlank() || state.hasApiKey || base.trim().equals("local", true)),
+                    ) {
+                        if (testing) {
+                            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Testing...")
+                        } else {
+                            Text("Test")
+                        }
+                    }
+                    TextButton(
+                        onClick = {
+                            viewModel.enableStandalone(key, base, model)
+                            editingStandalone = false
+                        },
+                        enabled = base.isNotBlank() && model.isNotBlank() &&
+                            (key.isNotBlank() || state.hasApiKey || base.trim().equals("local", true)),
+                    ) { Text("Save") }
+                }
             },
             dismissButton = {
                 TextButton(onClick = { editingStandalone = false }) { Text("Cancel") }
@@ -468,20 +622,22 @@ private fun AppearanceSection(
             modifier = Modifier.size(18.dp),
         )
         Spacer(Modifier.width(8.dp))
-        Text("Theme", fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-        SingleChoiceSegmentedButtonRow {
-            val options = listOf(
-                ThemeMode.SYSTEM to "System",
-                ThemeMode.DARK to "Dark",
-                ThemeMode.LIGHT to "Light",
-            )
-            options.forEachIndexed { i, (value, label) ->
-                SegmentedButton(
-                    selected = mode == value,
-                    onClick = { onModeChange(value) },
-                    shape = SegmentedButtonDefaults.itemShape(i, options.size),
-                ) { Text(label) }
-            }
+        Text("Theme", fontWeight = FontWeight.Medium)
+    }
+    // Own line: beside the label, three buttons at a large font scale left
+    // the word one letter wide.
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        val options = listOf(
+            ThemeMode.SYSTEM to "System",
+            ThemeMode.DARK to "Dark",
+            ThemeMode.LIGHT to "Light",
+        )
+        options.forEachIndexed { i, (value, label) ->
+            SegmentedButton(
+                selected = mode == value,
+                onClick = { onModeChange(value) },
+                shape = SegmentedButtonDefaults.itemShape(i, options.size),
+            ) { Text(label, maxLines = 1) }
         }
     }
 

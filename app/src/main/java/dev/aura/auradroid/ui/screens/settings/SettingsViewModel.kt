@@ -1,8 +1,11 @@
 package dev.aura.auradroid.ui.screens.settings
 
+import android.content.Context
+import android.content.pm.PackageManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.aura.auradroid.data.memory.AgentMemory
 import dev.aura.auradroid.data.network.AuraHttp
 import dev.aura.auradroid.data.security.TokenVault
@@ -10,11 +13,20 @@ import dev.aura.auradroid.data.settings.Appearance
 import dev.aura.auradroid.data.settings.AppearanceRepository
 import dev.aura.auradroid.data.settings.ApprovalRepository
 import dev.aura.auradroid.data.settings.ThemeMode
+import dev.aura.auradroid.data.standalone.DirectProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import rikka.shizuku.Shizuku
 import javax.inject.Inject
+
+enum class ShizukuStatus {
+    NOT_INSTALLED,
+    NOT_RUNNING,
+    PERMISSION_NEEDED,
+    READY,
+}
 
 data class SettingsUiState(
     val host: String? = null,
@@ -39,19 +51,37 @@ data class SettingsUiState(
     val autoApproveAll: Boolean = false,
     /** Whether the agent may reach beyond the app's sandbox when asked. */
     val sandboxOut: Boolean = false,
+    /** Shizuku status for elevated commands */
+    val shizukuStatus: ShizukuStatus = ShizukuStatus.NOT_RUNNING,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val vault: TokenVault,
     private val http: AuraHttp,
     private val memory: AgentMemory,
     private val appearanceRepo: AppearanceRepository,
     private val approvalRepo: ApprovalRepository,
+    private val provider: DirectProvider,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
+
+    private val permissionListener = Shizuku.OnRequestPermissionResultListener { requestCode, _ ->
+        if (requestCode == SHIZUKU_REQUEST_CODE) {
+            updateShizukuStatus()
+        }
+    }
+
+    private val binderReceivedListener = Shizuku.OnBinderReceivedListener {
+        updateShizukuStatus()
+    }
+
+    private val binderDeadListener = Shizuku.OnBinderDeadListener {
+        updateShizukuStatus()
+    }
 
     init {
         // Appearance is read reactively: a change here updates the theme of the
@@ -71,6 +101,12 @@ class SettingsViewModel @Inject constructor(
                 _state.value = _state.value.copy(sandboxOut = on)
             }
         }
+        try {
+            Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
+            Shizuku.addBinderDeadListener(binderDeadListener)
+            Shizuku.addRequestPermissionResultListener(permissionListener)
+        } catch (_: Throwable) {}
+        updateShizukuStatus()
         refresh()
     }
 
@@ -134,7 +170,7 @@ class SettingsViewModel @Inject constructor(
                 )
                 return@launch
             }
-            if (apiKey.isBlank() && !vault.hasProviderKey()) {
+            if (apiKey.isBlank() && !vault.hasProviderKey() && !baseUrl.trim().equals("local", true)) {
                 _state.value = _state.value.copy(
                     saveError = "Enter an API key — there is none stored yet.",
                 )
@@ -150,14 +186,26 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun testStandalone(
+        apiKey: String,
+        baseUrl: String,
+        model: String,
+        onResult: (Result<String>) -> Unit,
+    ) {
+        viewModelScope.launch {
+            val key = if (apiKey.isBlank()) vault.loadStandalone()?.apiKey.orEmpty() else apiKey
+            val result = provider.testConnection(key, baseUrl, model)
+            onResult(result)
+        }
+    }
+
     fun disableStandalone() {
         viewModelScope.launch {
-            // Removes the key, not just the flag: leaving a provider credential
-            // on a phone that is no longer using it is the thing this mode is
-            // supposed to be careful about. The endpoint and model stay, since
-            // neither is secret and both make turning it back on painless.
-            vault.clearStandalone()
-            _state.value = _state.value.copy(standalone = false, hasApiKey = false)
+            // Keeps URL, model and key (still encrypted in the KeyStore): the
+            // user asked for them to be remembered, and retyping a key on a
+            // phone keyboard is the friction this avoids.
+            vault.disableStandalone()
+            _state.value = _state.value.copy(standalone = false)
         }
     }
 
@@ -195,5 +243,49 @@ class SettingsViewModel @Inject constructor(
 
     fun setSandboxOut(enabled: Boolean) {
         viewModelScope.launch { approvalRepo.setSandboxOut(enabled) }
+    }
+
+    fun updateShizukuStatus() {
+        val status = try {
+            val installed = try {
+                context.packageManager.getPackageInfo("moe.shizuku.privileged.api", 0)
+                true
+            } catch (_: PackageManager.NameNotFoundException) {
+                false
+            }
+            if (!installed) {
+                ShizukuStatus.NOT_INSTALLED
+            } else if (!Shizuku.pingBinder()) {
+                ShizukuStatus.NOT_RUNNING
+            } else if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                ShizukuStatus.PERMISSION_NEEDED
+            } else {
+                ShizukuStatus.READY
+            }
+        } catch (_: Throwable) {
+            ShizukuStatus.NOT_RUNNING
+        }
+        _state.value = _state.value.copy(shizukuStatus = status)
+    }
+
+    fun requestShizukuPermission() {
+        try {
+            if (Shizuku.pingBinder() && Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                Shizuku.requestPermission(SHIZUKU_REQUEST_CODE)
+            }
+        } catch (_: Throwable) {}
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            Shizuku.removeBinderReceivedListener(binderReceivedListener)
+            Shizuku.removeBinderDeadListener(binderDeadListener)
+            Shizuku.removeRequestPermissionResultListener(permissionListener)
+        } catch (_: Throwable) {}
+    }
+
+    private companion object {
+        const val SHIZUKU_REQUEST_CODE = 1001
     }
 }

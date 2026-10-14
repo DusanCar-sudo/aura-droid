@@ -138,8 +138,13 @@ class TokenVault @Inject constructor(
     suspend fun loadStandalone(): Standalone? {
         val prefs = context.pairingStore.data.first()
         if (prefs[KEY_STANDALONE] != true) return null
-        val iv = prefs[KEY_API_IV] ?: return null
-        val ct = prefs[KEY_API_CT] ?: return null
+        val iv = prefs[KEY_API_IV]
+        val ct = prefs[KEY_API_CT]
+        // The on-phone model needs no key, so it must not be gated on one.
+        if (iv == null || ct == null) {
+            val base = prefs[KEY_BASE_URL].orEmpty()
+            return if (base.trim().equals("local", true)) Standalone("", base, prefs[KEY_MODEL].orEmpty()) else null
+        }
 
         // Its own alias first, then the pairing alias, because installs from
         // before the split hold a key encrypted under the old one. Found that
@@ -191,6 +196,11 @@ class TokenVault @Inject constructor(
     suspend fun hasProviderKey(): Boolean {
         val prefs = context.pairingStore.data.first()
         return prefs[KEY_API_IV] != null && prefs[KEY_API_CT] != null
+    }
+
+    /** Switch standalone off but keep URL, model and key, so turning it on is one tap. */
+    suspend fun disableStandalone() {
+        context.pairingStore.edit { it[KEY_STANDALONE] = false }
     }
 
     suspend fun clearStandalone() {

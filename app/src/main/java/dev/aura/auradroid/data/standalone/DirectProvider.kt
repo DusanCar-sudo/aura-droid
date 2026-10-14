@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -74,7 +75,9 @@ sealed interface Chunk {
  * thinking and hung.
  */
 @Singleton
-class DirectProvider @Inject constructor() {
+class DirectProvider @Inject constructor(
+    private val local: LocalLlm,
+) {
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -89,9 +92,22 @@ class DirectProvider @Inject constructor() {
         system: String,
         history: List<Turn>,
         tools: List<ToolSpec> = emptyList(),
+    ): Flow<Chunk> = if (baseUrl.trim().equals(LocalLlm.BASE, true)) {
+        local.stream(model, system, history)
+    } else remote(apiKey, baseUrl, model, system, history, tools)
+
+    private fun remote(
+        apiKey: String,
+        baseUrl: String,
+        model: String,
+        system: String,
+        history: List<Turn>,
+        tools: List<ToolSpec>,
     ): Flow<Chunk> = callbackFlow {
+        val effectiveModel = normalizeModel(baseUrl, model)
+        val url = endpointFor(baseUrl)
         val body = JsonObject().apply {
-            addProperty("model", model)
+            addProperty("model", effectiveModel)
             addProperty("stream", true)
             add("messages", messagesFor(system, history))
             if (tools.isNotEmpty()) {
@@ -100,21 +116,28 @@ class DirectProvider @Inject constructor() {
             }
         }
 
-        val request = Request.Builder()
-            .url(endpointFor(baseUrl))
-            .header("Authorization", "Bearer $apiKey")
+        val requestBuilder = Request.Builder()
+            .url(url)
             .header("Content-Type", "application/json")
             .post(body.toString().toRequestBody(JSON))
-            .build()
 
+        if (apiKey.isNotBlank()) {
+            requestBuilder.header("Authorization", "Bearer ${apiKey.trim()}")
+        }
+        if (url.contains("openrouter.ai", ignoreCase = true)) {
+            requestBuilder.header("HTTP-Referer", "https://aurawebsite-eta.vercel.app")
+            requestBuilder.header("X-Title", "Aura Droid")
+        }
+
+        val request = requestBuilder.build()
         val call = client.newCall(request)
         try {
             call.execute().use { res ->
                 if (!res.isSuccessful) {
-                    // The provider's own message is far more useful than a
-                    // status code — it says "insufficient balance" or "model
-                    // not found", which is exactly what the user must fix.
-                    trySend(Chunk.Failed(describeFailure(res.code, res.body?.string())))
+                    val raw = res.body?.string()
+                    val failure = describeFailure(res.code, raw, url, effectiveModel)
+                    android.util.Log.w("AuraDirect", "provider error ${res.code} for $effectiveModel at $url: $raw")
+                    trySend(Chunk.Failed(failure))
                     close()
                     return@use
                 }
@@ -130,6 +153,7 @@ class DirectProvider @Inject constructor() {
                 // index rather than id, since only the first delta carries an
                 // id. Assembled here and emitted once at the end of the turn.
                 val pending = sortedMapOf<Int, PartialCall>()
+                val markup = ToolMarkupFilter()
 
                 while (!source.exhausted()) {
                     val line = source.readUtf8Line() ?: break
@@ -138,17 +162,22 @@ class DirectProvider @Inject constructor() {
                     if (payload == "[DONE]") break
 
                     val delta = deltaOf(payload) ?: continue
-                    textOf(delta)?.takeIf { it.isNotEmpty() }?.let { trySend(Chunk.Text(it)) }
+                    textOf(delta)?.takeIf { it.isNotEmpty() }?.let { raw ->
+                        markup.feed(raw).takeIf { it.isNotEmpty() }?.let { trySend(Chunk.Text(it)) }
+                    }
                     accumulateCalls(delta, pending)
                 }
 
+                markup.flush().takeIf { it.isNotEmpty() }?.let { trySend(Chunk.Text(it)) }
                 val calls = pending.values.mapNotNull { it.toInvocation() }
                 if (calls.isNotEmpty()) trySend(Chunk.Calls(calls))
                 trySend(Chunk.Done)
                 close()
             }
         } catch (e: Exception) {
-            trySend(Chunk.Failed(e.message ?: "Could not reach the provider."))
+            android.util.Log.e("AuraDirect", "provider failed for $effectiveModel at $url", e)
+            val at = e.stackTrace.firstOrNull { it.className.startsWith("dev.aura") }
+            trySend(Chunk.Failed((e.message ?: "Could not reach the provider.") + (at?.let { " @ ${it.fileName}:${it.lineNumber}" } ?: "")))
             close()
         }
 
@@ -257,8 +286,9 @@ class DirectProvider @Inject constructor() {
     /** The `delta` object of the first choice, or null for anything unusable. */
     private fun deltaOf(payload: String): JsonObject? = try {
         JsonParser.parseString(payload).asJsonObject
-            .getAsJsonArray("choices")?.firstOrNull()?.asJsonObject
-            ?.getAsJsonObject("delta")
+            .get("choices")?.takeIf { it.isJsonArray }?.asJsonArray?.firstOrNull()
+            ?.takeIf { it.isJsonObject }?.asJsonObject
+            ?.get("delta")?.takeIf { it.isJsonObject }?.asJsonObject
     } catch (_: Exception) {
         // A malformed chunk mid-stream should drop that chunk, not the reply.
         null
@@ -268,7 +298,7 @@ class DirectProvider @Inject constructor() {
         delta.get("content")?.takeIf { !it.isJsonNull }?.asString
 
     private fun accumulateCalls(delta: JsonObject, into: MutableMap<Int, PartialCall>) {
-        val array = delta.getAsJsonArray("tool_calls") ?: return
+        val array = delta.get("tool_calls")?.takeIf { it.isJsonArray }?.asJsonArray ?: return
         for (element in array) {
             val obj = element.asJsonObject
             // Index is what ties fragments together. Absent, assume a single
@@ -303,35 +333,140 @@ class DirectProvider @Inject constructor() {
         }
     }
 
-    private fun describeFailure(code: Int, body: String?): String {
-        val detail = try {
-            JsonParser.parseString(body ?: "").asJsonObject
-                .getAsJsonObject("error")?.get("message")?.asString
-        } catch (_: Exception) {
-            null
+    suspend fun testConnection(
+        apiKey: String,
+        baseUrl: String,
+        model: String,
+    ): Result<String> = withContext(Dispatchers.IO) {
+        if (baseUrl.trim().equals(LocalLlm.BASE, true)) {
+            val models = local.models()
+            return@withContext if (models.isNotEmpty()) {
+                Result.success("Found ${models.size} local model(s)")
+            } else {
+                Result.failure(Exception("No local model found in models/"))
+            }
         }
-        return when {
-            detail != null -> detail
-            code == 401 -> "The API key was rejected."
-            code == 404 -> "That model or base URL was not found."
-            code == 429 -> "Rate limited by the provider."
-            else -> "Provider returned $code."
+        val effectiveModel = normalizeModel(baseUrl, model)
+        val url = endpointFor(baseUrl)
+        val body = JsonObject().apply {
+            addProperty("model", effectiveModel)
+            addProperty("max_tokens", 5)
+            add("messages", JsonArray().apply {
+                add(JsonObject().apply {
+                    addProperty("role", "user")
+                    addProperty("content", "hi")
+                })
+            })
+        }
+        val builder = Request.Builder()
+            .url(url)
+            .header("Content-Type", "application/json")
+            .post(body.toString().toRequestBody(JSON))
+        if (apiKey.isNotBlank()) {
+            builder.header("Authorization", "Bearer ${apiKey.trim()}")
+        }
+        if (url.contains("openrouter.ai", ignoreCase = true)) {
+            builder.header("HTTP-Referer", "https://aurawebsite-eta.vercel.app")
+            builder.header("X-Title", "Aura Droid")
+        }
+        val start = System.currentTimeMillis()
+        try {
+            client.newCall(builder.build()).execute().use { res ->
+                val took = System.currentTimeMillis() - start
+                val raw = res.body?.string()
+                if (res.isSuccessful) {
+                    Result.success("Connected (${took}ms)")
+                } else {
+                    val msg = describeFailure(res.code, raw, url, effectiveModel)
+                    Result.failure(Exception(msg))
+                }
+            }
+        } catch (e: Exception) {
+            val at = e.stackTrace.firstOrNull { it.className.startsWith("dev.aura") }
+            val extra = at?.let { " @ ${it.fileName}:${it.lineNumber}" } ?: ""
+            Result.failure(Exception((e.message ?: "Could not reach the provider") + extra))
         }
     }
 
-    private companion object {
+    private fun extractErrorMessage(body: String?): String? {
+        if (body.isNullOrBlank()) return null
+        return try {
+            val element = JsonParser.parseString(body)
+            when {
+                element.isJsonObject -> {
+                    val obj = element.asJsonObject
+                    obj.getAsJsonObject("error")?.get("message")?.takeIf { !it.isJsonNull }?.asString
+                        ?: obj.get("error")?.takeIf { it.isJsonPrimitive }?.asString
+                        ?: obj.get("detail")?.takeIf { it.isJsonPrimitive }?.asString
+                        ?: obj.get("message")?.takeIf { it.isJsonPrimitive }?.asString
+                }
+                element.isJsonArray -> {
+                    val first = element.asJsonArray.firstOrNull()?.takeIf { it.isJsonObject }?.asJsonObject
+                    first?.getAsJsonObject("error")?.get("message")?.takeIf { !it.isJsonNull }?.asString
+                        ?: first?.get("message")?.takeIf { it.isJsonPrimitive }?.asString
+                }
+                element.isJsonPrimitive -> element.asString
+                else -> null
+            }
+        } catch (_: Exception) {
+            val text = body.trim()
+            if (!text.startsWith("<") && text.length <= 250) text else null
+        }
+    }
+
+    private fun describeFailure(code: Int, body: String?, url: String = "", model: String = ""): String {
+        val detail = extractErrorMessage(body)
+        val target = if (model.isNotBlank()) "model '$model'" else "the model"
+        val at = if (url.isNotBlank()) " at ${url.substringBefore("/chat/completions")}" else ""
+        return when {
+            detail != null && code == 404 -> "$detail (404 for $target$at)"
+            detail != null -> detail
+            code == 401 -> "API key was rejected (401)$at."
+            code == 404 -> "Model '$model' or base URL was not found (404)$at. Check endpoint and model ID."
+            code == 429 -> "Rate limited by the provider (429)$at."
+            else -> "Provider returned HTTP $code$at."
+        }
+    }
+
+    companion object {
         /**
-         * Accepts a base URL with or without the version and path, because
+         * Accepts a base URL with or without scheme, version and path, because
          * providers document it inconsistently and a user pasting the exact
          * string from their dashboard should not get a 404 for it.
          */
         fun endpointFor(baseUrl: String): String {
-            val trimmed = baseUrl.trim().trimEnd('/')
+            var trimmed = baseUrl.trim().trimEnd('/')
+            if (!trimmed.startsWith("http://", ignoreCase = true) &&
+                !trimmed.startsWith("https://", ignoreCase = true)
+            ) {
+                trimmed = "https://$trimmed"
+            }
             return when {
-                trimmed.endsWith("/chat/completions") -> trimmed
-                trimmed.endsWith("/v1") -> "$trimmed/chat/completions"
+                trimmed.endsWith("/chat/completions", ignoreCase = true) -> trimmed
+                trimmed.contains("openrouter.ai", ignoreCase = true) && !trimmed.contains("/api", ignoreCase = true) ->
+                    "$trimmed/api/v1/chat/completions"
+                trimmed.contains("api.groq.com", ignoreCase = true) && !trimmed.contains("/openai", ignoreCase = true) ->
+                    "$trimmed/openai/v1/chat/completions"
+                trimmed.endsWith("/openai", ignoreCase = true) ->
+                    "$trimmed/chat/completions"
+                Regex(".*/v[0-9]+.*", RegexOption.IGNORE_CASE).matches(trimmed) ->
+                    "$trimmed/chat/completions"
                 else -> "$trimmed/v1/chat/completions"
             }
+        }
+
+        fun normalizeModel(baseUrl: String, model: String): String {
+            val trimmed = model.trim()
+            if (baseUrl.contains("integrate.api.nvidia.com", ignoreCase = true)) {
+                val stripped = trimmed.removePrefix("nvidia/")
+                return when (stripped) {
+                    "glm-5.3", "glm-5.3-flash" -> "z-ai/glm-5.3-flash"
+                    "kimi-k3" -> "moonshotai/kimi-k3"
+                    "deepseek-v4.1-flash" -> "deepseek-ai/deepseek-v4.1-flash"
+                    else -> stripped
+                }
+            }
+            return trimmed
         }
     }
 }

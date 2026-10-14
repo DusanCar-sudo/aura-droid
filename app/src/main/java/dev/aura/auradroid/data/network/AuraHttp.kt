@@ -83,7 +83,7 @@ class AuraHttp @Inject constructor() {
             return@withContext null
         }
 
-        val models = obj.getAsJsonArray("models")?.mapNotNull { el ->
+        val models = obj.get("models")?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { el ->
             val m = el.asJsonObject
             val id = m.get("id")?.takeIf { !it.isJsonNull }?.asString ?: return@mapNotNull null
             ModelChoice(
