@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Aura launcher mark: kept inside the adaptive-icon safe zone for clean masking. -->
+<!--
+  Aura Droid symbol: the rounded peak, one path drawn three times (halo, body,
+  core). Cream body and a gold core on the forest launcher background
+  (BRAND.md §3.3). Kept inside the adaptive-icon safe zone for clean masking.
+  Also used as the themed (monochrome) icon: only its shape and alpha count.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -8,8 +13,8 @@
 
     <path
         android:strokeWidth="13"
-        android:strokeColor="@color/aura_cyan"
-        android:strokeAlpha="0.16"
+        android:strokeColor="@color/aura_cream"
+        android:strokeAlpha="0.18"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:fillColor="@android:color/transparent"
@@ -17,7 +22,7 @@
 
     <path
         android:strokeWidth="7"
-        android:strokeColor="@color/aura_cyan"
+        android:strokeColor="@color/aura_cream"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:fillColor="@android:color/transparent"
@@ -25,7 +30,7 @@
 
     <path
         android:strokeWidth="3.5"
-        android:strokeColor="@color/aura_ruby"
+        android:strokeColor="@color/aura_gold_deep"
         android:strokeAlpha="0.95"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
@@ -33,15 +38,6 @@
         android:pathData="M 23,77 C 31,71 39,67 47,66 C 60,65 73,69 86,77" />
 
     <path
-        android:strokeWidth="2.5"
-        android:strokeColor="#EAF1F7"
-        android:strokeAlpha="0.82"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:fillColor="@android:color/transparent"
-        android:pathData="M 40,40 C 43,33 46,28 49,23" />
-
-    <path
-        android:fillColor="#D98E63"
+        android:fillColor="@color/aura_gold"
         android:pathData="M 54,61.5 C 55.38,61.5 56.5,62.62 56.5,64 C 56.5,65.38 55.38,66.5 54,66.5 C 52.62,66.5 51.5,65.38 51.5,64 C 51.5,62.62 52.62,61.5 54,61.5 Z" />
 </vector>

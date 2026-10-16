@@ -31,7 +31,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.aura.auradroid.data.export.ChatExporter
 import dev.aura.auradroid.data.model.Session
-import dev.aura.auradroid.ui.theme.AuraCyan
 import dev.aura.auradroid.ui.theme.AuraLogo
 import java.text.SimpleDateFormat
 import java.util.*
@@ -145,8 +144,8 @@ fun AuraSessionsTopBar(onNavigateBack: () -> Unit) {
             ) {
                 AuraLogo(
                     modifier = Modifier.size(28.dp),
-                    cyanColor = MaterialTheme.colorScheme.primary,
-                    rubyColor = MaterialTheme.colorScheme.tertiary
+                    bodyColor = MaterialTheme.colorScheme.onBackground,
+                    coreColor = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = "Sessions",
@@ -529,8 +528,8 @@ fun AuraEmptySessionsState(onCreateNew: () -> Unit) {
             )
             AuraLogo(
                 modifier = Modifier.size(64.dp),
-                cyanColor = MaterialTheme.colorScheme.primary,
-                rubyColor = MaterialTheme.colorScheme.tertiary
+                bodyColor = MaterialTheme.colorScheme.onBackground,
+                coreColor = MaterialTheme.colorScheme.primary
             )
         }
 

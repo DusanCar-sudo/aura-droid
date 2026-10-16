@@ -30,6 +30,7 @@ class AppearanceRepository @Inject constructor(
         Appearance(
             themeMode = ThemeMode.fromName(prefs[KEY_THEME_MODE]),
             dynamicColor = prefs[KEY_DYNAMIC_COLOR] ?: false,
+            palette = ThemePalette.fromName(prefs[KEY_THEME_PALETTE]),
         )
     }
 
@@ -41,15 +42,21 @@ class AppearanceRepository @Inject constructor(
         context.appearanceStore.edit { it[KEY_DYNAMIC_COLOR] = enabled }
     }
 
+    suspend fun setThemePalette(palette: ThemePalette) {
+        context.appearanceStore.edit { it[KEY_THEME_PALETTE] = palette.name }
+    }
+
     private companion object {
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val KEY_THEME_PALETTE = stringPreferencesKey("theme_palette")
     }
 }
 
 data class Appearance(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = false,
+    val palette: ThemePalette = ThemePalette.NATURE,
 )
 
 enum class ThemeMode {
@@ -58,5 +65,21 @@ enum class ThemeMode {
     companion object {
         fun fromName(name: String?): ThemeMode =
             runCatching { valueOf(name!!.uppercase()) }.getOrDefault(SYSTEM)
+    }
+}
+
+enum class ThemePalette(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+) {
+    NATURE("nature", "Nature", "Forest, cream & gold (Default)"),
+    OLED("oled", "OLED Black", "Pitch black for AMOLED screens"),
+    SPECTRUM("spectrum", "Spectrum", "Retro 8-bit blue & yellow"),
+    CODE("code", "Aura Code", "Studio navy & terracotta");
+
+    companion object {
+        fun fromName(name: String?): ThemePalette =
+            entries.firstOrNull { it.name.equals(name, ignoreCase = true) || it.id.equals(name, ignoreCase = true) } ?: NATURE
     }
 }
