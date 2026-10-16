@@ -124,7 +124,7 @@ class DirectProvider @Inject constructor(
         if (apiKey.isNotBlank()) {
             requestBuilder.header("Authorization", "Bearer ${apiKey.trim()}")
         }
-        if (url.contains("openrouter.ai", ignoreCase = true)) {
+        if (url.contains("openrouter.ai", ignoreCase = true) || url.contains("kilocode.ai", ignoreCase = true)) {
             requestBuilder.header("HTTP-Referer", "https://aurawebsite-eta.vercel.app")
             requestBuilder.header("X-Title", "Aura Droid")
         }
@@ -365,7 +365,7 @@ class DirectProvider @Inject constructor(
         if (apiKey.isNotBlank()) {
             builder.header("Authorization", "Bearer ${apiKey.trim()}")
         }
-        if (url.contains("openrouter.ai", ignoreCase = true)) {
+        if (url.contains("openrouter.ai", ignoreCase = true) || url.contains("kilocode.ai", ignoreCase = true)) {
             builder.header("HTTP-Referer", "https://aurawebsite-eta.vercel.app")
             builder.header("X-Title", "Aura Droid")
         }
@@ -445,6 +445,11 @@ class DirectProvider @Inject constructor(
                 trimmed.endsWith("/chat/completions", ignoreCase = true) -> trimmed
                 trimmed.contains("openrouter.ai", ignoreCase = true) && !trimmed.contains("/api", ignoreCase = true) ->
                     "$trimmed/api/v1/chat/completions"
+                trimmed.contains("kilocode.ai", ignoreCase = true) ->
+                    "$trimmed/chat/completions"
+                trimmed.contains("deepinfra.com", ignoreCase = true) ->
+                    if (trimmed.endsWith("/openai", ignoreCase = true)) "$trimmed/chat/completions"
+                    else "$trimmed/openai/chat/completions"
                 trimmed.contains("api.groq.com", ignoreCase = true) && !trimmed.contains("/openai", ignoreCase = true) ->
                     "$trimmed/openai/v1/chat/completions"
                 trimmed.endsWith("/openai", ignoreCase = true) ->
@@ -456,7 +461,13 @@ class DirectProvider @Inject constructor(
         }
 
         fun normalizeModel(baseUrl: String, model: String): String {
-            val trimmed = model.trim()
+            var trimmed = model.trim()
+            if (baseUrl.contains("kilocode.ai", ignoreCase = true)) {
+                trimmed = trimmed.removePrefix("kilocode/")
+            }
+            if (baseUrl.contains("deepinfra.com", ignoreCase = true)) {
+                trimmed = trimmed.removePrefix("deepinfra/")
+            }
             if (baseUrl.contains("integrate.api.nvidia.com", ignoreCase = true)) {
                 val stripped = trimmed.removePrefix("nvidia/")
                 return when (stripped) {

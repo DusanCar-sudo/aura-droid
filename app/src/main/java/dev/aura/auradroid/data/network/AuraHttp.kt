@@ -204,6 +204,29 @@ class AuraHttp @Inject constructor() {
         }
     }
 
+    /**
+     * POST JSON to a desktop route and return the raw body on success.
+     *
+     * Used by GitHubBridge to reach the self-hosted GitHub App on the paired
+     * desktop. The token travels as a header (never a query string), matching
+     * the rest of the client.
+     */
+    suspend fun postJson(endpoint: Endpoint, path: String, payload: JsonObject): String? =
+        withContext(Dispatchers.IO) {
+            val request = Request.Builder()
+                .url(endpoint.httpUrl + path)
+                .header("X-Aura-Token", endpoint.token)
+                .post(payload.toString().toRequestBody(JSON_MEDIA_TYPE))
+                .build()
+            try {
+                clientFor(endpoint).newCall(request).execute().use { res ->
+                    if (res.isSuccessful) res.body?.string() else null
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+
     private fun get(endpoint: Endpoint, path: String): String? = try {
         val request = Request.Builder()
             .url(endpoint.httpUrl + path)

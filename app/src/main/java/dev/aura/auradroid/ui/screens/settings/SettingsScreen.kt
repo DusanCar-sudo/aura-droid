@@ -32,11 +32,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.aura.auradroid.data.settings.ThemeMode
+import dev.aura.auradroid.data.settings.ThemePalette
+import dev.aura.auradroid.data.standalone.ModelFactory
 import dev.aura.auradroid.ui.theme.AuraLogo
 import dev.aura.auradroid.ui.theme.GeistMono
+import dev.aura.auradroid.ui.theme.previewAccent
+import dev.aura.auradroid.ui.theme.previewGround
+import dev.aura.auradroid.ui.theme.previewSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,8 +160,10 @@ fun SettingsScreen(
             Section("Appearance") {
                 AppearanceSection(
                     mode = state.appearance.themeMode,
+                    palette = state.appearance.palette,
                     dynamicColor = state.appearance.dynamicColor,
                     onModeChange = viewModel::setThemeMode,
+                    onPaletteChange = viewModel::setThemePalette,
                     onDynamicColor = viewModel::setDynamicColor,
                 )
             }
@@ -301,6 +310,8 @@ fun SettingsScreen(
                     )
                 }
                 if (state.standalone) {
+                    val provName = ModelFactory.detectProvider(state.baseUrl)?.name ?: "Custom"
+                    Row2("Provider", provName)
                     Row2("Model", state.standaloneModel.ifBlank { "—" })
                     Row2("Endpoint", state.baseUrl.ifBlank { "—" })
                     Row2("API key", if (state.hasApiKey) "stored on device" else "none")
@@ -392,33 +403,42 @@ fun SettingsScreen(
 
     if (editingStandalone) {
         var key by rememberSaveable { mutableStateOf("") }
+        var selectedProviderId by rememberSaveable {
+            mutableStateOf(
+                state.activeProviderId
+                    ?: ModelFactory.detectProvider(state.baseUrl)?.id
+                    ?: "openrouter"
+            )
+        }
         var base by rememberSaveable {
-            mutableStateOf(state.baseUrl.ifBlank { "https://integrate.api.nvidia.com/v1" })
+            mutableStateOf(state.baseUrl.ifBlank {
+                ModelFactory.findById(selectedProviderId)?.defaultBaseUrl ?: "https://openrouter.ai/api/v1"
+            })
         }
         var model by rememberSaveable {
-            mutableStateOf(state.standaloneModel.ifBlank { "deepseek-ai/deepseek-v4.1-flash" })
+            mutableStateOf(state.standaloneModel.ifBlank {
+                ModelFactory.findById(selectedProviderId)?.defaultModel ?: "openrouter/auto"
+            })
         }
         var showKey by rememberSaveable { mutableStateOf(false) }
         var testing by remember { mutableStateOf(false) }
         var testResult by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
 
-        val presets = listOf(
-            Triple("NVIDIA NIM", "https://integrate.api.nvidia.com/v1", "deepseek-ai/deepseek-v4.1-flash"),
-            Triple("DeepSeek", "https://api.deepseek.com", "deepseek-chat"),
-            Triple("OpenRouter", "https://openrouter.ai/api/v1", "deepseek/deepseek-chat"),
-            Triple("Groq", "https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"),
-            Triple("Gemini", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.0-flash"),
-            Triple("Zhipu GLM", "https://open.bigmodel.cn/api/paas/v4", "glm-4-flash"),
-            Triple("Local", "local", "local"),
-        )
+        val activeFactoryProvider = ModelFactory.findById(selectedProviderId)
+        val hasSavedKeyForProvider = state.savedProviders.contains(selectedProviderId) ||
+            (selectedProviderId == "local") ||
+            (selectedProviderId == (state.activeProviderId ?: ModelFactory.detectProvider(state.baseUrl)?.id) && state.hasApiKey)
 
         AlertDialog(
             onDismissRequest = { editingStandalone = false },
-            title = { Text("Standalone setup") },
+            title = { Text("Model Factory") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     Text(
-                        "Presets",
+                        "Provider",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -426,16 +446,67 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        items(presets) { (pName, pBase, pModel) ->
+                        items(ModelFactory.PROVIDERS) { p ->
+                            val isSaved = state.savedProviders.contains(p.id) || p.id == "local"
+                            val isSelected = selectedProviderId == p.id
                             FilterChip(
-                                selected = base == pBase && model == pModel,
+                                selected = isSelected,
                                 onClick = {
-                                    base = pBase
-                                    model = pModel
+                                    selectedProviderId = p.id
+                                    base = p.defaultBaseUrl
+                                    model = p.defaultModel
                                     testResult = null
+                                    key = ""
                                 },
-                                label = { Text(pName, style = MaterialTheme.typography.labelSmall) },
+                                label = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(p.name, style = MaterialTheme.typography.labelSmall)
+                                        if (isSaved) {
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("●", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                },
                             )
+                        }
+                    }
+
+                    if (activeFactoryProvider != null && activeFactoryProvider.models.isNotEmpty()) {
+                        Text(
+                            "Curated Models (${activeFactoryProvider.name})",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            items(activeFactoryProvider.models) { m ->
+                                val isSelected = model == m.id
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        model = m.id
+                                        testResult = null
+                                    },
+                                    label = {
+                                        Column {
+                                            Text(
+                                                (if (m.isFree) "[Free] " else "") + m.label,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            )
+                                            if (m.speed.isNotBlank()) {
+                                                Text(
+                                                    m.speed,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                    },
+                                )
+                            }
                         }
                     }
 
@@ -459,42 +530,42 @@ fun SettingsScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    OutlinedTextField(
-                        value = key,
-                        onValueChange = {
-                            key = it
-                            testResult = null
-                        },
-                        label = {
-                            Text(if (state.hasApiKey) "API key (already saved)" else "API key")
-                        },
-                        singleLine = true,
-                        // Masked by default and never read back from storage:
-                        // a key that can be displayed is a key that can be
-                        // shoulder-surfed off a screen.
-                        visualTransformation = if (showKey) {
-                            VisualTransformation.None
-                        } else {
-                            PasswordVisualTransformation()
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { showKey = !showKey }) {
-                                Icon(
-                                    if (showKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = if (showKey) "Hide key" else "Show key",
+                    if (selectedProviderId != "local" && !base.trim().equals("local", true)) {
+                        OutlinedTextField(
+                            value = key,
+                            onValueChange = {
+                                key = it
+                                testResult = null
+                            },
+                            label = {
+                                Text(
+                                    if (hasSavedKeyForProvider) "API key (Saved on phone)"
+                                    else "API key"
                                 )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    if (state.hasApiKey) {
+                            },
+                            singleLine = true,
+                            visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { showKey = !showKey }) {
+                                    Icon(
+                                        if (showKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = if (showKey) "Hide key" else "Show key",
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                         Text(
-                            "Leave empty to keep the key already stored. It survives " +
-                                "pairing and unpairing a desktop.",
+                            if (hasSavedKeyForProvider) {
+                                "✓ Key saved on device. Leave blank to keep existing key."
+                            } else {
+                                "Enter API key. It will be encrypted into hardware KeyStore and remembered for ${activeFactoryProvider?.name ?: "this provider"}."
+                            },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (hasSavedKeyForProvider) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+
                     testResult?.let { (ok, msg) ->
                         Text(
                             msg,
@@ -514,7 +585,7 @@ fun SettingsScreen(
                         onClick = {
                             testing = true
                             testResult = null
-                            viewModel.testStandalone(key, base, model) { res ->
+                            viewModel.testStandalone(key, base, model, selectedProviderId) { res ->
                                 testing = false
                                 res.onSuccess {
                                     testResult = true to it
@@ -524,7 +595,7 @@ fun SettingsScreen(
                             }
                         },
                         enabled = !testing && base.isNotBlank() && model.isNotBlank() &&
-                            (key.isNotBlank() || state.hasApiKey || base.trim().equals("local", true)),
+                            (key.isNotBlank() || hasSavedKeyForProvider || base.trim().equals("local", true)),
                     ) {
                         if (testing) {
                             CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
@@ -536,11 +607,11 @@ fun SettingsScreen(
                     }
                     TextButton(
                         onClick = {
-                            viewModel.enableStandalone(key, base, model)
+                            viewModel.enableStandalone(key, base, model, selectedProviderId)
                             editingStandalone = false
                         },
                         enabled = base.isNotBlank() && model.isNotBlank() &&
-                            (key.isNotBlank() || state.hasApiKey || base.trim().equals("local", true)),
+                            (key.isNotBlank() || hasSavedKeyForProvider || base.trim().equals("local", true)),
                     ) { Text("Save") }
                 }
             },
@@ -611,8 +682,10 @@ private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) 
 @Composable
 private fun AppearanceSection(
     mode: ThemeMode,
+    palette: ThemePalette,
     dynamicColor: Boolean,
     onModeChange: (ThemeMode) -> Unit,
+    onPaletteChange: (ThemePalette) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -622,10 +695,9 @@ private fun AppearanceSection(
             modifier = Modifier.size(18.dp),
         )
         Spacer(Modifier.width(8.dp))
-        Text("Theme", fontWeight = FontWeight.Medium)
+        Text("Theme Mode", fontWeight = FontWeight.Medium)
     }
-    // Own line: beside the label, three buttons at a large font scale left
-    // the word one letter wide.
+
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
         val options = listOf(
             ThemeMode.SYSTEM to "System",
@@ -641,13 +713,109 @@ private fun AppearanceSection(
         }
     }
 
+    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Palette", fontWeight = FontWeight.Medium)
+            Text(
+                if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    "Dynamic wallpaper colour is currently overriding the palette."
+                } else {
+                    "Choose Aura's visual identity."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ThemePalette.entries.forEach { p ->
+            val isSelected = palette == p && (!dynamicColor || Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+            Surface(
+                onClick = {
+                    if (dynamicColor) onDynamicColor(false)
+                    onPaletteChange(p)
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+                },
+                border = BorderStroke(
+                    width = if (isSelected) 1.5.dp else 1.dp,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    },
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(p.previewGround)
+                                .border(1.dp, Color(0x33888888), CircleShape),
+                        )
+                        Box(
+                            Modifier
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(p.previewSurface)
+                                .border(1.dp, Color(0x33888888), CircleShape),
+                        )
+                        Box(
+                            Modifier
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(p.previewAccent)
+                                .border(1.dp, Color(0x33888888), CircleShape),
+                        )
+                    }
+
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            p.title,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            p.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = null,
+                    )
+                }
+            }
+        }
+    }
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Dynamic colour", fontWeight = FontWeight.Medium)
                 Text(
-                    "Match the palette to your wallpaper.",
+                    "Match the palette to your wallpaper (overrides palette selection).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

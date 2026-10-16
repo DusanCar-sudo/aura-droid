@@ -83,6 +83,22 @@ class DirectProviderTest {
     }
 
     @Test
+    fun endpointForKiloCode() {
+        assertEquals(
+            "https://api.kilocode.ai/api/openrouter/chat/completions",
+            DirectProvider.endpointFor("https://api.kilocode.ai/api/openrouter"),
+        )
+    }
+
+    @Test
+    fun endpointForDeepInfra() {
+        assertEquals(
+            "https://api.deepinfra.com/v1/openai/chat/completions",
+            DirectProvider.endpointFor("https://api.deepinfra.com/v1/openai"),
+        )
+    }
+
+    @Test
     fun endpointWithoutScheme() {
         assertEquals(
             "https://api.deepseek.com/v1/chat/completions",
@@ -128,6 +144,28 @@ class DirectProviderTest {
         assertEquals(
             "deepseek-chat",
             DirectProvider.normalizeModel("https://api.deepseek.com", "deepseek-chat"),
+        )
+    }
+
+    @Test
+    fun normalizeModelKiloCode() {
+        val base = "https://api.kilocode.ai/api/openrouter"
+        assertEquals(
+            "kilo-auto/free",
+            DirectProvider.normalizeModel(base, "kilocode/kilo-auto/free"),
+        )
+        assertEquals(
+            "nvidia/nemotron-3-ultra-550b-a55b:free",
+            DirectProvider.normalizeModel(base, "kilocode/nvidia/nemotron-3-ultra-550b-a55b:free"),
+        )
+    }
+
+    @Test
+    fun normalizeModelDeepInfra() {
+        val base = "https://api.deepinfra.com/v1/openai"
+        assertEquals(
+            "meta-llama/Llama-3.3-70B-Instruct",
+            DirectProvider.normalizeModel(base, "deepinfra/meta-llama/Llama-3.3-70B-Instruct"),
         )
     }
 }

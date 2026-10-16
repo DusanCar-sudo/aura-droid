@@ -9,9 +9,12 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.gson.JsonParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.aura.auradroid.data.network.Endpoint
+import dev.aura.auradroid.data.standalone.ModelFactory
 import kotlinx.coroutines.flow.first
+import java.io.File
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -117,21 +120,177 @@ class TokenVault @Inject constructor(
      * replaces one.
      */
     suspend fun saveStandalone(creds: Standalone) {
-        // The key is worth real money and is not revocable from this phone, so
-        // it gets AndroidKeyStore encryption like the pairing token — but under
-        // its own alias. Sharing one alias meant unpairing a desktop, which
-        // deletes that alias, silently destroyed the API key too, and the user
-        // had to type it again with nothing on screen explaining why.
-        val encrypted = creds.apiKey.takeIf { it.isNotBlank() }?.let { encrypt(it, PROVIDER_ALIAS) }
+        val detected = ModelFactory.detectProvider(creds.baseUrl)?.id ?: "custom"
+        saveProvider(
+            providerId = detected,
+            apiKey = creds.apiKey,
+            baseUrl = creds.baseUrl,
+            model = creds.model,
+            activate = true,
+        )
+    }
+
+    suspend fun saveProvider(
+        providerId: String,
+        apiKey: String,
+        baseUrl: String,
+        model: String,
+        activate: Boolean = true,
+    ) {
+        val cleanId = providerId.trim().lowercase()
+        val keyIv = provIvKey(cleanId)
+        val keyCt = provCtKey(cleanId)
+        val keyUrl = provUrlKey(cleanId)
+        val keyModel = provModelKey(cleanId)
+
+        val encrypted = apiKey.takeIf { it.isNotBlank() }?.let { encrypt(it, PROVIDER_ALIAS) }
 
         context.pairingStore.edit { prefs ->
             encrypted?.let { (iv, ct) ->
-                prefs[KEY_API_IV] = iv
-                prefs[KEY_API_CT] = ct
+                prefs[keyIv] = iv
+                prefs[keyCt] = ct
             }
-            prefs[KEY_BASE_URL] = creds.baseUrl.trim()
-            prefs[KEY_MODEL] = creds.model.trim()
-            prefs[KEY_STANDALONE] = true
+            if (baseUrl.isNotBlank()) {
+                prefs[keyUrl] = baseUrl.trim()
+            }
+            if (model.isNotBlank()) {
+                prefs[keyModel] = model.trim()
+            }
+
+            val currentSet = prefs[KEY_SAVED_PROVIDERS]?.split(",")?.filter { it.isNotBlank() }?.toMutableSet()
+                ?: mutableSetOf()
+            currentSet.add(cleanId)
+            prefs[KEY_SAVED_PROVIDERS] = currentSet.joinToString(",")
+
+            if (activate) {
+                prefs[KEY_ACTIVE_PROVIDER_ID] = cleanId
+                if (baseUrl.isNotBlank()) {
+                    prefs[KEY_BASE_URL] = baseUrl.trim()
+                }
+                if (model.isNotBlank()) {
+                    prefs[KEY_MODEL] = model.trim()
+                }
+                if (encrypted != null) {
+                    prefs[KEY_API_IV] = encrypted.first
+                    prefs[KEY_API_CT] = encrypted.second
+                } else if (prefs[keyIv] != null && prefs[keyCt] != null) {
+                    prefs[KEY_API_IV] = prefs[keyIv]!!
+                    prefs[KEY_API_CT] = prefs[keyCt]!!
+                }
+                prefs[KEY_STANDALONE] = true
+            }
+        }
+    }
+
+    suspend fun loadProvider(providerId: String): Standalone? {
+        val cleanId = providerId.trim().lowercase()
+        val prefs = context.pairingStore.data.first()
+        val keyIv = provIvKey(cleanId)
+        val keyCt = provCtKey(cleanId)
+        val keyUrl = provUrlKey(cleanId)
+        val keyModel = provModelKey(cleanId)
+
+        val factory = ModelFactory.findById(cleanId)
+        val url = prefs[keyUrl] ?: factory?.defaultBaseUrl.orEmpty()
+        val model = prefs[keyModel] ?: factory?.defaultModel.orEmpty()
+        val iv = prefs[keyIv]
+        val ct = prefs[keyCt]
+
+        if (cleanId == "local" || url.trim().equals("local", true)) {
+            return Standalone("", url, model)
+        }
+
+        if (iv == null || ct == null) {
+            return if (url.isNotBlank() || model.isNotBlank()) Standalone("", url, model) else null
+        }
+
+        val apiKey = decrypt(iv, ct, PROVIDER_ALIAS) ?: return null
+        return Standalone(
+            apiKey = apiKey,
+            baseUrl = url,
+            model = model,
+        )
+    }
+
+    suspend fun hasProviderKey(providerId: String): Boolean {
+        val cleanId = providerId.trim().lowercase()
+        if (cleanId == "local") return true
+        val prefs = context.pairingStore.data.first()
+        return prefs[provIvKey(cleanId)] != null && prefs[provCtKey(cleanId)] != null
+    }
+
+    suspend fun getSavedProviderIds(): Set<String> {
+        val prefs = context.pairingStore.data.first()
+        val set = prefs[KEY_SAVED_PROVIDERS]?.split(",")?.filter { it.isNotBlank() }?.toMutableSet()
+            ?: mutableSetOf()
+        if (prefs[KEY_API_IV] != null && prefs[KEY_API_CT] != null) {
+            val detected = ModelFactory.detectProvider(prefs[KEY_BASE_URL].orEmpty())?.id
+            if (detected != null) set.add(detected)
+        }
+        return set
+    }
+
+    suspend fun getActiveProviderId(): String? {
+        val prefs = context.pairingStore.data.first()
+        return prefs[KEY_ACTIVE_PROVIDER_ID] ?: ModelFactory.detectProvider(prefs[KEY_BASE_URL].orEmpty())?.id
+    }
+
+    suspend fun switchActiveProvider(providerId: String): Standalone? {
+        val cleanId = providerId.trim().lowercase()
+        val saved = loadProvider(cleanId)
+        val factory = ModelFactory.findById(cleanId)
+        val url = saved?.baseUrl?.ifBlank { factory?.defaultBaseUrl.orEmpty() } ?: factory?.defaultBaseUrl.orEmpty()
+        val model = saved?.model?.ifBlank { factory?.defaultModel.orEmpty() } ?: factory?.defaultModel.orEmpty()
+        val key = saved?.apiKey.orEmpty()
+
+        saveProvider(
+            providerId = cleanId,
+            apiKey = key,
+            baseUrl = url,
+            model = model,
+            activate = true,
+        )
+        return Standalone(key, url, model)
+    }
+
+    suspend fun checkAndImportSeedCredentials(): Boolean {
+        val seedFile = File("/data/local/tmp/aura_credentials.json")
+        if (!seedFile.exists() || !seedFile.canRead()) return false
+        return try {
+            val content = seedFile.readText()
+            if (content.isBlank()) return false
+            val json = JsonParser.parseString(content).asJsonObject
+            val activeProvider = json.get("active_provider")?.takeIf { !it.isJsonNull }?.asString
+            val providers = json.getAsJsonArray("providers") ?: return false
+
+            for (i in 0 until providers.size()) {
+                val p = providers.get(i).asJsonObject
+                val id = p.get("id")?.asString ?: continue
+                val apiKey = p.get("api_key")?.asString.orEmpty()
+                val baseUrl = p.get("base_url")?.asString.orEmpty()
+                val model = p.get("model")?.asString.orEmpty()
+                val isTargetActive = if (activeProvider != null) {
+                    id.equals(activeProvider, ignoreCase = true)
+                } else {
+                    i == 0
+                }
+                saveProvider(
+                    providerId = id,
+                    apiKey = apiKey,
+                    baseUrl = baseUrl,
+                    model = model,
+                    activate = isTargetActive,
+                )
+            }
+            runCatching {
+                seedFile.writeText("")
+                seedFile.delete()
+            }
+            android.util.Log.i("AuraTokenVault", "Successfully imported ${providers.size()} credentials from seed file")
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("AuraTokenVault", "Failed to import seed credentials", e)
+            false
         }
     }
 
@@ -195,7 +354,8 @@ class TokenVault @Inject constructor(
     /** True when a provider key is stored, without decrypting it. */
     suspend fun hasProviderKey(): Boolean {
         val prefs = context.pairingStore.data.first()
-        return prefs[KEY_API_IV] != null && prefs[KEY_API_CT] != null
+        return (prefs[KEY_API_IV] != null && prefs[KEY_API_CT] != null) ||
+            prefs[KEY_BASE_URL]?.trim().equals("local", ignoreCase = true)
     }
 
     /** Switch standalone off but keep URL, model and key, so turning it on is one tap. */
@@ -207,9 +367,7 @@ class TokenVault @Inject constructor(
         context.pairingStore.edit { prefs ->
             prefs.remove(KEY_API_IV)
             prefs.remove(KEY_API_CT)
-            // Base URL and model deliberately survive: they are not secrets,
-            // and keeping them means turning standalone back on is one field
-            // rather than three.
+            prefs.remove(KEY_ACTIVE_PROVIDER_ID)
             prefs[KEY_STANDALONE] = false
         }
         runCatching { keyStore().deleteEntry(PROVIDER_ALIAS) }
@@ -322,5 +480,12 @@ class TokenVault @Inject constructor(
         val KEY_API_CT = stringPreferencesKey("api_ct")
         val KEY_BASE_URL = stringPreferencesKey("base_url")
         val KEY_MODEL = stringPreferencesKey("standalone_model")
+        val KEY_ACTIVE_PROVIDER_ID = stringPreferencesKey("active_provider_id")
+        val KEY_SAVED_PROVIDERS = stringPreferencesKey("saved_providers")
+
+        fun provIvKey(id: String) = stringPreferencesKey("prov_${id.lowercase()}_iv")
+        fun provCtKey(id: String) = stringPreferencesKey("prov_${id.lowercase()}_ct")
+        fun provUrlKey(id: String) = stringPreferencesKey("prov_${id.lowercase()}_url")
+        fun provModelKey(id: String) = stringPreferencesKey("prov_${id.lowercase()}_model")
     }
 }

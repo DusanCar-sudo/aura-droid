@@ -203,6 +203,8 @@ class ChatViewModel @Inject constructor(
      */
     fun configure() {
         viewModelScope.launch {
+            vault.checkAndImportSeedCredentials()
+            memory.checkAndSeedDurableMemories()
             val endpoint = vault.load()
             val standalone = vault.loadStandalone()
 

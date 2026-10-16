@@ -54,7 +54,11 @@ class MainActivity : ComponentActivity() {
             // during it does not replay it.
             var showSplash by rememberSaveable { mutableStateOf(true) }
 
-            AuraDroidTheme(darkTheme = darkTheme, dynamicColor = prefs.dynamicColor) {
+            AuraDroidTheme(
+                darkTheme = darkTheme,
+                dynamicColor = prefs.dynamicColor,
+                palette = prefs.palette,
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

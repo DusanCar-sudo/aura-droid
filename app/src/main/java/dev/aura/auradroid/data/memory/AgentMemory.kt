@@ -90,6 +90,55 @@ class AgentMemory @Inject constructor(private val dao: MemoryDao) {
 
   suspend fun forgetAll() = dao.deleteAll()
 
+  /**
+   * Inject durable foundation facts into memory if the store is empty,
+   * or import any external seed file placed at /data/local/tmp/aura_memory_seed.json.
+   */
+  suspend fun checkAndSeedDurableMemories(): Int {
+    var count = checkAndImportExternalSeed()
+    if (dao.count() == 0) {
+      count += injectDurableMemories(AuraMemorySeed.INITIAL_FACTS)
+    }
+    return count
+  }
+
+  suspend fun injectDurableMemories(facts: List<MemoryItem> = AuraMemorySeed.INITIAL_FACTS): Int {
+    var added = 0
+    for (fact in facts) {
+      if (remember(text = fact.text, tag = fact.tag) != null) {
+        added++
+      }
+    }
+    return added
+  }
+
+  private suspend fun checkAndImportExternalSeed(): Int {
+    val file = java.io.File("/data/local/tmp/aura_memory_seed.json")
+    if (!file.exists() || !file.canRead()) return 0
+    return try {
+      val text = file.readText()
+      if (text.isBlank()) return 0
+      val json = com.google.gson.JsonParser.parseString(text)
+      var imported = 0
+      if (json.isJsonArray) {
+        val array = json.asJsonArray
+        for (i in 0 until array.size()) {
+          val obj = array.get(i).asJsonObject
+          val itemText = obj.get("text")?.asString.orEmpty()
+          val itemTag = obj.get("tag")?.asString ?: "note"
+          if (remember(text = itemText, tag = itemTag) != null) imported++
+        }
+      }
+      runCatching {
+        file.writeText("")
+        file.delete()
+      }
+      imported
+    } catch (_: Exception) {
+      0
+    }
+  }
+
   /** The block that goes into the system prompt, or null when there is nothing worth spending the tokens on. */
   suspend fun promptBlock(): String? {
     val rows = dao.top(PROMPT_LIMIT)

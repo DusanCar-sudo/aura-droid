@@ -13,7 +13,9 @@ import dev.aura.auradroid.data.settings.Appearance
 import dev.aura.auradroid.data.settings.AppearanceRepository
 import dev.aura.auradroid.data.settings.ApprovalRepository
 import dev.aura.auradroid.data.settings.ThemeMode
+import dev.aura.auradroid.data.settings.ThemePalette
 import dev.aura.auradroid.data.standalone.DirectProvider
+import dev.aura.auradroid.data.standalone.ModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,6 +55,10 @@ data class SettingsUiState(
     val sandboxOut: Boolean = false,
     /** Shizuku status for elevated commands */
     val shizukuStatus: ShizukuStatus = ShizukuStatus.NOT_RUNNING,
+    /** Active provider ID (e.g. openrouter, kilocode, gemini) */
+    val activeProviderId: String? = null,
+    /** Set of provider IDs that have saved keys/credentials */
+    val savedProviders: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -112,11 +118,12 @@ class SettingsViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            // Read first, whatever mode this phone is in. The setup form is
-            // prefilled from these, and a form that forgets the endpoint every
-            // time is why the API key kept getting retyped.
+            vault.checkAndImportSeedCredentials()
+            memory.checkAndSeedDurableMemories()
             val (lastBase, lastModel) = vault.lastProviderSettings()
             val standaloneOn = vault.standaloneSummary() != null
+            val savedProv = vault.getSavedProviderIds()
+            val activeId = vault.getActiveProviderId() ?: ModelFactory.detectProvider(lastBase)?.id
 
             _state.value = _state.value.copy(
                 standalone = standaloneOn,
@@ -124,6 +131,8 @@ class SettingsViewModel @Inject constructor(
                 standaloneModel = lastModel,
                 hasApiKey = vault.hasProviderKey(),
                 memoryCount = memory.count(),
+                savedProviders = savedProv,
+                activeProviderId = activeId,
             )
 
             val endpoint = vault.load() ?: run {
@@ -154,6 +163,24 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun selectProvider(providerId: String) {
+        viewModelScope.launch {
+            val factory = ModelFactory.findById(providerId)
+            val saved = vault.loadProvider(providerId)
+            val targetBase = saved?.baseUrl?.ifBlank { factory?.defaultBaseUrl.orEmpty() } ?: factory?.defaultBaseUrl.orEmpty()
+            val targetModel = saved?.model?.ifBlank { factory?.defaultModel.orEmpty() } ?: factory?.defaultModel.orEmpty()
+            val hasKey = vault.hasProviderKey(providerId)
+
+            _state.value = _state.value.copy(
+                activeProviderId = providerId,
+                baseUrl = targetBase,
+                standaloneModel = targetModel,
+                hasApiKey = hasKey,
+                saveError = null,
+            )
+        }
+    }
+
     /**
      * Turn standalone on, storing the credentials.
      *
@@ -162,7 +189,7 @@ class SettingsViewModel @Inject constructor(
      * adjustment meant finding a fifty-character secret and typing it into a
      * phone.
      */
-    fun enableStandalone(apiKey: String, baseUrl: String, model: String) {
+    fun enableStandalone(apiKey: String, baseUrl: String, model: String, providerId: String? = null) {
         viewModelScope.launch {
             if (baseUrl.isBlank() || model.isBlank()) {
                 _state.value = _state.value.copy(
@@ -170,18 +197,30 @@ class SettingsViewModel @Inject constructor(
                 )
                 return@launch
             }
-            if (apiKey.isBlank() && !vault.hasProviderKey() && !baseUrl.trim().equals("local", true)) {
+            val targetProvId = providerId ?: ModelFactory.detectProvider(baseUrl)?.id ?: "custom"
+            val hasSavedKey = vault.hasProviderKey(targetProvId)
+            if (apiKey.isBlank() && !hasSavedKey && !vault.hasProviderKey() && !baseUrl.trim().equals("local", true)) {
                 _state.value = _state.value.copy(
                     saveError = "Enter an API key — there is none stored yet.",
                 )
                 return@launch
             }
-            vault.saveStandalone(
-                TokenVault.Standalone(apiKey = apiKey, baseUrl = baseUrl, model = model),
+            vault.saveProvider(
+                providerId = targetProvId,
+                apiKey = apiKey,
+                baseUrl = baseUrl,
+                model = model,
+                activate = true,
             )
+            val savedProv = vault.getSavedProviderIds()
             _state.value = _state.value.copy(
-                standalone = true, baseUrl = baseUrl.trim(), standaloneModel = model.trim(),
-                hasApiKey = true, saveError = null,
+                standalone = true,
+                baseUrl = baseUrl.trim(),
+                standaloneModel = model.trim(),
+                activeProviderId = targetProvId,
+                savedProviders = savedProv,
+                hasApiKey = true,
+                saveError = null,
             )
         }
     }
@@ -190,10 +229,20 @@ class SettingsViewModel @Inject constructor(
         apiKey: String,
         baseUrl: String,
         model: String,
+        providerId: String? = null,
         onResult: (Result<String>) -> Unit,
     ) {
         viewModelScope.launch {
-            val key = if (apiKey.isBlank()) vault.loadStandalone()?.apiKey.orEmpty() else apiKey
+            val key = if (apiKey.isNotBlank()) {
+                apiKey
+            } else {
+                val targetProvId = providerId ?: ModelFactory.detectProvider(baseUrl)?.id
+                if (targetProvId != null) {
+                    vault.loadProvider(targetProvId)?.apiKey.orEmpty()
+                } else {
+                    vault.loadStandalone()?.apiKey.orEmpty()
+                }
+            }
             val result = provider.testConnection(key, baseUrl, model)
             onResult(result)
         }
@@ -233,8 +282,19 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { appearanceRepo.setThemeMode(mode) }
     }
 
+    fun setThemePalette(palette: ThemePalette) {
+        viewModelScope.launch { appearanceRepo.setThemePalette(palette) }
+    }
+
     fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch { appearanceRepo.setDynamicColor(enabled) }
+    }
+
+    fun injectDurableMemories() {
+        viewModelScope.launch {
+            memory.injectDurableMemories()
+            _state.value = _state.value.copy(memoryCount = memory.count())
+        }
     }
 
     fun setAutoApproveAll(enabled: Boolean) {

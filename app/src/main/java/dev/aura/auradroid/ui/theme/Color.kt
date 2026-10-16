@@ -103,3 +103,28 @@ val GlowLight = Color(0xFFC8AD5C)
 val GlowDark = AuraGold
 val GlowHotLight = Color(0xFFE7CF85)
 val GlowHotDark = Color(0xFFFFF7D6)
+
+// ── ThemePalette Preview Swatches ───────────────────────────────────────────
+val dev.aura.auradroid.data.settings.ThemePalette.previewGround: Color
+    get() = when (this) {
+        dev.aura.auradroid.data.settings.ThemePalette.NATURE -> AuraForest
+        dev.aura.auradroid.data.settings.ThemePalette.OLED -> Color(0xFF000000)
+        dev.aura.auradroid.data.settings.ThemePalette.SPECTRUM -> Color(0xFF070A14)
+        dev.aura.auradroid.data.settings.ThemePalette.CODE -> Color(0xFF0F1724)
+    }
+
+val dev.aura.auradroid.data.settings.ThemePalette.previewSurface: Color
+    get() = when (this) {
+        dev.aura.auradroid.data.settings.ThemePalette.NATURE -> AuraMoss
+        dev.aura.auradroid.data.settings.ThemePalette.OLED -> Color(0xFF141414)
+        dev.aura.auradroid.data.settings.ThemePalette.SPECTRUM -> Color(0xFF162038)
+        dev.aura.auradroid.data.settings.ThemePalette.CODE -> Color(0xFF1C2739)
+    }
+
+val dev.aura.auradroid.data.settings.ThemePalette.previewAccent: Color
+    get() = when (this) {
+        dev.aura.auradroid.data.settings.ThemePalette.NATURE -> AuraGold
+        dev.aura.auradroid.data.settings.ThemePalette.OLED -> AuraGold
+        dev.aura.auradroid.data.settings.ThemePalette.SPECTRUM -> Color(0xFFFFFF00)
+        dev.aura.auradroid.data.settings.ThemePalette.CODE -> Color(0xFFCC785C)
+    }
