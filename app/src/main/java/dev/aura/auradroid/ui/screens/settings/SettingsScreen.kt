@@ -54,6 +54,7 @@ fun SettingsScreen(
     /** Opens the mode chooser, so a desktop can be paired at any time. */
     onSetUpDesktop: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
+    onOpenTriggers: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var confirmUnpair by remember { mutableStateOf(false) }
@@ -344,6 +345,21 @@ fun SettingsScreen(
                 }
             }
 
+            Section("When Aura acts on her own") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Triggers", fontWeight = FontWeight.Medium)
+                        Text(
+                            "Tasks she runs on a schedule, or when an app " +
+                                "sends a notification she is watching for.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(onClick = onOpenTriggers) { Text("View") }
+                }
+            }
+
             // No API-key field unless standalone is on: when paired with a
             // desktop the keys live there, and the phone holds only a pairing
             // token.
@@ -423,6 +439,9 @@ fun SettingsScreen(
         var showKey by rememberSaveable { mutableStateOf(false) }
         var testing by remember { mutableStateOf(false) }
         var testResult by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+        var ollamaModels by remember { mutableStateOf<List<String>>(emptyList()) }
+        var ollamaError by remember { mutableStateOf<String?>(null) }
+        var loadingOllama by remember { mutableStateOf(false) }
 
         val activeFactoryProvider = ModelFactory.findById(selectedProviderId)
         val hasSavedKeyForProvider = state.savedProviders.contains(selectedProviderId) ||
@@ -507,6 +526,51 @@ fun SettingsScreen(
                                     },
                                 )
                             }
+                        }
+                    }
+
+                    if (selectedProviderId == "ollama") {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                "Models on server",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = {
+                                loadingOllama = true; ollamaError = null
+                                viewModel.fetchOllamaModels(base) { res ->
+                                    loadingOllama = false
+                                    res.onSuccess { ollamaModels = it }
+                                        .onFailure { ollamaError = it.message ?: "Unreachable" }
+                                }
+                            }, enabled = !loadingOllama && !base.contains("<pc-ip>")) {
+                                Text(if (loadingOllama) "..." else "Refresh")
+                            }
+                        }
+                        if (ollamaModels.isNotEmpty()) {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                items(ollamaModels) { m ->
+                                    FilterChip(
+                                        selected = model == m,
+                                        onClick = { model = m; testResult = null },
+                                        label = { Text(m, style = MaterialTheme.typography.labelSmall) },
+                                    )
+                                }
+                            }
+                        }
+                        ollamaError?.let {
+                            Text(
+                                "Ollama: $it — check the IP and that the PC allows port 11434",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
                         }
                     }
 

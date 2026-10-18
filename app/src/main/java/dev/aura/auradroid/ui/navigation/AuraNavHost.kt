@@ -40,6 +40,7 @@ import dev.aura.auradroid.ui.screens.pairing.PairingScreen
 import dev.aura.auradroid.ui.screens.sessions.SessionsScreen
 import dev.aura.auradroid.ui.screens.settings.SettingsScreen
 import dev.aura.auradroid.ui.screens.terminal.TerminalScreen
+import dev.aura.auradroid.ui.screens.triggers.TriggersScreen
 
 object Routes {
     const val PAIRING = "pairing"
@@ -50,6 +51,7 @@ object Routes {
     const val TERMINAL = "terminal"
     const val LOCAL = "local"
     const val MEMORY = "memory"
+    const val TRIGGERS = "triggers"
 
     /**
      * Key the sessions screen writes the chosen conversation into.
@@ -259,10 +261,14 @@ fun AuraNavHost(
                 },
                 onSetUpDesktop = { navController.navigate(Routes.PAIRING) },
                 onOpenMemory = { navController.navigate(Routes.MEMORY) },
+                onOpenTriggers = { navController.navigate(Routes.TRIGGERS) },
             )
         }
         composable(Routes.MEMORY) {
             MemoryScreen(onNavigateBack = { navController.popBackStack() })
+        }
+        composable(Routes.TRIGGERS) {
+            TriggersScreen(onNavigateBack = { navController.popBackStack() })
         }
     }
 }
