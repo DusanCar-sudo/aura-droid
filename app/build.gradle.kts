@@ -14,8 +14,8 @@ android {
         applicationId = "dev.aura.auradroid"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -23,8 +23,25 @@ android {
         }
     }
 
+    // Release signing comes from the environment, so no key is ever in the repo:
+    //   AURA_KEYSTORE (path), AURA_KEYSTORE_PASSWORD, AURA_KEY_ALIAS, AURA_KEY_PASSWORD
+    // Without them `assembleRelease` yields an unsigned APK; use assembleDebug for
+    // a debug-signed one that installs on a fresh device.
+    val releaseKeystore = System.getenv("AURA_KEYSTORE")
+    if (releaseKeystore != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("AURA_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("AURA_KEY_ALIAS")
+                keyPassword = System.getenv("AURA_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -79,15 +96,26 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
+    // Launch splash: the peak on forest while the process starts, handed to the
+    // in-app brand splash (ui/splash/BrandSplash.kt).
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
     // Hilt
     implementation("com.google.dagger:hilt-android:2.56.1")
     ksp("com.google.dagger:hilt-compiler:2.56.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
+    // On-device language models (Gemma-class .task / .litertlm files)
+    implementation("com.google.mediapipe:tasks-genai:0.10.24")
+
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+
+    // Shizuku for elevated shell (pm, settings, dumpsys, sdcard access)
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
 
     // Networking (OkHttp also carries the streaming/SSE path)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

@@ -13,20 +13,22 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 
 /**
- * Aura Logo - rounded triangular mark from the app icon.
+ * Aura Droid symbol: the rounded peak from the app icon. One path drawn three
+ * times, as a halo, a body and a core (BRAND.md §3.3). Cream body with a gold
+ * core on dark; the caller passes theme colours so it also reads on light.
  */
 @Composable
 fun AuraLogo(
     modifier: Modifier = Modifier,
-    cyanColor: Color = AuraCyan,
-    rubyColor: Color = AuraRuby
+    bodyColor: Color = AuraCream,
+    coreColor: Color = AuraGold
 ) {
     Canvas(modifier = modifier.size(32.dp)) {
-        drawAuraMark(cyanColor = cyanColor, violetColor = rubyColor)
+        drawAuraMark(bodyColor = bodyColor, coreColor = coreColor)
     }
 }
 
-private fun DrawScope.drawAuraMark(cyanColor: Color, violetColor: Color) {
+internal fun DrawScope.drawAuraMark(bodyColor: Color, coreColor: Color) {
     val w = size.width
     val h = size.height
     val path = Path().apply {
@@ -40,7 +42,7 @@ private fun DrawScope.drawAuraMark(cyanColor: Color, violetColor: Color) {
 
     drawPath(
         path = path,
-        color = cyanColor.copy(alpha = 0.24f),
+        color = bodyColor.copy(alpha = 0.22f),
         style = Stroke(
             width = w * 0.19f,
             cap = StrokeCap.Round,
@@ -49,7 +51,7 @@ private fun DrawScope.drawAuraMark(cyanColor: Color, violetColor: Color) {
     )
     drawPath(
         path = path,
-        color = cyanColor,
+        color = bodyColor,
         style = Stroke(
             width = w * 0.105f,
             cap = StrokeCap.Round,
@@ -58,7 +60,7 @@ private fun DrawScope.drawAuraMark(cyanColor: Color, violetColor: Color) {
     )
     drawPath(
         path = path,
-        color = violetColor.copy(alpha = 0.7f),
+        color = coreColor.copy(alpha = 0.9f),
         style = Stroke(
             width = w * 0.045f,
             cap = StrokeCap.Round,

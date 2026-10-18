@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -52,6 +53,8 @@ class PhoneTools @Inject constructor(
 ) {
 
     private val http = OkHttpClient.Builder()
+        .followRedirects(false)
+        .followSslRedirects(false)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
@@ -66,8 +69,23 @@ class PhoneTools @Inject constructor(
      */
     suspend fun needsApproval(name: String, arguments: String): Boolean = when (name) {
         RUN_SHELL, ASK_DESKTOP -> true
+        // A page the model just read can tell it to send what it found here in
+        // a query string. Once anything local or fetched is in play, a URL that
+        // can carry data out is shown to the person first.
+        FETCH_URL -> tainted && carriesData(parse(arguments).stringOr("url", ""))
         READ_FILE, WRITE_FILE, LIST_FILES -> sandboxAllowed() && escapes(arguments)
         else -> false
+    }
+
+    /** Set once this turn has read local data or fetched content; cleared by [newTurn]. */
+    @Volatile private var tainted = false
+
+    fun newTurn() { tainted = false }
+
+    private fun carriesData(url: String): Boolean {
+        val u = runCatching { java.net.URI(url.trim()) }.getOrNull() ?: return true
+        return u.rawQuery != null || u.rawFragment != null || u.rawUserInfo != null ||
+            (u.rawPath?.length ?: 0) > 80
     }
 
     private fun escapes(arguments: String): Boolean =
@@ -132,12 +150,17 @@ class PhoneTools @Inject constructor(
         ToolSpec(
             name = RUN_SHELL,
             description = "Run one shell command on this phone. " +
-                "Standard toybox tools only (ls, cat, grep, find, wc, head, tail). " +
-                "No root. With 'Sandbox out' the command may leave the app " +
-                "workspace, like a terminal the person typed into.",
+                "By default, standard toybox tools only (ls, cat, grep, find, wc, head, tail). " +
+                "If 'elevated' is true, runs via Shizuku (uid 2000) allowing pm install, settings put, " +
+                "dumpsys, and full /sdcard access (requires Shizuku to be active and permitted). " +
+                "With 'Sandbox out' the command may leave the app workspace.",
             parameters = schema(
                 required = listOf("command"),
                 "command" to string("The command line to run."),
+                "elevated" to JsonObject().apply {
+                    addProperty("type", "boolean")
+                    addProperty("description", "Set to true to run via Shizuku for system-wide access.")
+                }
             ),
         ),
         ToolSpec(
@@ -179,7 +202,11 @@ class PhoneTools @Inject constructor(
     fun describe(name: String, arguments: String): String {
         val args = parse(arguments)
         return when (name) {
-            RUN_SHELL -> args.stringOr("command", "")
+            RUN_SHELL -> {
+                val cmd = args.stringOr("command", "")
+                val elev = if (args.get("elevated")?.asBoolean == true) "[elevated] " else ""
+                "$elev$cmd"
+            }
             WRITE_FILE -> "write ${args.stringOr("path", "?")}"
             SAVE_DOWNLOAD -> "save ${args.stringOr("filename", "?")} to Downloads"
             FETCH_URL -> "fetch ${args.stringOr("url", "?")}"
@@ -190,6 +217,7 @@ class PhoneTools @Inject constructor(
 
     suspend fun run(name: String, arguments: String, sessionId: String?): ToolOutcome {
         val args = parse(arguments)
+        if (name in setOf(READ_FILE, LIST_FILES, RUN_SHELL, RECALL, FETCH_URL)) tainted = true
         return when (name) {
             REMEMBER -> doRemember(args, sessionId)
             RECALL -> doRecall(args)
@@ -272,22 +300,18 @@ class PhoneTools @Inject constructor(
 
     private suspend fun doShell(args: JsonObject): ToolOutcome {
         val command = args.stringOr("command", "")
+        val elevated = args.get("elevated")?.let { if (it.isJsonPrimitive) it.asBoolean else false } ?: false
         if (command.isBlank()) return ToolOutcome("run_shell needs a command.", failed = true)
-        // Pinned to the workspace unless "Sandbox out" is on. The shell's own
-        // working directory is the app's files root, which also holds the
-        // conversation database and the encrypted credentials — not what the
-        // tool description promises, and not somewhere the model has any
-        // business poking around.
-        // With sandbox-out the shell may leave the workspace, but it starts
-        // there — the app's own files root is where the conversation database
-        // and credentials live, and the full-size terminal keeps that as its
-        // home too. Only the user's own terminal has reason to sit there.
-        val here = if (sandboxAllowed()) {
+        
+        // Pinned to the workspace unless "Sandbox out" is on.
+        val here = if (sandboxAllowed() || elevated) {
+            // Elevated implies sandbox out is essentially granted for this process (since it runs as adb).
+            // but we'll try to stick to shell.cwd if it's not home.
             if (shell.cwd == shell.home()) workspace() else shell.cwd
         } else {
             workspace()
         }
-        val result = shell.run(command, inDirectory = here)
+        val result = shell.run(command, inDirectory = here, elevated = elevated)
         val body = result.output.take(MAX_READ).ifBlank { "(no output)" }
         return ToolOutcome(
             output = "exit ${result.exitCode}\n$body",
@@ -314,7 +338,22 @@ class PhoneTools @Inject constructor(
             return@withContext ToolOutcome("fetch_url needs an http(s) URL.", failed = true)
         }
         runCatching {
-            http.newCall(Request.Builder().url(url).build()).execute().use { res ->
+            // Redirects are followed by hand and stop at a new host: a redirect is
+            // as good as a query string for carrying data somewhere else.
+            val origin = url.toHttpUrlOrNull()?.host
+            var current = url
+            var hops = 0
+            var call = http.newCall(Request.Builder().url(current).build()).execute()
+            while (call.isRedirect && hops++ < 5) {
+                val next = call.header("Location")?.let { call.request.url.resolve(it) }
+                call.close()
+                if (next == null || next.host != origin) {
+                    return@withContext ToolOutcome("Redirected to another host; not followed.", failed = true)
+                }
+                current = next.toString()
+                call = http.newCall(Request.Builder().url(current).build()).execute()
+            }
+            call.use { res ->
                 if (!res.isSuccessful) {
                     return@withContext ToolOutcome("HTTP ${res.code} from $url.", failed = true)
                 }
@@ -385,8 +424,11 @@ class PhoneTools @Inject constructor(
 
         if (!sandboxAllowed()) return null
 
-        val private = context.filesDir.canonicalFile
-        val isPrivate = target == private || target.path.startsWith(private.path + File.separator)
+        // The whole app data dir, not just filesDir: the conversation database
+        // (databases/) and shared_prefs sit beside it.
+        val private = listOfNotNull(context.dataDir, context.getExternalFilesDir(null)?.parentFile)
+            .map { it.canonicalFile }
+        val isPrivate = private.any { target == it || target.path.startsWith(it.path + File.separator) }
         return target.takeIf { !isPrivate }
     }
 

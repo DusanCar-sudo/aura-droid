@@ -3,6 +3,8 @@ package dev.aura.auradroid.ui.screens.settings
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,16 +27,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.aura.auradroid.data.settings.ThemeMode
+import dev.aura.auradroid.data.settings.ThemePalette
+import dev.aura.auradroid.data.standalone.ModelFactory
 import dev.aura.auradroid.ui.theme.AuraLogo
+import dev.aura.auradroid.ui.theme.GeistMono
+import dev.aura.auradroid.ui.theme.previewAccent
+import dev.aura.auradroid.ui.theme.previewGround
+import dev.aura.auradroid.ui.theme.previewSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +54,7 @@ fun SettingsScreen(
     /** Opens the mode chooser, so a desktop can be paired at any time. */
     onSetUpDesktop: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
+    onOpenTriggers: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var confirmUnpair by remember { mutableStateOf(false) }
@@ -60,8 +70,8 @@ fun SettingsScreen(
                     ) {
                         AuraLogo(
                             modifier = Modifier.size(24.dp),
-                            cyanColor = MaterialTheme.colorScheme.primary,
-                            rubyColor = MaterialTheme.colorScheme.tertiary,
+                            bodyColor = MaterialTheme.colorScheme.onBackground,
+                            coreColor = MaterialTheme.colorScheme.primary,
                         )
                         Text("Settings", fontWeight = FontWeight.SemiBold)
                     }
@@ -123,7 +133,7 @@ fun SettingsScreen(
                         Text(
                             "${state.host}:${state.port}",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = GeistMono,
                         )
                     }
                     state.projectName?.let { Row2("Project", it) }
@@ -151,8 +161,10 @@ fun SettingsScreen(
             Section("Appearance") {
                 AppearanceSection(
                     mode = state.appearance.themeMode,
+                    palette = state.appearance.palette,
                     dynamicColor = state.appearance.dynamicColor,
                     onModeChange = viewModel::setThemeMode,
+                    onPaletteChange = viewModel::setThemePalette,
                     onDynamicColor = viewModel::setDynamicColor,
                 )
             }
@@ -201,6 +213,82 @@ fun SettingsScreen(
                 }
             }
 
+            Section("Elevated shell (Shizuku)") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when (state.shizukuStatus) {
+                                            ShizukuStatus.READY -> MaterialTheme.colorScheme.primary
+                                            ShizukuStatus.PERMISSION_NEEDED -> Color(0xFFF59E0B)
+                                            ShizukuStatus.NOT_RUNNING -> MaterialTheme.colorScheme.onSurfaceVariant
+                                            ShizukuStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+                                        },
+                                    ),
+                            )
+                            Text(
+                                when (state.shizukuStatus) {
+                                    ShizukuStatus.READY -> "Active (uid 2000 / adb shell)"
+                                    ShizukuStatus.PERMISSION_NEEDED -> "Permission required"
+                                    ShizukuStatus.NOT_RUNNING -> "Service not running"
+                                    ShizukuStatus.NOT_INSTALLED -> "Not installed"
+                                },
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                        Text(
+                            when (state.shizukuStatus) {
+                                ShizukuStatus.READY ->
+                                    "Commands run with elevated privileges. Allows app management, system settings, dumpsys, and full storage access."
+                                ShizukuStatus.PERMISSION_NEEDED ->
+                                    "Shizuku service is running, but this app needs permission to communicate with it."
+                                ShizukuStatus.NOT_RUNNING ->
+                                    "Shizuku is installed. Start it via Wireless Debugging or computer ADB."
+                                ShizukuStatus.NOT_INSTALLED ->
+                                    "Shizuku is required for elevated shell commands on non-rooted devices."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                when (state.shizukuStatus) {
+                    ShizukuStatus.PERMISSION_NEEDED -> {
+                        Button(
+                            onClick = viewModel::requestShizukuPermission,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Request Shizuku permission")
+                        }
+                    }
+                    ShizukuStatus.NOT_INSTALLED -> {
+                        LinkRow(
+                            label = "Get Shizuku",
+                            shown = "shizuku.rikka.app",
+                            url = "https://shizuku.rikka.app",
+                        )
+                    }
+                    ShizukuStatus.NOT_RUNNING -> {
+                        Text(
+                            "Start command:\nadb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = GeistMono,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    ShizukuStatus.READY -> {
+                        // Already active
+                    }
+                }
+            }
+
             Section("Standalone") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
@@ -223,6 +311,8 @@ fun SettingsScreen(
                     )
                 }
                 if (state.standalone) {
+                    val provName = ModelFactory.detectProvider(state.baseUrl)?.name ?: "Custom"
+                    Row2("Provider", provName)
                     Row2("Model", state.standaloneModel.ifBlank { "—" })
                     Row2("Endpoint", state.baseUrl.ifBlank { "—" })
                     Row2("API key", if (state.hasApiKey) "stored on device" else "none")
@@ -252,6 +342,21 @@ fun SettingsScreen(
                         )
                     }
                     TextButton(onClick = onOpenMemory) { Text("View") }
+                }
+            }
+
+            Section("When Aura acts on her own") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Triggers", fontWeight = FontWeight.Medium)
+                        Text(
+                            "Tasks she runs on a schedule, or when an app " +
+                                "sends a notification she is watching for.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(onClick = onOpenTriggers) { Text("View") }
                 }
             }
 
@@ -314,64 +419,222 @@ fun SettingsScreen(
 
     if (editingStandalone) {
         var key by rememberSaveable { mutableStateOf("") }
+        var selectedProviderId by rememberSaveable {
+            mutableStateOf(
+                state.activeProviderId
+                    ?: ModelFactory.detectProvider(state.baseUrl)?.id
+                    ?: "openrouter"
+            )
+        }
         var base by rememberSaveable {
-            mutableStateOf(state.baseUrl.ifBlank { "https://api.deepseek.com" })
+            mutableStateOf(state.baseUrl.ifBlank {
+                ModelFactory.findById(selectedProviderId)?.defaultBaseUrl ?: "https://openrouter.ai/api/v1"
+            })
         }
         var model by rememberSaveable {
-            mutableStateOf(state.standaloneModel.ifBlank { "deepseek-chat" })
+            mutableStateOf(state.standaloneModel.ifBlank {
+                ModelFactory.findById(selectedProviderId)?.defaultModel ?: "openrouter/auto"
+            })
         }
         var showKey by rememberSaveable { mutableStateOf(false) }
+        var testing by remember { mutableStateOf(false) }
+        var testResult by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+        var ollamaModels by remember { mutableStateOf<List<String>>(emptyList()) }
+        var ollamaError by remember { mutableStateOf<String?>(null) }
+        var loadingOllama by remember { mutableStateOf(false) }
+
+        val activeFactoryProvider = ModelFactory.findById(selectedProviderId)
+        val hasSavedKeyForProvider = state.savedProviders.contains(selectedProviderId) ||
+            (selectedProviderId == "local") ||
+            (selectedProviderId == (state.activeProviderId ?: ModelFactory.detectProvider(state.baseUrl)?.id) && state.hasApiKey)
 
         AlertDialog(
             onDismissRequest = { editingStandalone = false },
-            title = { Text("Standalone setup") },
+            title = { Text("Model Factory") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        "Provider",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        items(ModelFactory.PROVIDERS) { p ->
+                            val isSaved = state.savedProviders.contains(p.id) || p.id == "local"
+                            val isSelected = selectedProviderId == p.id
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    selectedProviderId = p.id
+                                    base = p.defaultBaseUrl
+                                    model = p.defaultModel
+                                    testResult = null
+                                    key = ""
+                                },
+                                label = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(p.name, style = MaterialTheme.typography.labelSmall)
+                                        if (isSaved) {
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("●", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                    }
+
+                    if (activeFactoryProvider != null && activeFactoryProvider.models.isNotEmpty()) {
+                        Text(
+                            "Curated Models (${activeFactoryProvider.name})",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            items(activeFactoryProvider.models) { m ->
+                                val isSelected = model == m.id
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        model = m.id
+                                        testResult = null
+                                    },
+                                    label = {
+                                        Column {
+                                            Text(
+                                                (if (m.isFree) "[Free] " else "") + m.label,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            )
+                                            if (m.speed.isNotBlank()) {
+                                                Text(
+                                                    m.speed,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
+
+                    if (selectedProviderId == "ollama") {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                "Models on server",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = {
+                                loadingOllama = true; ollamaError = null
+                                viewModel.fetchOllamaModels(base) { res ->
+                                    loadingOllama = false
+                                    res.onSuccess { ollamaModels = it }
+                                        .onFailure { ollamaError = it.message ?: "Unreachable" }
+                                }
+                            }, enabled = !loadingOllama && !base.contains("<pc-ip>")) {
+                                Text(if (loadingOllama) "..." else "Refresh")
+                            }
+                        }
+                        if (ollamaModels.isNotEmpty()) {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                items(ollamaModels) { m ->
+                                    FilterChip(
+                                        selected = model == m,
+                                        onClick = { model = m; testResult = null },
+                                        label = { Text(m, style = MaterialTheme.typography.labelSmall) },
+                                    )
+                                }
+                            }
+                        }
+                        ollamaError?.let {
+                            Text(
+                                "Ollama: $it — check the IP and that the PC allows port 11434",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+
                     OutlinedTextField(
                         value = base,
-                        onValueChange = { base = it },
+                        onValueChange = {
+                            base = it
+                            testResult = null
+                        },
                         label = { Text("Base URL") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = model,
-                        onValueChange = { model = it },
+                        onValueChange = {
+                            model = it
+                            testResult = null
+                        },
                         label = { Text("Model ID") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    OutlinedTextField(
-                        value = key,
-                        onValueChange = { key = it },
-                        label = {
-                            Text(if (state.hasApiKey) "API key (already saved)" else "API key")
-                        },
-                        singleLine = true,
-                        // Masked by default and never read back from storage:
-                        // a key that can be displayed is a key that can be
-                        // shoulder-surfed off a screen.
-                        visualTransformation = if (showKey) {
-                            VisualTransformation.None
-                        } else {
-                            PasswordVisualTransformation()
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { showKey = !showKey }) {
-                                Icon(
-                                    if (showKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = if (showKey) "Hide key" else "Show key",
+                    if (selectedProviderId != "local" && !base.trim().equals("local", true)) {
+                        OutlinedTextField(
+                            value = key,
+                            onValueChange = {
+                                key = it
+                                testResult = null
+                            },
+                            label = {
+                                Text(
+                                    if (hasSavedKeyForProvider) "API key (Saved on phone)"
+                                    else "API key"
                                 )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    if (state.hasApiKey) {
+                            },
+                            singleLine = true,
+                            visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { showKey = !showKey }) {
+                                    Icon(
+                                        if (showKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = if (showKey) "Hide key" else "Show key",
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                         Text(
-                            "Leave empty to keep the key already stored. It survives " +
-                                "pairing and unpairing a desktop.",
+                            if (hasSavedKeyForProvider) {
+                                "✓ Key saved on device. Leave blank to keep existing key."
+                            } else {
+                                "Enter API key. It will be encrypted into hardware KeyStore and remembered for ${activeFactoryProvider?.name ?: "this provider"}."
+                            },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (hasSavedKeyForProvider) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    testResult?.let { (ok, msg) ->
+                        Text(
+                            msg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         )
                     }
                     state.saveError?.let {
@@ -381,14 +644,40 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.enableStandalone(key, base, model)
-                        editingStandalone = false
-                    },
-                    enabled = base.isNotBlank() && model.isNotBlank() &&
-                        (key.isNotBlank() || state.hasApiKey),
-                ) { Text("Save") }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(
+                        onClick = {
+                            testing = true
+                            testResult = null
+                            viewModel.testStandalone(key, base, model, selectedProviderId) { res ->
+                                testing = false
+                                res.onSuccess {
+                                    testResult = true to it
+                                }.onFailure {
+                                    testResult = false to (it.message ?: "Connection failed")
+                                }
+                            }
+                        },
+                        enabled = !testing && base.isNotBlank() && model.isNotBlank() &&
+                            (key.isNotBlank() || hasSavedKeyForProvider || base.trim().equals("local", true)),
+                    ) {
+                        if (testing) {
+                            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Testing...")
+                        } else {
+                            Text("Test")
+                        }
+                    }
+                    TextButton(
+                        onClick = {
+                            viewModel.enableStandalone(key, base, model, selectedProviderId)
+                            editingStandalone = false
+                        },
+                        enabled = base.isNotBlank() && model.isNotBlank() &&
+                            (key.isNotBlank() || hasSavedKeyForProvider || base.trim().equals("local", true)),
+                    ) { Text("Save") }
+                }
             },
             dismissButton = {
                 TextButton(onClick = { editingStandalone = false }) { Text("Cancel") }
@@ -457,8 +746,10 @@ private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) 
 @Composable
 private fun AppearanceSection(
     mode: ThemeMode,
+    palette: ThemePalette,
     dynamicColor: Boolean,
     onModeChange: (ThemeMode) -> Unit,
+    onPaletteChange: (ThemePalette) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -468,19 +759,116 @@ private fun AppearanceSection(
             modifier = Modifier.size(18.dp),
         )
         Spacer(Modifier.width(8.dp))
-        Text("Theme", fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-        SingleChoiceSegmentedButtonRow {
-            val options = listOf(
-                ThemeMode.SYSTEM to "System",
-                ThemeMode.DARK to "Dark",
-                ThemeMode.LIGHT to "Light",
+        Text("Theme Mode", fontWeight = FontWeight.Medium)
+    }
+
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        val options = listOf(
+            ThemeMode.SYSTEM to "System",
+            ThemeMode.DARK to "Dark",
+            ThemeMode.LIGHT to "Light",
+        )
+        options.forEachIndexed { i, (value, label) ->
+            SegmentedButton(
+                selected = mode == value,
+                onClick = { onModeChange(value) },
+                shape = SegmentedButtonDefaults.itemShape(i, options.size),
+            ) { Text(label, maxLines = 1) }
+        }
+    }
+
+    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Palette", fontWeight = FontWeight.Medium)
+            Text(
+                if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    "Dynamic wallpaper colour is currently overriding the palette."
+                } else {
+                    "Choose Aura's visual identity."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            options.forEachIndexed { i, (value, label) ->
-                SegmentedButton(
-                    selected = mode == value,
-                    onClick = { onModeChange(value) },
-                    shape = SegmentedButtonDefaults.itemShape(i, options.size),
-                ) { Text(label) }
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ThemePalette.entries.forEach { p ->
+            val isSelected = palette == p && (!dynamicColor || Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+            Surface(
+                onClick = {
+                    if (dynamicColor) onDynamicColor(false)
+                    onPaletteChange(p)
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+                },
+                border = BorderStroke(
+                    width = if (isSelected) 1.5.dp else 1.dp,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    },
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(p.previewGround)
+                                .border(1.dp, Color(0x33888888), CircleShape),
+                        )
+                        Box(
+                            Modifier
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(p.previewSurface)
+                                .border(1.dp, Color(0x33888888), CircleShape),
+                        )
+                        Box(
+                            Modifier
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(p.previewAccent)
+                                .border(1.dp, Color(0x33888888), CircleShape),
+                        )
+                    }
+
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            p.title,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            p.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = null,
+                    )
+                }
             }
         }
     }
@@ -491,7 +879,7 @@ private fun AppearanceSection(
             Column(Modifier.weight(1f)) {
                 Text("Dynamic colour", fontWeight = FontWeight.Medium)
                 Text(
-                    "Match the palette to your wallpaper.",
+                    "Match the palette to your wallpaper (overrides palette selection).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

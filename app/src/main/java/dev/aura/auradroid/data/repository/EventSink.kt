@@ -268,7 +268,20 @@ class EventSink(
      * database round-trips per response, so buffer in memory and flush on a
      * ~10/sec budget; [finishStream] writes whatever is left.
      */
+    /** Live and last-reply writing speed in tokens/s (≈ chars/4), null before any reply. */
+    private val _speed = MutableStateFlow<Float?>(null)
+    val speed: StateFlow<Float?> = _speed.asStateFlow()
+    private val _firstTokenMs = MutableStateFlow<Long?>(null)
+    val firstTokenMs: StateFlow<Long?> = _firstTokenMs.asStateFlow()
+    private var speedStart = 0L
+    private var speedChars = 0
+
     private suspend fun appendStreamedText(sessionId: String, chunk: String) {
+        val tNow = System.currentTimeMillis()
+        if (streamingMessageId == null) { speedStart = tNow; speedChars = 0 }
+        speedChars += chunk.length
+        val dt = tNow - speedStart
+        if (dt > 400) _speed.value = speedChars / 4f / (dt / 1000f)
         streamBuffer.append(chunk)
         streamedThisTurn = true
 

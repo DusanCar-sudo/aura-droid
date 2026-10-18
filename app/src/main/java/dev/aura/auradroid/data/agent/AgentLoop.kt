@@ -57,6 +57,7 @@ class AgentLoop @Inject constructor(
         /** Asked before a tool that can change something outside the model. */
         approve: suspend (name: String, description: String) -> Boolean,
     ): Flow<AgentEvent> = flow {
+        tools.newTurn()
         val conversation = history.toMutableList()
 
         for (step in 1..maxSteps) {
@@ -118,8 +119,13 @@ class AgentLoop @Inject constructor(
                         summary = "declined",
                     )
                 } else {
-                    runCatching { tools.run(call.name, call.arguments, sessionId) }
-                        .getOrElse { ToolOutcome("Tool failed: ${it.message}", failed = true) }
+                    try {
+                        tools.run(call.name, call.arguments, sessionId)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e   // Stop must end the loop, not become a failed tool
+                    } catch (e: Exception) {
+                        ToolOutcome("Tool failed: ${e.message}", failed = true)
+                    }
                 }
 
                 emit(
@@ -154,6 +160,6 @@ class AgentLoop @Inject constructor(
          * Enough for read-think-write-verify, which covers nearly everything
          * asked of a phone, without letting a confused model run all afternoon.
          */
-        const val DEFAULT_MAX_STEPS = 8
+        const val DEFAULT_MAX_STEPS = 20
     }
 }
