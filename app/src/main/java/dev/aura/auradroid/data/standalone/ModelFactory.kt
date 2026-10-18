@@ -141,6 +141,13 @@ object ModelFactory {
             ),
         ),
         FactoryProvider(
+            id = "ollama",
+            name = "Ollama",
+            defaultBaseUrl = "http://<pc-ip>:11434/v1",
+            defaultModel = "gemma3:1b",
+            models = emptyList(),
+        ),
+        FactoryProvider(
             id = "local",
             name = "Local (On-Device)",
             defaultBaseUrl = "local",
@@ -165,6 +172,7 @@ object ModelFactory {
             lower.contains("integrate.api.nvidia.com") -> findById("nvidia")
             lower.contains("api.groq.com") -> findById("groq")
             lower.contains("z.ai") || lower.contains("bigmodel.cn") -> findById("zhipu")
+            lower.contains(":11434") || lower.contains("ollama") -> findById("ollama")
             lower == "local" -> findById("local")
             else -> null
         }

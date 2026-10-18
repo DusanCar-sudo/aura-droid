@@ -248,6 +248,36 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Live model list from an Ollama server: GET /api/tags on the host behind
+     * the /v1 base URL. Curated chips cannot know what the server has pulled,
+     * so this is the only honest listing for it.
+     */
+    fun fetchOllamaModels(baseUrl: String, onResult: (Result<List<String>>) -> Unit) {
+        viewModelScope.launch {
+            val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val host = baseUrl.trim().removeSuffix("/").removeSuffix("/v1")
+                    val request = okhttp3.Request.Builder().url("$host/api/tags").build()
+                    okhttp3.OkHttpClient.Builder()
+                        .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                        .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                        .build()
+                        .newCall(request).execute().use { response ->
+                            check(response.isSuccessful) { "HTTP ${response.code}" }
+                            val models = com.google.gson.JsonParser.parseString(response.body?.string())
+                                .asJsonObject.getAsJsonArray("models")
+                                .map { it.asJsonObject.get("name").asString }
+                            Result.success(models)
+                        }
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+            }
+            onResult(result)
+        }
+    }
+
     fun disableStandalone() {
         viewModelScope.launch {
             // Keeps URL, model and key (still encrypted in the KeyStore): the
