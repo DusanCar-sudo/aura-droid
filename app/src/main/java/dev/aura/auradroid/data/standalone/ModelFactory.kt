@@ -15,6 +15,10 @@ data class FactoryProvider(
     val models: List<FactoryModel>,
     val signupUrl: String = "",
     val isLocal: Boolean = false,
+    // Context window in K tokens and a hard output cap sent as max_tokens,
+    // so a provider's server default (or no limit at all) never applies.
+    val contextK: Int = 128,
+    val maxOutput: Int = 8192,
 )
 
 object ModelFactory {
@@ -57,6 +61,7 @@ object ModelFactory {
             defaultBaseUrl = "https://api.deepinfra.com/v1/openai",
             defaultModel = "meta-llama/Llama-3.3-70B-Instruct",
             signupUrl = "https://deepinfra.com/dash",
+            contextK = 131,
             models = listOf(
                 FactoryModel("meta-llama/Llama-3.3-70B-Instruct", "Llama 3.3 70B", "Fast 131k"),
                 FactoryModel("deepseek-ai/DeepSeek-R1", "DeepSeek R1", "Reasoning"),
@@ -71,6 +76,7 @@ object ModelFactory {
             defaultBaseUrl = "https://token-plan-sgp.xiaomimimo.com/v1",
             defaultModel = "mimo-v2.6-pro",
             signupUrl = "https://platform.xiaomimimo.com/#/console/api-keys",
+            contextK = 1000,
             models = listOf(
                 FactoryModel("mimo-v2.6-pro", "MiMo V2.6 Pro", "Flagship 1M context"),
                 FactoryModel("mimo-v2.6-flash", "MiMo V2.6 Flash", "Fastest multimodal"),
@@ -84,6 +90,7 @@ object ModelFactory {
             defaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai",
             defaultModel = "gemini-3.6-flash",
             signupUrl = "https://aistudio.google.com/apikey",
+            contextK = 1000,
             models = listOf(
                 FactoryModel("gemini-3.6-flash", "Gemini 3.6 Flash", "Fast flagship"),
                 FactoryModel("gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "Deep reasoning"),
@@ -135,6 +142,7 @@ object ModelFactory {
             defaultBaseUrl = "https://api.z.ai/api/paas/v4",
             defaultModel = "glm-5.3-flash",
             signupUrl = "https://z.ai",
+            contextK = 200,
             models = listOf(
                 FactoryModel("glm-5.3-flash", "GLM 5.3 Flash", "Fast & cost-effective"),
                 FactoryModel("glm-5.2", "GLM 5.2", "1M context flagship"),
@@ -153,6 +161,13 @@ object ModelFactory {
             defaultBaseUrl = "local",
             defaultModel = "",
             isLocal = true,
+            models = emptyList(),
+        ),
+        FactoryProvider(
+            id = "custom",
+            name = "Custom",
+            defaultBaseUrl = "",
+            defaultModel = "",
             models = emptyList(),
         ),
     )

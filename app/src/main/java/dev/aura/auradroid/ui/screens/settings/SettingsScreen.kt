@@ -443,6 +443,19 @@ fun SettingsScreen(
         var ollamaError by remember { mutableStateOf<String?>(null) }
         var loadingOllama by remember { mutableStateOf(false) }
 
+        // Re-selecting a saved provider restores its saved endpoint/model
+        // instead of the factory default — the point of the Custom chip.
+        LaunchedEffect(selectedProviderId) {
+            if (selectedProviderId in state.savedProviders) {
+                viewModel.loadSavedProviderSettings(selectedProviderId) { saved ->
+                    if (saved != null) {
+                        if (saved.first.isNotBlank()) base = saved.first
+                        if (saved.second.isNotBlank()) model = saved.second
+                    }
+                }
+            }
+        }
+
         val activeFactoryProvider = ModelFactory.findById(selectedProviderId)
         val hasSavedKeyForProvider = state.savedProviders.contains(selectedProviderId) ||
             (selectedProviderId == "local") ||
@@ -492,7 +505,8 @@ fun SettingsScreen(
 
                     if (activeFactoryProvider != null && activeFactoryProvider.models.isNotEmpty()) {
                         Text(
-                            "Curated Models (${activeFactoryProvider.name})",
+                            "Curated Models (${activeFactoryProvider.name}) — " +
+                                "${activeFactoryProvider.contextK}k ctx · ${activeFactoryProvider.maxOutput / 1024}k out",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

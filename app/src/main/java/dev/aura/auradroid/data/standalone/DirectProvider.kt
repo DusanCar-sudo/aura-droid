@@ -109,6 +109,11 @@ class DirectProvider @Inject constructor(
         val body = JsonObject().apply {
             addProperty("model", effectiveModel)
             addProperty("stream", true)
+            // Hard cap from the Model Factory: never trust the provider's
+            // server default, which is sometimes tiny and sometimes none.
+            ModelFactory.detectProvider(baseUrl)?.maxOutput
+                ?.takeIf { it > 0 }
+                ?.let { addProperty("max_tokens", it) }
             add("messages", messagesFor(system, history))
             if (tools.isNotEmpty()) {
                 add("tools", toolsFor(tools))

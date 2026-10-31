@@ -253,6 +253,14 @@ class SettingsViewModel @Inject constructor(
      * the /v1 base URL. Curated chips cannot know what the server has pulled,
      * so this is the only honest listing for it.
      */
+    /** Saved base/model for a provider, so re-selecting it (esp. custom) restores them. */
+    fun loadSavedProviderSettings(providerId: String, onResult: (Pair<String, String>?) -> Unit) {
+        viewModelScope.launch {
+            val saved = vault.loadProvider(providerId) ?: return@launch onResult(null)
+            onResult(saved.baseUrl to saved.model)
+        }
+    }
+
     fun fetchOllamaModels(baseUrl: String, onResult: (Result<List<String>>) -> Unit) {
         viewModelScope.launch {
             val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
