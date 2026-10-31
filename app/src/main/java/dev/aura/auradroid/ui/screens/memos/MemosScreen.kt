@@ -44,6 +44,10 @@ fun MemosScreen(
     val transcript by viewModel.transcript.collectAsState()
     val listenState by viewModel.listenState.collectAsState()
     val level by viewModel.level.collectAsState()
+    val online by viewModel.online.collectAsState()
+    val working by viewModel.working.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val meter by viewModel.meter.collectAsState()
 
     var editing by remember { mutableStateOf<Memo?>(null) }
 
@@ -75,11 +79,34 @@ fun MemosScreen(
         ) {
             if (recording) {
                 RecordingPanel(
-                    transcript = transcript,
-                    level = level,
+                    transcript = if (online) "Recording — Aura transcribes it when you stop." else transcript,
+                    level = if (online) meter else level,
                     onStop = viewModel::stopAndSave,
                     onCancel = viewModel::cancelRecording,
                 )
+            }
+
+            if (working) {
+                Text(
+                    "Transcribing…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+            error?.let { msg ->
+                Row(
+                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        msg,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = viewModel::retryTranscription) { Text("Retry") }
+                }
             }
 
             (listenState as? ListenState.Error)?.let {

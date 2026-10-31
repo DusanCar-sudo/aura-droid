@@ -165,11 +165,14 @@ class Listener @Inject constructor(
     /** Restart on the main looper — never synchronously inside a callback. */
     private fun restartListening() {
         if (stopping || !continuous) return
-        main.post {
-            if (stopping || !continuous) return@post
+        // A short pause before re-arming: restarting in the same instant the
+        // service reports a result is what yields ERROR_RECOGNIZER_BUSY and the
+        // "listens to one sentence, then goodbye" behaviour.
+        main.postDelayed({
+            if (stopping || !continuous) return@postDelayed
             recognizer?.cancel()
             recognizer?.startListening(intent())
-        }
+        }, 250L)
     }
 
     private fun intent(): Intent =
@@ -241,7 +244,11 @@ class Listener @Inject constructor(
             // Silence is not a failure in continuous mode — it is a pause. Keep
             // going, or a memo would end the moment the speaker drew breath.
             val recoverable = error == SpeechRecognizer.ERROR_NO_MATCH ||
-                error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+                error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT ||
+                error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY ||
+                error == SpeechRecognizer.ERROR_CLIENT ||
+                error == SpeechRecognizer.ERROR_SERVER ||
+                error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT
             if (continuous && !stopping && recoverable) {
                 restartListening()
                 return

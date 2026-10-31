@@ -3,8 +3,13 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
     <!-- Dictation and memos. Requested at the point of use, not at launch. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Triggers: the clock (exact alarms) and the world (notification listener). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
       Photos are taken by the system camera app through ACTION_IMAGE_CAPTURE,
@@ -32,6 +37,7 @@
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
+        <package android:name="moe.shizuku.privileged.api" />
     </queries>
 
     <!--
@@ -59,7 +65,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.AuraDroid"
+            android:theme="@style/Theme.AuraDroid.Splash"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -77,6 +83,36 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+        <!-- Triggers. The receiver is private: only our alarms and the system
+             boot/time broadcasts reach it. The listener needs the system bind,
+             and the user grants notification access in Settings. -->
+        <receiver
+            android:name=".data.trigger.TriggerReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="dev.aura.auradroid.TRIGGER_FIRE" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".data.trigger.AuraNotificationListener"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
     </application>
 

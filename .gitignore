@@ -19,6 +19,7 @@ release/
 
 # Gradle files
 .gradle/
+.gradle-temp/
 build/
 
 # Local configuration file

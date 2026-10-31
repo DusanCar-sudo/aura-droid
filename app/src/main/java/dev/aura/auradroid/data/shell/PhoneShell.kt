@@ -1,10 +1,22 @@
 package dev.aura.auradroid.data.shell
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.ParcelFileDescriptor
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
+import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuRemoteProcess
+import moe.shizuku.server.IRemoteProcess
+import moe.shizuku.server.IShizukuService
 import java.io.File
+import java.lang.reflect.Constructor
+import java.lang.reflect.Method
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +30,9 @@ data class ShellResult(val output: String, val exitCode: Int, val cwd: File)
  * other apps, /sdcard without permission, and anything needing root are all
  * closed. What is here is toybox — ls, cat, grep, ps, df — over the app's own
  * files, plus whatever the user writes there.
+ *
+ * If elevated, uses Shizuku (if installed and authorized) to run as the adb user
+ * (uid 2000), unlocking pm, settings, dumpsys, and full /sdcard access.
  */
 @Singleton
 class PhoneShell @Inject constructor(
@@ -53,8 +68,6 @@ class PhoneShell @Inject constructor(
         Regex("""aura_pairing""", RegexOption.IGNORE_CASE),
     )
 
-
-
     /**
      * Run one command.
      *
@@ -64,7 +77,7 @@ class PhoneShell @Inject constructor(
      * types into keeps its own `cd` position, and the two should not drag each
      * other around.
      */
-    suspend fun run(command: String, inDirectory: File? = null): ShellResult =
+    suspend fun run(command: String, inDirectory: File? = null, elevated: Boolean = false): ShellResult =
         withContext(Dispatchers.IO) {
         val cmd = command.trim()
         val here = inDirectory ?: cwd
@@ -94,9 +107,9 @@ class PhoneShell @Inject constructor(
                 else -> File(here, target)
             }
             return@withContext when {
-                !dest.exists() -> ShellResult("cd: ${dest.path}: no such directory", 1, here)
-                !dest.isDirectory -> ShellResult("cd: ${dest.path}: not a directory", 1, here)
-                !dest.canRead() -> ShellResult("cd: ${dest.path}: permission denied", 1, here)
+                !elevated && !dest.exists() -> ShellResult("cd: ${dest.path}: no such directory", 1, here)
+                !elevated && !dest.isDirectory -> ShellResult("cd: ${dest.path}: not a directory", 1, here)
+                !elevated && !dest.canRead() -> ShellResult("cd: ${dest.path}: permission denied", 1, here)
                 // A one-off directory is for the life of the command; moving the
                 // terminal's position from under it would be a surprise.
                 inDirectory != null -> ShellResult("", 0, dest.canonicalFile)
@@ -105,18 +118,74 @@ class PhoneShell @Inject constructor(
         }
 
         try {
-            val process = ProcessBuilder("/system/bin/sh", "-c", cmd)
-                .directory(here)
-                .redirectErrorStream(true)   // stderr matters as much as stdout here
-                .start()
+            val process: java.lang.Process = if (elevated) {
+                if (!Shizuku.pingBinder()) {
+                    return@withContext ShellResult("Shizuku is not running on this device. Start it via adb or wireless debugging.", 1, here)
+                }
+                if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                    return@withContext ShellResult("Shizuku permission not granted to this app. Please grant it in Shizuku or Settings.", 1, here)
+                }
+                val runDir = when {
+                    // The adb user (uid 2000) cannot access the app's private sandbox directory (/data/user/0/<pkg>/...).
+                    // Fall back to /sdcard or /data/local/tmp for elevated commands.
+                    here.absolutePath.startsWith(context.applicationInfo.dataDir) -> {
+                        File("/sdcard").takeIf { it.exists() && it.canRead() } ?: File("/data/local/tmp")
+                    }
+                    else -> here
+                }
+                try {
+                    spawnShizukuProcess(cmd, runDir)
+                } catch (e: Exception) {
+                    Log.e("PhoneShell", "spawnShizukuProcess failed", e)
+                    return@withContext ShellResult("Shizuku execution failed: ${e.message}", 1, here)
+                }
+            } else {
+                ProcessBuilder("/system/bin/sh", "-c", cmd)
+                    .directory(here)
+                    .redirectErrorStream(true)
+                    .start()
+            }
             // Bounded: a runaway `find /` would otherwise fill memory with
             // output nobody is going to read on a phone screen.
-            val text = process.inputStream.bufferedReader().use { it.readText() }
-            val code = process.waitFor()
-            ShellResult(text.take(200_000), code, here)
+            // Stop cancels the coroutine but a blocking read ignores that; kill
+            // the process so the read hits EOF and nothing keeps running.
+            val job = currentCoroutineContext().job
+            val handle = job.invokeOnCompletion { if (it != null) process.destroyForcibly() }
+            try {
+                val outDeferred = async { readBoundedStream(process.inputStream, 200_000) }
+                val errDeferred = async { readBoundedStream(process.errorStream, 50_000) }
+                val stdout = outDeferred.await()
+                val stderr = errDeferred.await()
+                val code = process.waitFor()
+                val output = when {
+                    stderr.isBlank() -> stdout
+                    stdout.isBlank() -> stderr
+                    else -> "${stdout.trimEnd()}\n${stderr.trimEnd()}"
+                }
+                ShellResult(output, code, here)
+            } finally {
+                handle.dispose()
+                if (process.isAlive) process.destroyForcibly()
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
+            Log.e("PhoneShell", "Execution failed", e)
             ShellResult("failed: ${e.message}", 1, here)
         }
+    }
+
+    private fun readBoundedStream(stream: java.io.InputStream, maxChars: Int): String {
+        val sb = StringBuilder()
+        stream.bufferedReader().use { r ->
+            val buf = CharArray(8192)
+            while (true) {
+                val n = r.read(buf)
+                if (n < 0) break
+                if (sb.length < maxChars) sb.append(buf, 0, minOf(n, maxChars - sb.length))
+            }
+        }
+        return sb.toString()
     }
 
     /** Shown as the prompt; the full path is long and mostly noise. */
@@ -126,6 +195,57 @@ class PhoneShell @Inject constructor(
             cwd.path == h -> "~"
             cwd.path.startsWith("$h/") -> "~/" + cwd.path.removePrefix("$h/")
             else -> cwd.path
+        }
+    }
+
+    private fun spawnShizukuProcess(command: String, here: File): java.lang.Process {
+        val shellCmd = arrayOf("/system/bin/sh", "-c", "exec 2>&1; $command")
+        val dirPath = here.absolutePath
+        Log.d("PhoneShell", "spawnShizukuProcess: cmd=$command dir=$dirPath")
+        // 1. Try cached Shizuku.newProcess(cmd, env, dir)
+        shizukuNewProcessMethod?.let { m ->
+            try {
+                return m.invoke(null, shellCmd, null, dirPath) as java.lang.Process
+            } catch (t: Throwable) {
+                Log.w("PhoneShell", "shizukuNewProcessMethod reflection failed, trying service direct", t)
+            }
+        }
+
+        // 2. Fall back to calling IShizukuService directly and wrapping in ShizukuRemoteProcess
+        val binder = Shizuku.getBinder()
+            ?: throw IllegalStateException("Shizuku binder is not available")
+        val service = IShizukuService.Stub.asInterface(binder)
+            ?: throw IllegalStateException("Cannot obtain IShizukuService interface")
+        val remoteProcess = service.newProcess(shellCmd, null, dirPath)
+            ?: throw IllegalStateException("IShizukuService.newProcess returned null")
+
+        val ctor = shizukuRemoteProcessConstructor
+            ?: throw IllegalStateException("ShizukuRemoteProcess constructor is not available")
+        return ctor.newInstance(remoteProcess) as java.lang.Process
+    }
+
+    companion object {
+        private val shizukuNewProcessMethod: Method? by lazy {
+            try {
+                Shizuku::class.java.getDeclaredMethod(
+                    "newProcess",
+                    Array<String>::class.java,
+                    Array<String>::class.java,
+                    String::class.java,
+                ).apply { isAccessible = true }
+            } catch (_: Throwable) {
+                null
+            }
+        }
+
+        private val shizukuRemoteProcessConstructor: Constructor<*>? by lazy {
+            try {
+                ShizukuRemoteProcess::class.java.getDeclaredConstructor(
+                    IRemoteProcess::class.java,
+                ).apply { isAccessible = true }
+            } catch (_: Throwable) {
+                null
+            }
         }
     }
 }

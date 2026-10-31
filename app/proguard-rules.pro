@@ -24,3 +24,10 @@
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
+
+# Payloads persisted to Room as reflective Gson JSON (EventSink.kt). R8 would
+# rename their fields and stored rows would stop round-tripping across builds.
+-keep class dev.aura.auradroid.data.repository.ToolPayload { *; }
+-keep class dev.aura.auradroid.data.repository.PlanPayload { *; }
+-keep class dev.aura.auradroid.data.repository.ArtifactPayload { *; }
+-keep class dev.aura.auradroid.data.repository.StepSnapshot { *; }

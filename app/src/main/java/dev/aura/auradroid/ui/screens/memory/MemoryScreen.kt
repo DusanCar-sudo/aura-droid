@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.aura.auradroid.data.memory.AgentMemory
 import dev.aura.auradroid.data.model.Memory
+import dev.aura.auradroid.ui.theme.GeistMono
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -41,6 +43,8 @@ class MemoryViewModel @Inject constructor(
     fun forget(id: String) = viewModelScope.launch { memory.forget(id) }
 
     fun forgetAll() = viewModelScope.launch { memory.forgetAll() }
+
+    fun seedDurableMemory() = viewModelScope.launch { memory.injectDurableMemories() }
 }
 
 /**
@@ -59,6 +63,16 @@ fun MemoryScreen(
 ) {
     val notes by viewModel.notes.collectAsState()
     var confirmClear by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    val shown = remember(notes, query) {
+        val q = query.trim()
+        if (q.isEmpty()) notes
+        else notes.filter { it.text.contains(q, true) || it.tag.contains(q, true) }
+    }
+    // One "episode" per day, newest first, so a session's lessons sit together.
+    val episodes = remember(shown) {
+        shown.sortedByDescending { it.createdAt }.groupBy { episodeDay(it.createdAt) }
+    }
 
     Scaffold(
         topBar = {
@@ -73,7 +87,14 @@ fun MemoryScreen(
                             null,
                             tint = MaterialTheme.colorScheme.tertiary,
                         )
-                        Text("Aura's memory", fontWeight = FontWeight.SemiBold)
+                        Column {
+                            Text("Aura's memory", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Lessons Aura saved by herself · ${notes.size}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -82,6 +103,9 @@ fun MemoryScreen(
                     }
                 },
                 actions = {
+                    TextButton(onClick = { viewModel.seedDurableMemory() }) {
+                        Text("Restore defaults", color = MaterialTheme.colorScheme.primary)
+                    }
                     if (notes.isNotEmpty()) {
                         TextButton(onClick = { confirmClear = true }) {
                             Text("Clear all", color = MaterialTheme.colorScheme.error)
@@ -94,7 +118,10 @@ fun MemoryScreen(
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         if (notes.isEmpty()) {
-            EmptyMemory(Modifier.padding(padding))
+            EmptyMemory(
+                onSeedMemory = { viewModel.seedDurableMemory() },
+                modifier = Modifier.padding(padding),
+            )
             return@Scaffold
         }
 
@@ -105,8 +132,30 @@ fun MemoryScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(notes, key = { it.id }) { note ->
-                NoteCard(note, onForget = { viewModel.forget(note.id) })
+            item {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search what Aura learned…") },
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                )
+            }
+            episodes.forEach { (day, group) ->
+                item(key = "h-$day") {
+                    Text(
+                        "EPISODE · ${day.uppercase()}  ·  ${group.size}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = GeistMono,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                items(group, key = { it.id }) { note ->
+                    NoteCard(note, onForget = { viewModel.forget(note.id) })
+                }
             }
         }
     }
@@ -186,7 +235,10 @@ private fun NoteCard(note: Memory, onForget: () -> Unit) {
 }
 
 @Composable
-private fun EmptyMemory(modifier: Modifier = Modifier) {
+private fun EmptyMemory(
+    onSeedMemory: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier
             .fillMaxSize()
@@ -214,8 +266,21 @@ private fun EmptyMemory(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = onSeedMemory,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+        ) {
+            Text("Inject foundation memory")
+        }
     }
 }
+
+private fun episodeDay(millis: Long): String =
+    SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(Date(millis))
 
 private fun formatDate(millis: Long): String =
     SimpleDateFormat("d MMM", Locale.getDefault()).format(Date(millis))

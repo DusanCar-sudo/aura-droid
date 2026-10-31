@@ -103,7 +103,7 @@ fun parse(raw: String): ServerEvent? {
 
 private fun parsePlan(obj: JsonObject?): Plan {
     if (obj == null) return Plan(null, null, emptyList())
-    val steps = obj.getAsJsonArray("steps")
+    val steps = obj.get("steps")?.takeIf { it.isJsonArray }?.asJsonArray
         ?.mapNotNull { parseStep(it.asJsonObject) }
         ?: emptyList()
     return Plan(

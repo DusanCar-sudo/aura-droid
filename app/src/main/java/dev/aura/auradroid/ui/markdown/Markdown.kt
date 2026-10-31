@@ -15,13 +15,13 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.aura.auradroid.ui.theme.GeistMono
 
 /**
  * Markdown rendering for the chat, done by hand.
@@ -189,7 +189,7 @@ private fun RenderBlock(
         is Block.Code -> {
             Text(
                 block.content,
-                style = base.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
+                style = base.copy(fontFamily = GeistMono, fontSize = 12.sp),
                 color = mutedColor,
             )
         }
@@ -267,7 +267,7 @@ private fun inlineMarkdown(
 /** Which SpanStyle a given matched regex should paint, if any. */
 private fun matchStyle(m: MatchResult): SpanStyle? = when {
     m.value.startsWith("**") -> SpanStyle(fontWeight = FontWeight.Bold)
-    m.value.startsWith("`") -> SpanStyle(fontFamily = FontFamily.Monospace)
+    m.value.startsWith("`") -> SpanStyle(fontFamily = GeistMono)
     m.value.startsWith("~~") -> SpanStyle(textDecoration = TextDecoration.LineThrough)
     m.value.startsWith("*") -> SpanStyle(fontStyle = FontStyle.Italic)
     else -> null // links are applied with their own colour in applyMatch

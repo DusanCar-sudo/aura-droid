@@ -163,6 +163,7 @@ class ChatViewModel @Inject constructor(
             local ?: remote?.takeUnless { chat || all }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val contextHealth: StateFlow<ContextSnapshot?> = sink.contextHealth
+    val speed: StateFlow<Float?> = sink.speed
 
     private var messageCollectJob: Job? = null
     private var replyJob: Job? = null
@@ -202,14 +203,14 @@ class ChatViewModel @Inject constructor(
      */
     fun configure() {
         viewModelScope.launch {
+            vault.checkAndImportSeedCredentials()
+            memory.checkAndSeedDurableMemories()
             val endpoint = vault.load()
             val standalone = vault.loadStandalone()
 
             // Nothing changed since the last check — leave the live socket and
             // the loaded conversation alone rather than tearing them down.
-            if (configured && standalone?.model == _standalone.value?.model &&
-                (standalone == null) == (_standalone.value == null)
-            ) return@launch
+            if (configured && standalone == _standalone.value) return@launch
 
             configured = true
             _standalone.value = standalone
@@ -466,6 +467,42 @@ class ChatViewModel @Inject constructor(
      * straight here, so the connection is often still coming up, and silently
      * losing what someone just recorded is the worst possible outcome.
      */
+    /**
+     * What the desktop agent is told with every phone message. It otherwise sees
+     * a bare task string and assumes the user is sitting at the PC; this says
+     * they are on their phone, how to answer, and what the phone remembers.
+     */
+    /**
+     * The desktop agent starts every task cold, so this thread is the only
+     * memory it has of the conversation. Without it "put in downloads" or "apk"
+     * arrives with nothing to refer to.
+     */
+    private fun recentTranscript(): String {
+        val turns = _messages.value
+            .filter { it.role != MessageRole.SYSTEM && it.content.isNotBlank() && !it.isStreaming }
+            .takeLast(12)
+        if (turns.isEmpty()) return ""
+        return buildString {
+            append("[Conversation so far in this chat — the new message below continues it]\n")
+            turns.forEach {
+                val who = if (it.role == MessageRole.USER) "User" else "You"
+                append(who).append(": ").append(it.content.take(700)).append("\n")
+            }
+            append("[End of conversation so far]\n")
+        }
+    }
+
+    private suspend fun phoneContext(recent: String = ""): String = buildString {
+        append("[Sent from Aura Droid on the user's Android PHONE, not from the PC you run on. ")
+        append("They are away from the keyboard: answer short and readable on a 6-inch screen ")
+        append("(answer first, about three sentences, no headings). ")
+        append("Say plainly when something needs them at the PC. The mode is ")
+        append(_currentMode.value.name.lowercase()).append(".]\n")
+        memory.promptBlock()?.let { append("[Phone memory]\n").append(it).append("\n") }
+        append(recent)
+        append("\n")
+    }
+
     fun sendTaskText(task: String) {
         val sessionId = _currentSession.value?.id ?: return
 
@@ -477,6 +514,7 @@ class ChatViewModel @Inject constructor(
             return
         }
 
+        val recent = recentTranscript()
         viewModelScope.launch {
             repository.addMessage(sessionId, MessageRole.USER, task)
             titleSessionFrom(task)
@@ -494,7 +532,7 @@ class ChatViewModel @Inject constructor(
                 )
                 return@launch
             }
-            socket.sendTask(task, _selectedModel.value)
+            socket.sendTask(phoneContext(recent) + task, _selectedModel.value)
         }
     }
 
@@ -520,6 +558,7 @@ class ChatViewModel @Inject constructor(
         if (connection.value !is ConnState.Connected) return
         val sessionId = _currentSession.value?.id ?: return
 
+        val recent = recentTranscript()
         viewModelScope.launch {
             // The desktop protocol carries a task string, so an attachment goes
             // as its text. Images cannot cross that path at all, and saying so
@@ -530,7 +569,7 @@ class ChatViewModel @Inject constructor(
             _inputText.value = ""
             _attachments.value = emptyList()
 
-            val sent = socket.sendTask(body, _selectedModel.value)
+            val sent = socket.sendTask(phoneContext(recent) + body, _selectedModel.value)
             if (!sent) {
                 repository.addMessage(
                     sessionId = sessionId,

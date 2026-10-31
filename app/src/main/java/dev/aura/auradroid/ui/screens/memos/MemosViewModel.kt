@@ -23,7 +23,21 @@ class MemosViewModel @Inject constructor(
     private val http: dev.aura.auradroid.data.network.AuraHttp,
     private val vault: dev.aura.auradroid.data.security.TokenVault,
     val listener: Listener,
+    private val transcriber: dev.aura.auradroid.data.audio.Transcriber,
 ) : ViewModel() {
+
+    private val _online = MutableStateFlow(false)
+    /** True while this recording is being captured for online transcription. */
+    val online: StateFlow<Boolean> = _online.asStateFlow()
+
+    private val _working = MutableStateFlow(false)
+    val working: StateFlow<Boolean> = _working.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _meter = MutableStateFlow(0f)
+    val meter: StateFlow<Float> = _meter.asStateFlow()
 
     init {
         syncPending()
@@ -68,6 +82,48 @@ class MemosViewModel @Inject constructor(
 
     fun startRecording() {
         startedAt = System.currentTimeMillis()
+        _error.value = null
+        viewModelScope.launch {
+            if (transcriber.available()) {
+                try {
+                    transcriber.start()
+                    _online.value = true
+                    _recording.value = true
+                    while (_online.value && _recording.value) {
+                        _meter.value = transcriber.level()
+                        kotlinx.coroutines.delay(80)
+                    }
+                    return@launch
+                } catch (_: Exception) {
+                    transcriber.discard()
+                    _online.value = false
+                }
+            }
+            startOnDevice()
+        }
+    }
+
+    fun retryTranscription() {
+        val f = transcriber.lastAudio ?: return
+        _error.value = null
+        transcribeAndSave(f, System.currentTimeMillis() - startedAt)
+    }
+
+    private fun transcribeAndSave(f: java.io.File, duration: Long) {
+        viewModelScope.launch {
+            _working.value = true
+            transcriber.transcribe(f)
+                .onSuccess { text ->
+                    repository.saveMemo(text, duration)
+                    f.delete()
+                    syncPending()
+                }
+                .onFailure { _error.value = it.message }
+            _working.value = false
+        }
+    }
+
+    private fun startOnDevice() {
         _recording.value = true
         // Continuous: a memo is someone thinking aloud, and the recogniser
         // would otherwise stop at the first pause.
@@ -76,6 +132,14 @@ class MemosViewModel @Inject constructor(
 
     /** Stop and keep it. Returns silently if nothing was heard. */
     fun stopAndSave() {
+        if (_online.value) {
+            _online.value = false
+            _recording.value = false
+            val duration = System.currentTimeMillis() - startedAt
+            val f = transcriber.stop()
+            if (f == null) _error.value = "Nothing was recorded" else transcribeAndSave(f, duration)
+            return
+        }
         listener.stop()
         _recording.value = false
         val text = transcript.value.trim()
@@ -94,6 +158,7 @@ class MemosViewModel @Inject constructor(
     }
 
     fun cancelRecording() {
+        if (_online.value) { transcriber.discard(); _online.value = false }
         listener.reset()
         _recording.value = false
     }

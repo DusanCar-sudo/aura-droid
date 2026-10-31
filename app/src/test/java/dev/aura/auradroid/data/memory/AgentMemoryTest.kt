@@ -162,4 +162,20 @@ class AgentMemoryTest {
 
         assertNull(memory.promptBlock())
     }
+
+    @Test
+    fun `seeding injects durable foundation facts when empty`() = runTest {
+        val dao = FakeMemoryDao()
+        val memory = AgentMemory(dao)
+
+        assertEquals(0, memory.count())
+        val seeded = memory.checkAndSeedDurableMemories()
+        assertTrue("Expected seeded count > 0, was $seeded", seeded > 0)
+        assertEquals(AuraMemorySeed.INITIAL_FACTS.size, memory.count())
+
+        val block = memory.promptBlock()
+        assertTrue(block!!.contains("Dusan"))
+        assertTrue(block.contains("Redmi Note 12 Pro"))
+        assertTrue(block.contains("Aura adOS"))
+    }
 }
