@@ -2,8 +2,20 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "routes": [
     {
+      "src": "^/droid-0\\.4\\.0\\.apk$",
+      "status": 308,
+      "headers": {
+        "Location": "/droid-0.5.0.apk"
+      }
+    },
+    {
       "src": "^/$",
-      "has": [{ "type": "host", "value": "^aura-droid-site(-.*)?\\.vercel\\.app$" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "^aura-droid-site(-.*)?\\.vercel\\.app$"
+        }
+      ],
       "dest": "/retro/index.html"
     }
   ]
