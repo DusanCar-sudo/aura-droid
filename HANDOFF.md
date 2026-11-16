@@ -2,6 +2,14 @@
 
 For the Claude Code terminal CLI on your Linux machine. Read `BRAND.md` next; it holds the brand rules.
 
+## State (2026-11-16)
+
+- **Poster edition** is the main site at https://aura-droid.vercel.app/ (`index.html`; fonts in `site-assets/fonts/`, share image `site-assets/og-poster.jpg`).
+- **Nature edition** moved to `/nature.html`; `/modern/` redirects there. `/poster/` redirects to `/`.
+- Public download is `droid-0.5.0.apk` (66.6 MiB). `/droid-0.4.0.apk` redirects to it (`vercel.json`).
+- `main` carries the whole live site again, so production builds from `main`.
+- BRAND.md does not describe the Poster edition yet.
+
 ## State (2026-09-29)
 
 | Site | URL | Source | Status |
